@@ -5,22 +5,41 @@ const url = process.env.TURSO_DATABASE_URL!;
 const authToken = process.env.TURSO_AUTH_TOKEN!;
 
 export const db = createClient({
-    url,
-    authToken,
+  url,
+  authToken,
 });
 
 export const initDb = async () => {
-    await db.execute(`
-    CREATE TABLE IF NOT EXISTS campaigns (
+  // Users table
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
-      vibe TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      master_video_url TEXT,
-      status TEXT
+      username TEXT,
+      profile_pic_url TEXT,
+      credits INTEGER DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
 
-    await db.execute(`
+  // Updated Campaigns table
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS campaigns (
+      id TEXT PRIMARY KEY,
+      user_id TEXT,
+      vibe TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      master_video_url TEXT,
+      status TEXT,
+      FOREIGN KEY (user_id) REFERENCES users (id)
+    )
+  `);
+
+  // Ensure user_id column exists for existing tables
+  try {
+    await db.execute(`ALTER TABLE campaigns ADD COLUMN user_id TEXT`);
+  } catch (e) { /* Column likely already exists */ }
+
+  await db.execute(`
     CREATE TABLE IF NOT EXISTS shots (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       campaign_id TEXT,

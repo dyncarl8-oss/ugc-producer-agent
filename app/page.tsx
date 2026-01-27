@@ -28,8 +28,9 @@ const App: React.FC = () => {
     const [status, setStatus] = useState<GenerationStatus>({ stage: 'idle', message: '' });
     const [hasKey, setHasKey] = useState(false);
     const [campaignId, setCampaignId] = useState<string | null>(null);
-    const [user, setUser] = useState<{ username: string; profile_pic_url: string } | null>(null);
+    const [user, setUser] = useState<{ id: string; username: string; profile_pic_url: string; credits: number } | null>(null);
     const [loadingAuth, setLoadingAuth] = useState(true);
+    const [projects, setProjects] = useState<any[]>([]);
 
     const [shots, setShots] = useState<Shot[]>([]);
     const [currentShotId, setCurrentShotId] = useState<number | null>(null);
@@ -73,15 +74,29 @@ const App: React.FC = () => {
     useEffect(() => {
         const fetchUser = async () => {
             try {
-                const response = await fetch('/api/auth/me');
                 if (response.ok) {
                     const data = await response.json();
-                    console.log("Client: Received user data:", data);
                     setUser(data);
+                    // Fetch projects too
+                    fetchProjects();
                 }
             } catch (e) { console.error("Failed to fetch Whop user"); }
             finally { setLoadingAuth(false); }
         };
+
+        const fetchProjects = async () => {
+            try {
+                const response = await fetch('/api/campaign', {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'getCampaigns' })
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    setProjects(data.campaigns);
+                }
+            } catch (e) { console.error("Failed to fetch projects"); }
+        };
+
         fetchUser();
 
         const checkKey = async () => {
@@ -160,10 +175,18 @@ const App: React.FC = () => {
             setCampaignId(newCampaignId);
 
             // Initial DB entry
-            await fetch('/api/campaign', {
+            const createRes = await fetch('/api/campaign', {
                 method: 'POST',
                 body: JSON.stringify({ action: 'createCampaign', campaignId: newCampaignId, data: { vibe } })
             });
+
+            if (!createRes.ok) {
+                const errData = await createRes.json();
+                throw new Error(errData.error || 'Failed to create campaign');
+            }
+
+            const createData = await createRes.json();
+            if (user) setUser({ ...user, credits: createData.newCredits });
 
             // 1. Vision-Enhanced Scripting
             setStatus({ stage: 'generating', message: 'Drafting viral script...' });
@@ -254,7 +277,7 @@ const App: React.FC = () => {
 
     if (loadingAuth) {
         return (
-            <div className="flex items-center justify-center h-screen bg-[#030305] text-indigo-500">
+            <div className="flex items-center justify-center h-screen bg-[#030305] text-orange-500">
                 <Loader2 className="w-12 h-12 animate-spin" />
             </div>
         );
@@ -263,11 +286,11 @@ const App: React.FC = () => {
     if (!user && status.stage !== 'generating') {
         return (
             <div className="flex flex-col items-center justify-center h-screen bg-[#030305] text-slate-100 p-8 text-center">
-                <div className="w-20 h-20 bg-indigo-600 rounded-3xl flex items-center justify-center mb-8 shadow-2xl shadow-indigo-500/20">
+                <div className="w-20 h-20 bg-orange-600 rounded-3xl flex items-center justify-center mb-8 shadow-2xl shadow-orange-500/20">
                     <ShieldAlert className="w-10 h-10 text-white" />
                 </div>
                 <h2 className="text-3xl font-black uppercase tracking-tighter mb-4 italic">Security Checkpoint</h2>
-                <p className="text-slate-500 max-w-md mx-auto mb-8 font-medium">Please open VlogStudio through the Whop Dashboard to authenticate your session.</p>
+                <p className="text-slate-500 max-w-md mx-auto mb-8 font-medium">Please open UGC Producer Agent through the Whop Dashboard to authenticate your session.</p>
                 <div className="flex gap-4">
                     <a href="https://whop.com" className="bg-white text-black px-8 py-3 rounded-2xl font-black uppercase text-sm hover:bg-slate-200 transition-all">Go to Whop</a>
                 </div>
@@ -280,43 +303,84 @@ const App: React.FC = () => {
             {/* Sidebar */}
             <aside className="w-80 bg-[#07070a] border-r border-white/5 flex flex-col p-6 overflow-y-auto">
                 <div className="flex items-center gap-3 mb-10">
-                    <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/30">
-                        <Smartphone className="w-6 h-6 text-white" />
+                    <div className="w-10 h-10 bg-orange-600 rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/30">
+                        <Clapperboard className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                        <h1 className="text-lg font-bold tracking-tight">VlogStudio</h1>
-                        <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-widest">Handheld Engine</span>
+                        <h1 className="text-lg font-bold tracking-tight">UGC Producer</h1>
+                        <span className="text-[10px] text-orange-400 font-bold uppercase tracking-widest leading-none">AI Agent Studio</span>
                     </div>
                 </div>
 
                 {user && (
-                    <div className="mb-10 p-4 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-3">
+                    <div className="mb-4 p-4 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-3">
                         {user.profile_pic_url ? (
                             <img
                                 src={user.profile_pic_url}
                                 alt={user.username}
-                                className="w-10 h-10 rounded-full border border-indigo-500/30 object-cover"
+                                className="w-10 h-10 rounded-full border border-orange-500/30 object-cover"
                                 onError={(e) => {
                                     (e.target as HTMLImageElement).style.display = 'none';
                                     (e.target as HTMLImageElement).parentElement?.querySelector('.avatar-placeholder')?.classList.remove('hidden');
                                 }}
                             />
                         ) : null}
-                        <div className={`avatar-placeholder ${user.profile_pic_url ? 'hidden' : ''} w-10 h-10 rounded-full bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center`}>
-                            <User className="w-5 h-5 text-indigo-400" />
+                        <div className={`avatar-placeholder ${user.profile_pic_url ? 'hidden' : ''} w-10 h-10 rounded-full bg-orange-600/20 border border-orange-500/30 flex items-center justify-center`}>
+                            <User className="w-5 h-5 text-orange-400" />
                         </div>
                         <div className="flex flex-col">
-                            <span className="text-xs font-bold text-white tracking-tight leading-none mb-1">{user.username}</span>
-                            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Verified Creator</span>
+                            <span className="text-xs font-bold text-white tracking-tight leading-none mb-1 truncate max-w-[120px]">{user.username}</span>
+                            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Verified User</span>
                         </div>
                     </div>
                 )}
+
+                {user && (
+                    <div className="mb-8 p-4 bg-orange-600/10 border border-orange-500/20 rounded-2xl">
+                        <div className="flex items-center justify-between mb-1">
+                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Credits Balance</span>
+                            <Sparkles className="w-3 h-3 text-orange-400" />
+                        </div>
+                        <div className="text-2xl font-black text-white italic">{user.credits} <span className="text-xs font-medium text-slate-500 not-italic uppercase tracking-tighter ml-1">Credits</span></div>
+                    </div>
+                )}
+
+                <nav className="space-y-1 mb-10">
+                    <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-3 ml-2">Main Menu</div>
+                    <button className="w-full flex items-center gap-3 px-4 py-3 bg-orange-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-orange-500/20 transition-all">
+                        <Box className="w-4 h-4" />
+                        Create Ads
+                    </button>
+                </nav>
+
+                <div className="flex-1">
+                    <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-3 ml-2">Past Projects</div>
+                    <div className="space-y-3">
+                        {projects.length === 0 ? (
+                            <div className="p-4 border border-dashed border-white/10 rounded-2xl text-center">
+                                <p className="text-[10px] text-slate-600 font-medium">No projects yet</p>
+                            </div>
+                        ) : (
+                            projects.slice(0, 5).map(p => (
+                                <div key={p.id} className="p-3 bg-white/5 border border-white/5 rounded-xl hover:bg-white/10 transition-all cursor-pointer group">
+                                    <div className="flex items-center justify-between mb-1">
+                                        <span className="text-[10px] font-bold text-slate-400 truncate max-w-[120px]">{p.vibe}</span>
+                                        <div className={`w-1.5 h-1.5 rounded-full ${p.status === 'completed' ? 'bg-green-500' : 'bg-orange-500'}`} />
+                                    </div>
+                                    <div className="text-[9px] text-slate-600 font-bold uppercase tracking-widest">
+                                        {new Date(p.created_at).toLocaleDateString()}
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </div>
 
                 <div className="space-y-8">
                     <section>
                         <div className="flex items-center justify-between mb-4">
                             <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block">Active Creator</label>
-                            <span className="text-[10px] text-indigo-400 font-bold uppercase">{selectedTemplate.split('/').pop()?.replace('.png', '')}</span>
+                            <span className="text-[10px] text-orange-400 font-bold uppercase">{selectedTemplate.split('/').pop()?.replace('.png', '')}</span>
                         </div>
                         <div className="relative rounded-3xl overflow-hidden border border-white/10 bg-white/5 aspect-[3/4] flex items-center justify-center group shadow-2xl">
                             {avatarImage && <img src={avatarImage} alt="Host" className="w-full h-full object-cover transition-all duration-700" />}
@@ -337,7 +401,7 @@ const App: React.FC = () => {
                                     <button
                                         key={num}
                                         onClick={() => setSelectedTemplate(path)}
-                                        className={`aspect-square rounded-xl overflow-hidden border-2 transition-all ${selectedTemplate === path ? 'border-indigo-500 scale-95 shadow-lg shadow-indigo-500/20' : 'border-white/5 opacity-40 hover:opacity-100 hover:border-white/20'}`}
+                                        className={`aspect-square rounded-xl overflow-hidden border-2 transition-all ${selectedTemplate === path ? 'border-orange-500 scale-95 shadow-lg shadow-orange-500/20' : 'border-white/5 opacity-40 hover:opacity-100 hover:border-white/20'}`}
                                     >
                                         <img src={path} className="w-full h-full object-cover" alt={`Template ${num}`} />
                                     </button>
@@ -347,11 +411,11 @@ const App: React.FC = () => {
                     </section>
 
                     <section className="space-y-3">
-                        <div className="p-4 bg-indigo-600/5 rounded-2xl border border-indigo-500/10">
-                            <h4 className="text-[10px] font-bold text-indigo-400 uppercase mb-2">Social Format</h4>
+                        <div className="p-4 bg-orange-600/5 rounded-2xl border border-orange-500/10">
+                            <h4 className="text-[10px] font-bold text-orange-400 uppercase mb-2">Social Format</h4>
                             <div className="flex items-center justify-between">
                                 <span className="text-xs text-slate-400">9:16 Portrait</span>
-                                <Layers className="w-4 h-4 text-indigo-500" />
+                                <Layers className="w-4 h-4 text-orange-500" />
                             </div>
                         </div>
                         <button
@@ -381,7 +445,7 @@ const App: React.FC = () => {
 
                     <div className="space-y-10">
                         <div>
-                            <h2 className="text-5xl font-black text-white tracking-tighter mb-2 italic uppercase">Lo-Fi UGC Studio</h2>
+                            <h2 className="text-5xl font-black text-white tracking-tighter mb-2 italic uppercase">UGC Producer Agent</h2>
                             <p className="text-slate-500 text-base">Generate authentic social ads shot-by-shot.</p>
                         </div>
 
@@ -390,7 +454,7 @@ const App: React.FC = () => {
                                 <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
                                     <Box className="w-3 h-3" /> 1. Upload Product
                                 </label>
-                                <label className={`flex flex-col items-center justify-center w-full aspect-square rounded-[40px] border-2 border-dashed transition-all cursor-pointer ${productImage ? 'border-indigo-500/40 bg-indigo-500/5' : 'border-white/10 hover:border-indigo-500/30 bg-white/5 shadow-inner'
+                                <label className={`flex flex-col items-center justify-center w-full aspect-square rounded-[40px] border-2 border-dashed transition-all cursor-pointer ${productImage ? 'border-orange-500/40 bg-orange-500/5' : 'border-white/10 hover:border-orange-500/30 bg-white/5 shadow-inner'
                                     }`}>
                                     {productImage ? (
                                         <img src={productImage} alt="Product" className="w-full h-full object-contain p-10" />
@@ -452,12 +516,12 @@ const App: React.FC = () => {
 
                             <div className="grid grid-cols-4 gap-4">
                                 {shots.length > 0 ? shots.map((shot) => (
-                                    <div key={shot.id} className={`p-4 rounded-[32px] border transition-all duration-500 ${currentShotId === shot.id ? 'border-indigo-500 bg-indigo-600/10 shadow-[0_0_40px_rgba(79,70,229,0.1)]' : 'border-white/5 bg-white/5'
+                                    <div key={shot.id} className={`p-4 rounded-[32px] border transition-all duration-500 ${currentShotId === shot.id ? 'border-orange-500 bg-orange-600/10 shadow-[0_0_40px_rgba(255,77,0,0.1)]' : 'border-white/5 bg-white/5'
                                         }`}>
                                         <div className="flex justify-between items-center mb-3">
-                                            <span className="text-[9px] font-black uppercase tracking-widest text-indigo-400">{shot.type}</span>
+                                            <span className="text-[9px] font-black uppercase tracking-widest text-orange-400">{shot.type}</span>
                                             {shot.status === 'completed' && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
-                                            {shot.status === 'generating' && <Loader2 className="w-3 h-3 animate-spin text-indigo-400" />}
+                                            {shot.status === 'generating' && <Loader2 className="w-3 h-3 animate-spin text-orange-400" />}
                                             {shot.status === 'error' && <AlertCircle className="w-4 h-4 text-red-500" />}
                                         </div>
                                         <div className="aspect-[9/16] bg-black/40 rounded-2xl overflow-hidden mb-3 relative flex items-center justify-center border border-white/5">

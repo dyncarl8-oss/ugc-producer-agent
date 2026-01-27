@@ -1,17 +1,49 @@
-
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { headers } from "next/headers";
+import { whop } from "@/lib/whop";
 
 export async function POST(req: Request) {
     try {
+        const head = await headers();
+        const { userId } = await whop.verifyUserToken(head);
+
+        if (!userId) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
         const { action, campaignId, data } = await req.json();
 
         if (action === 'createCampaign') {
-            await db.execute({
-                sql: 'INSERT INTO campaigns (id, vibe, status) VALUES (?, ?, ?)',
-                args: [campaignId, data.vibe, 'pending']
+            // Check credits
+            const user = await db.execute({
+                sql: "SELECT credits FROM users WHERE id = ?",
+                args: [userId]
             });
-            return NextResponse.json({ success: true });
+
+            if (user.rows.length === 0 || (user.rows[0].credits as number) <= 0) {
+                return NextResponse.json({ error: 'Insufficient credits' }, { status: 402 });
+            }
+
+            // Deduct credit
+            await db.execute({
+                sql: "UPDATE users SET credits = credits - 1 WHERE id = ?",
+                args: [userId]
+            });
+
+            await db.execute({
+                sql: 'INSERT INTO campaigns (id, user_id, vibe, status) VALUES (?, ?, ?, ?)',
+                args: [campaignId, userId, data.vibe, 'pending']
+            });
+            return NextResponse.json({ success: true, newCredits: (user.rows[0].credits as number) - 1 });
+        }
+
+        if (action === 'getCampaigns') {
+            const result = await db.execute({
+                sql: 'SELECT * FROM campaigns WHERE user_id = ? ORDER BY created_at DESC',
+                args: [userId]
+            });
+            return NextResponse.json({ campaigns: result.rows });
         }
 
         if (action === 'saveShots') {
