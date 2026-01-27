@@ -25,10 +25,9 @@ export async function POST(req: Request) {
             plan: {
                 initial_price: price,
                 plan_type: "one_time",
-                billing_period: 0, // 0 for one-time
-                company_id: companyId,
+                billing_period: 0,
                 currency: "usd",
-            },
+            } as any,
             metadata: {
                 user_id: userId,
                 credits: credits.toString(),
