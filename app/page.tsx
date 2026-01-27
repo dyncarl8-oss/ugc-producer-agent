@@ -38,7 +38,7 @@ const App: React.FC = () => {
     useEffect(() => {
         const loadDefaultAvatar = async () => {
             try {
-                const response = await fetch('/template1.png');
+                const response = await fetch('/templates/template1.png');
                 if (response.ok) {
                     const blob = await response.blob();
                     const reader = new FileReader();
