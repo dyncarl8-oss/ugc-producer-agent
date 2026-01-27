@@ -916,7 +916,6 @@ const App: React.FC = () => {
                         <div className="p-4" style={{ minHeight: '600px' }}>
                             <WhopCheckoutEmbed
                                 sessionId={checkoutSessionId}
-                                returnUrl={typeof window !== 'undefined' ? window.location.href : ''}
                                 onComplete={handleCheckoutComplete}
                             />
                         </div>
