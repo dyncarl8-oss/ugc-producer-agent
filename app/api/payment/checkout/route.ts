@@ -25,12 +25,13 @@ export async function POST(req: Request) {
         const client = new Whop({ apiKey: process.env.WHOP_API_KEY });
 
         // Create checkout configuration (Option 2: Embedded checkout)
-        // As per Whop docs: company_id goes at TOP LEVEL, plan contains price/type
+        // API requires: plan.companyId and plan.currency
         const checkoutConfig = await (client.checkoutConfigurations as any).create({
-            company_id: companyId,
             plan: {
-                initial_price: Number(price),
-                plan_type: "one_time",
+                companyId: companyId,
+                initialPrice: Number(price),
+                planType: "one_time",
+                currency: "usd",
             },
             metadata: {
                 user_id: userId,
