@@ -31,25 +31,26 @@ const App: React.FC = () => {
     const [shots, setShots] = useState<Shot[]>([]);
     const [currentShotId, setCurrentShotId] = useState<number | null>(null);
     const [masterVideoUrl, setMasterVideoUrl] = useState<string | null>(null);
+    const [selectedTemplate, setSelectedTemplate] = useState('/templates/template1.png');
 
     const ffmpegRef = useRef<any>(null);
     const [ffmpegLoaded, setFfmpegLoaded] = useState(false);
 
     useEffect(() => {
-        const loadDefaultAvatar = async () => {
+        const loadAvatar = async (path: string) => {
             try {
-                const response = await fetch('/templates/template1.png');
+                const response = await fetch(path);
                 if (response.ok) {
                     const blob = await response.blob();
                     const reader = new FileReader();
                     reader.onloadend = () => setAvatarImage(reader.result as string);
                     reader.readAsDataURL(blob);
                 }
-            } catch (e) { console.warn("Default avatar not found."); }
+            } catch (e) { console.warn("Avatar not found:", path); }
         };
-        loadDefaultAvatar();
+        loadAvatar(selectedTemplate);
         loadFFmpeg();
-    }, []);
+    }, [selectedTemplate]);
 
     const loadFFmpeg = async () => {
         const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
@@ -221,14 +222,35 @@ const App: React.FC = () => {
 
                 <div className="space-y-8">
                     <section>
-                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4 block">Active Creator</label>
-                        <div className="relative rounded-3xl overflow-hidden border border-white/10 bg-white/5 aspect-[3/4] flex items-center justify-center group">
-                            {avatarImage && <img src={avatarImage} alt="Host" className="w-full h-full object-cover grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700" />}
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                        <div className="flex items-center justify-between mb-4">
+                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block">Active Creator</label>
+                            <span className="text-[10px] text-indigo-400 font-bold uppercase">{selectedTemplate.split('/').pop()?.replace('.png', '')}</span>
+                        </div>
+                        <div className="relative rounded-3xl overflow-hidden border border-white/10 bg-white/5 aspect-[3/4] flex items-center justify-center group shadow-2xl">
+                            {avatarImage && <img src={avatarImage} alt="Host" className="w-full h-full object-cover transition-all duration-700" />}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-40" />
                             <div className="absolute bottom-4 left-4 flex items-center gap-2">
                                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                                 <span className="text-[10px] font-bold text-white">READY TO RECORD</span>
                             </div>
+                        </div>
+                    </section>
+
+                    <section>
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4 block">Pick Template</label>
+                        <div className="grid grid-cols-3 gap-2">
+                            {[1, 2, 3, 4, 5, 6].map((num) => {
+                                const path = `/templates/template${num}.png`;
+                                return (
+                                    <button
+                                        key={num}
+                                        onClick={() => setSelectedTemplate(path)}
+                                        className={`aspect-square rounded-xl overflow-hidden border-2 transition-all ${selectedTemplate === path ? 'border-indigo-500 scale-95 shadow-lg shadow-indigo-500/20' : 'border-white/5 opacity-40 hover:opacity-100 hover:border-white/20'}`}
+                                    >
+                                        <img src={path} className="w-full h-full object-cover" alt={`Template ${num}`} />
+                                    </button>
+                                );
+                            })}
                         </div>
                     </section>
 
@@ -350,7 +372,7 @@ const App: React.FC = () => {
                                             {shot.videoUrl ? (
                                                 <video src={shot.videoUrl} className="w-full h-full object-cover" controls={false} autoPlay loop muted />
                                             ) : shot.refImage ? (
-                                                <img src={shot.refImage} className="w-full h-full object-cover opacity-60" />
+                                                <img src={shot.refImage} className="w-full h-full object-cover" />
                                             ) : (
                                                 <div className="flex flex-col items-center gap-2 opacity-10">
                                                     <Smartphone className="w-6 h-6" />
