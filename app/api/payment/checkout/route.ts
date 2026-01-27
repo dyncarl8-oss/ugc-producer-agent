@@ -24,12 +24,12 @@ export async function POST(req: Request) {
         });
 
         // Create checkout configuration
-        // API Error explicitly demands: plan.companyId and plan.currency
-        const checkoutConfig = await (client.checkoutConfigurations as any).create({
+        // Using strict snake_case matching the installed SDK type definition
+        const checkoutConfig = await client.checkoutConfigurations.create({
             plan: {
-                companyId: process.env.WHOP_COMPANY_ID!,
-                initialPrice: Number(price),
-                planType: "one_time",
+                company_id: process.env.WHOP_COMPANY_ID!,
+                initial_price: Number(price),
+                plan_type: "one_time",
                 currency: "usd",
             },
             metadata: {
