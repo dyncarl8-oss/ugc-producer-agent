@@ -7,7 +7,7 @@ import { AdVibe, AspectRatio, Config, GenerationStatus } from '../types';
 import { VeoService, Shot } from '../services/veoService';
 import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { fetchFile, toBlobURL } from '@ffmpeg/util';
-import { WhopCheckoutEmbed } from "@whop/checkout/react";
+
 
 
 declare global {
@@ -45,9 +45,7 @@ const App: React.FC = () => {
     const [ffmpegLoaded, setFfmpegLoaded] = useState(false);
     const [selectedProject, setSelectedProject] = useState<any | null>(null);
     const [modalVideoUrl, setModalVideoUrl] = useState<string | null>(null);
-    const [showPricingModal, setShowPricingModal] = useState(false);
-    const [loadingCheckout, setLoadingCheckout] = useState<number | null>(null);
-    const [checkoutSessionId, setCheckoutSessionId] = useState<string | null>(null);
+
     const params = useParams();
     const companyId = params?.companyId as string || '';
 
@@ -303,47 +301,7 @@ const App: React.FC = () => {
         document.body.removeChild(a);
     };
 
-    const handleCheckout = async (credits: number, price: number) => {
-        setLoadingCheckout(credits);
-        try {
-            const res = await fetch('/api/payment/checkout', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ credits, price, companyId })
-            });
 
-            if (res.ok) {
-                const data = await res.json();
-                // Enable embedded checkout
-                setCheckoutSessionId(data.sessionId);
-                setShowPricingModal(false);
-            } else {
-                const err = await res.json();
-                alert(`Error: ${err.error || 'Failed to initiate checkout'}`);
-            }
-        } catch (e) {
-            console.error("Checkout Request Failed:", e);
-        } finally {
-            setLoadingCheckout(null);
-        }
-    };
-
-    const handleCheckoutComplete = async (paymentId: string) => {
-        console.log("Payment completed:", paymentId);
-        // Close the checkout modal
-        setCheckoutSessionId(null);
-        // Refresh user credits
-        try {
-            const response = await fetch('/api/auth/me');
-            if (response.ok) {
-                const data = await response.json();
-                setUser(data);
-            }
-        } catch (e) {
-            console.error("Failed to refresh user:", e);
-        }
-
-    };
 
     if (loadingAuth) {
         return (
@@ -411,14 +369,7 @@ const App: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Top Up Credits Button */}
-                        <button
-                            onClick={() => setShowPricingModal(true)}
-                            className="w-full mt-2 py-2.5 bg-orange-600/10 hover:bg-orange-600/20 border border-orange-500/30 rounded-xl flex items-center justify-center gap-2 group transition-all"
-                        >
-                            <Plus className="w-3 h-3 text-orange-500 group-hover:scale-125 transition-transform" />
-                            <span className="text-[10px] font-black text-orange-200 uppercase tracking-widest">Buy Credits</span>
-                        </button>
+                        {/* Top Up Credits Button Removed */}
                     </div>
                 )}
 
