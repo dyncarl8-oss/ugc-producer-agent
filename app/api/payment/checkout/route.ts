@@ -23,6 +23,7 @@ export async function POST(req: Request) {
         const checkoutConfig = await whop.checkoutConfigurations.create({
             company_id: companyId,
             plan: {
+                companyId: companyId, // SDK/API specifically asking for this in camelCase
                 initial_price: price,
                 plan_type: "one_time",
                 billing_period: 0,
