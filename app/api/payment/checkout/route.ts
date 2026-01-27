@@ -18,17 +18,12 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Missing required fields: credits, price, or companyId" }, { status: 400 });
         }
 
-        // Create a checkout configuration
-        // We use metadata to store the userId and credit amount for the webhook to fulfill
-        const checkoutConfig = await (whop.checkoutConfigurations as any).create({
+        // Use Option 1 from the Whop docs: Create a plan to get a purchase_url
+        // This is more robust for one-time links and avoids the 'configuration' errors
+        const plan = await (whop.plans as any).create({
             company_id: companyId,
-            mode: "payment",
-            plan: {
-                initial_price: price,
-                plan_type: "one_time",
-                companyId: companyId, // Satisfy potential GraphQL requirements
-                currency: "usd",
-            },
+            initial_price: price,
+            plan_type: "one_time",
             metadata: {
                 user_id: userId,
                 credits: credits.toString(),
@@ -36,11 +31,11 @@ export async function POST(req: Request) {
             },
         });
 
-        // The SDK returns the config, we need to construct the purchase URL
-        // Typically it's whop.com/checkout/config_id
-        const purchaseUrl = `https://whop.com/checkout/${checkoutConfig.id}`;
+        if (!plan.purchase_url) {
+            throw new Error("Failed to generate purchase URL");
+        }
 
-        return NextResponse.json({ url: purchaseUrl });
+        return NextResponse.json({ url: plan.purchase_url });
     } catch (error: any) {
         console.error("Checkout Error:", error);
         return NextResponse.json({ error: error.message }, { status: 500 });
