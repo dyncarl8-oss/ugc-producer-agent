@@ -17,48 +17,53 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Missing required fields: credits, price" }, { status: 400 });
         }
 
-        const inputCompanyId = bodyCompanyId || process.env.WHOP_COMPANY_ID || process.env.NEXT_PUBLIC_WHOP_COMPANY_ID;
+        const companyId = bodyCompanyId || process.env.WHOP_COMPANY_ID || process.env.NEXT_PUBLIC_WHOP_COMPANY_ID;
 
-        // Create a checkout configuration (Option 2: Embedded checkout)
-        // 1. Initialize a clean Whop client (no appID) to avoid context issues
-        const { Whop } = await import("@whop/sdk");
-        const client = new Whop({ apiKey: process.env.WHOP_API_KEY });
-
-        // 2. [Pre-flight] Determine the correct company ID from the API key
-        // This ensures we're using the right biz_ID regardless of what's in the DB/frontend
-        let finalCompanyId = inputCompanyId;
-        try {
-            const company = await (client as any).companies.retrieve();
-            if (company && company.id) {
-                console.log("Confirmed Whop Company ID:", company.id);
-                finalCompanyId = company.id;
-            }
-        } catch (e) {
-            console.warn("Could not verify company ID via API, falling back to provided ID:", finalCompanyId);
+        if (!companyId) {
+            return NextResponse.json({ error: "No Company ID found. Please add WHOP_COMPANY_ID to your environment variables." }, { status: 400 });
         }
 
-        // 3. Create the checkout configuration with the EXACT schema from @whop/sdk types
-        // Note: For inline plans, company_id and currency are REQUIRED inside the plan object.
-        const checkoutConfig = await (client.checkoutConfigurations as any).create({
+        // Create a checkout configuration (Option 2: Embedded checkout)
+        // We use direct REST API to avoid SDK mapping issues
+        // Doc link: https://docs.whop.com/developer/guides/accept-payments#step-1:-create-a-checkout-configuration
+        const payload = {
+            company_id: companyId,
             plan: {
-                company_id: finalCompanyId,
-                currency: "usd",
+                company_id: companyId, // Double-provide to satisfy nested requirements if mandatory
+                title: "Credits Purchase",
                 initial_price: Number(price),
-                plan_type: "one_time"
+                plan_type: "one_time",
+                currency: "usd"
             },
             metadata: {
                 user_id: userId,
                 credits: credits.toString(),
                 type: "credit_purchase"
             },
+        };
+
+        console.log("Creating Whop Checkout Configuration with payload:", JSON.stringify(payload, null, 2));
+
+        const response = await fetch("https://api.whop.com/api/v1/checkout_configurations", {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${process.env.WHOP_API_KEY}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
         });
 
-        if (!checkoutConfig.id) {
-            throw new Error("Failed to generate checkout session (No ID returned)");
+        const data = await response.json();
+
+        if (!response.ok) {
+            console.error("Whop API Error Response:", JSON.stringify(data, null, 2));
+            throw new Error(data.error?.message || data.message || "Failed to generate checkout session");
         }
 
+        console.log("Whop Checkout Configuration created successfully:", data.id);
+
         // Return session ID for embedded checkout
-        return NextResponse.json({ sessionId: checkoutConfig.id });
+        return NextResponse.json({ sessionId: data.id });
     } catch (error: any) {
         console.error("Checkout Error:", error);
         return NextResponse.json({ error: error.message }, { status: 500 });
