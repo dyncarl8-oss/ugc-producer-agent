@@ -7,7 +7,7 @@ import { AdVibe, AspectRatio, Config, GenerationStatus } from '../types';
 import { VeoService, Shot } from '../services/veoService';
 import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { fetchFile, toBlobURL } from '@ffmpeg/util';
-import { CheckoutModal } from '../components/CheckoutModal';
+// CheckoutModal removed - using redirect to Whop checkout URL instead
 
 
 declare global {
@@ -314,9 +314,12 @@ const App: React.FC = () => {
 
             if (res.ok) {
                 const data = await res.json();
-                // Show embedded checkout modal (Option 2)
-                setCheckoutSessionId(data.sessionId);
-                setShowPricingModal(false);
+                // Redirect to Whop checkout URL (embedded checkout is blocked by x-frame-options)
+                if (data.url) {
+                    window.location.href = data.url;
+                } else {
+                    alert('Error: No checkout URL returned');
+                }
             } else {
                 const err = await res.json();
                 alert(`Error: ${err.error || 'Failed to initiate checkout'}`);
@@ -903,14 +906,7 @@ const App: React.FC = () => {
                 </div>
             )}
 
-            {/* Checkout Modal (Option 2) */}
-            {checkoutSessionId && (
-                <CheckoutModal
-                    sessionId={checkoutSessionId}
-                    onClose={() => setCheckoutSessionId(null)}
-                    onComplete={handleCheckoutComplete}
-                />
-            )}
+            {/* Checkout now redirects to Whop URL - no modal needed */}
 
 
             <style dangerouslySetInnerHTML={{
