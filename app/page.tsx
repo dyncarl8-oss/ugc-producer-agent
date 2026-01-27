@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Loader2, Key, ShieldAlert, Smartphone, Sparkles, User, Box, ShoppingBag, Clapperboard, CheckCircle2, AlertCircle, Layers, RefreshCcw, Download } from 'lucide-react';
+import { Play, Loader2, Key, ShieldAlert, Smartphone, Sparkles, User, Box, ShoppingBag, Clapperboard, CheckCircle2, AlertCircle, Layers, RefreshCcw, Download, Zap } from 'lucide-react';
 import { AdVibe, AspectRatio, Config, GenerationStatus } from '../types';
 import { VeoService, Shot } from '../services/veoService';
 import { FFmpeg } from '@ffmpeg/ffmpeg';
@@ -36,6 +36,7 @@ const App: React.FC = () => {
     const [currentShotId, setCurrentShotId] = useState<number | null>(null);
     const [masterVideoUrl, setMasterVideoUrl] = useState<string | null>(null);
     const [selectedTemplate, setSelectedTemplate] = useState('/templates/template1.png');
+    const [hoveredTemplate, setHoveredTemplate] = useState<string | null>(null);
 
     const ffmpegRef = useRef<any>(null);
     const [ffmpegLoaded, setFfmpegLoaded] = useState(false);
@@ -330,24 +331,19 @@ const App: React.FC = () => {
                             <div className={`avatar-placeholder ${user.profile_pic_url ? 'hidden' : ''} w-12 h-12 rounded-full bg-orange-600/20 border border-orange-500/30 flex items-center justify-center shadow-lg`}>
                                 <User className="w-6 h-6 text-orange-400" />
                             </div>
-                            <div className="flex flex-col min-w-0">
-                                <span className="text-sm font-black text-white tracking-tight leading-none mb-1 truncate">{user.username}</span>
-                                <div className="flex items-center gap-1.5 px-2 py-0.5 bg-orange-600/10 border border-orange-500/20 rounded-full w-fit">
-                                    <Sparkles className="w-2.5 h-2.5 text-orange-400" />
-                                    <span className="text-[10px] text-orange-200 font-black uppercase tracking-tighter">{user.credits} CREDITS</span>
+                            <div className="flex flex-col min-w-0 flex-1">
+                                <div className="flex items-center justify-between gap-2">
+                                    <span className="text-sm font-black text-white tracking-tight truncate">{user.username}</span>
+                                    <div className="flex items-center gap-1 px-2 py-0.5 bg-orange-600/20 border border-orange-500/30 rounded-full shrink-0">
+                                        <Zap className="w-2.5 h-2.5 text-orange-500 fill-orange-500" />
+                                        <span className="text-[10px] text-orange-200 font-black tracking-tighter">{user.credits}</span>
+                                    </div>
                                 </div>
+                                <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">Verified Account</span>
                             </div>
                         </div>
                     </div>
                 )}
-
-                <nav className="space-y-1 mb-10">
-                    <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-3 ml-2">Main Menu</div>
-                    <button className="w-full flex items-center gap-3 px-4 py-3 bg-orange-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-orange-500/20 transition-all">
-                        <Box className="w-4 h-4" />
-                        Create Ads
-                    </button>
-                </nav>
 
                 <div className="flex-1">
                     <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-3 ml-2">Recent Projects</div>
@@ -458,19 +454,30 @@ const App: React.FC = () => {
                                     <span className="w-5 h-5 bg-orange-600 rounded-md text-white flex items-center justify-center text-[9px] font-black italic">03</span>
                                     Select Template
                                 </label>
-                                <div className="grid grid-cols-6 gap-2">
+                                <div className="grid grid-cols-6 gap-2 relative">
                                     {[1, 2, 3, 4, 5, 6].map((num) => {
                                         const path = `/templates/template${num}.png`;
                                         return (
                                             <button
                                                 key={num}
                                                 onClick={() => setSelectedTemplate(path)}
+                                                onMouseEnter={() => setHoveredTemplate(path)}
+                                                onMouseLeave={() => setHoveredTemplate(null)}
                                                 className={`aspect-square rounded-xl overflow-hidden border-2 transition-all ${selectedTemplate === path ? 'border-orange-500 scale-95 shadow-lg shadow-orange-500/20' : 'border-white/5 opacity-40 hover:opacity-100 hover:border-white/20'}`}
                                             >
                                                 <img src={path} className="w-full h-full object-cover" alt={`Template ${num}`} />
                                             </button>
                                         );
                                     })}
+
+                                    {/* Hover Preview Overlay */}
+                                    {hoveredTemplate && (
+                                        <div className="absolute bottom-full mb-4 left-0 z-50 pointer-events-none animate-in fade-in zoom-in duration-200">
+                                            <div className="w-48 aspect-[9/16] rounded-3xl overflow-hidden border-4 border-orange-600 shadow-[0_0_50px_rgba(255,77,0,0.3)] bg-black">
+                                                <img src={hoveredTemplate} className="w-full h-full object-cover" alt="Preview" />
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </section>
 
