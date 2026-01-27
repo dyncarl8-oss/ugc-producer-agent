@@ -24,10 +24,11 @@ export async function POST(req: Request) {
         }
 
         // Create a checkout configuration
-        // Matching the docs EXACTLY now
+        // According to Whop API docs: company_id and currency go INSIDE the plan object
         const checkoutConfig = await (whop.checkoutConfigurations as any).create({
-            company_id: companyId,
             plan: {
+                company_id: companyId,
+                currency: "usd",
                 initial_price: price,
                 plan_type: "one_time",
             },
