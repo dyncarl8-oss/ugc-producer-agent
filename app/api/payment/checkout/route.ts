@@ -25,6 +25,8 @@ export async function POST(req: Request) {
                 initial_price: price,
                 plan_type: "one_time",
                 billing_period: 0, // 0 for one-time
+                company_id: companyId,
+                currency: "usd",
             },
             metadata: {
                 user_id: userId,
