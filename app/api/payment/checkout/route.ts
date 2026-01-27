@@ -23,12 +23,14 @@ export async function POST(req: Request) {
             apiKey: process.env.WHOP_API_KEY,
         });
 
-        // Create checkout configuration exactly per Whop docs
+        // Create checkout configuration
+        // API Error explicitly demands: plan.companyId and plan.currency
         const checkoutConfig = await (client.checkoutConfigurations as any).create({
-            company_id: process.env.WHOP_COMPANY_ID!,
             plan: {
-                initial_price: Number(price),
-                plan_type: "one_time",
+                companyId: process.env.WHOP_COMPANY_ID!,
+                initialPrice: Number(price),
+                planType: "one_time",
+                currency: "usd",
             },
             metadata: {
                 user_id: userId,
