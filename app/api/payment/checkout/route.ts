@@ -24,11 +24,14 @@ export async function POST(req: Request) {
         }
 
         // Create a checkout configuration (Option 2: Embedded checkout)
-        // API requires company_id and currency inside the plan object only
-        const checkoutConfig = await (whop.checkoutConfigurations as any).create({
+        // We use a fresh Whop client without appID to match the doc snippet exactly 
+        // and avoid "Cannot provide company_id" context errors.
+        const { Whop } = await import("@whop/sdk");
+        const client = new Whop({ apiKey: process.env.WHOP_API_KEY });
+
+        const checkoutConfig = await (client.checkoutConfigurations as any).create({
+            company_id: companyId,
             plan: {
-                company_id: companyId,
-                currency: "usd",
                 initial_price: price,
                 plan_type: "one_time",
             },
