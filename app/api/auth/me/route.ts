@@ -14,10 +14,13 @@ export async function GET() {
 
         const user = await whop.users.retrieve(userId);
 
+        // Defensive mapping for profile picture URL
+        const profilePicUrl = (user as any).profile_picture?.url || (user as any).profile_pic_url;
+
         return NextResponse.json({
             id: user.id,
             username: user.username,
-            profile_pic_url: user.profile_picture?.url,
+            profile_pic_url: profilePicUrl,
         });
     } catch (error: any) {
         console.error("Whop Auth Error:", error);
