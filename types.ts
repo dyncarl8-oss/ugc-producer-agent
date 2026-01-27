@@ -22,4 +22,5 @@ export interface Config {
 export interface GenerationStatus {
   stage: 'idle' | 'uploading' | 'generating' | 'fetching' | 'completed' | 'error';
   message: string;
+  progress?: number;
 }

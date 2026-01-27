@@ -167,7 +167,7 @@ const App: React.FC = () => {
             setHasKey(true);
         }
 
-        setStatus({ stage: 'generating', message: 'Initializing production...' });
+        setStatus({ stage: 'generating', message: 'Analyzing your product...', progress: 5 });
         setShots([]);
         setMasterVideoUrl(null);
 
@@ -191,7 +191,7 @@ const App: React.FC = () => {
             if (user) setUser({ ...user, credits: createData.newCredits });
 
             // 1. Vision-Enhanced Scripting
-            setStatus({ stage: 'generating', message: 'Drafting viral script...' });
+            setStatus({ stage: 'generating', message: 'Drafting viral ad script...', progress: 15 });
             const generatedShots = await VeoService.createScript(productB64, vibe, config.simulateMode);
             setShots(generatedShots);
 
@@ -204,12 +204,21 @@ const App: React.FC = () => {
             const completedVideoUrls: string[] = [];
 
             // 2. Sequential Shot Production
-            for (let i = 0; i < generatedShots.length; i++) {
+            const totalShots = generatedShots.length;
+            for (let i = 0; i < totalShots; i++) {
                 const shot = generatedShots[i];
                 setCurrentShotId(shot.id);
 
+                const shotProgressBase = 15;
+                const shotProgressRange = 70;
+                const currentShotStartingProgress = shotProgressBase + (i / totalShots) * shotProgressRange;
+
                 setShots(prev => prev.map(s => s.id === shot.id ? { ...s, status: 'generating' } : s));
-                setStatus({ stage: 'generating', message: `Pre-viz: ${shot.type}...` });
+                setStatus({
+                    stage: 'generating',
+                    message: `Generating footage (${i + 1}/${totalShots})...`,
+                    progress: Math.round(currentShotStartingProgress)
+                });
 
                 // Generate the context-specific reference frame
                 const refImg = await VeoService.generateShotReference(shot.imagePrompt, avatarImage, productImage, config.simulateMode);
@@ -217,7 +226,10 @@ const App: React.FC = () => {
 
                 // Start Handheld Animation
                 const videoUrl = await VeoService.animateShot(shot, refImg, (msg) => {
-                    setStatus(prev => ({ ...prev, message: msg }));
+                    // Filter technical messages, keep it vague but professional
+                    if (!msg.toLowerCase().includes('cooloff') && !msg.toLowerCase().includes('rendering')) {
+                        setStatus(prev => ({ ...prev, message: `Finalizing cinematic details...` }));
+                    }
                 }, config.simulateMode);
 
                 completedVideoUrls.push(videoUrl);
@@ -235,26 +247,30 @@ const App: React.FC = () => {
 
                 // Add 65-second breathing room for the API before next shot
                 if (i < generatedShots.length - 1) {
-                    setStatus({ stage: 'generating', message: 'API Cooloff (65s)...' });
+                    setStatus({
+                        stage: 'generating',
+                        message: `Applying post-processing...`,
+                        progress: Math.round(shotProgressBase + ((i + 0.5) / totalShots) * shotProgressRange)
+                    });
                     await new Promise(res => setTimeout(res, 65000));
                 }
             }
 
             // 3. Final Stitching
+            setStatus({ stage: 'generating', message: 'Merging final cinematic cut...', progress: 95 });
             await concatenateVideos(completedVideoUrls);
 
             // Finish campaign in DB
             await fetch('/api/campaign', {
                 method: 'POST',
-                body: JSON.stringify({ action: 'finishCampaign', campaignId: newCampaignId, data: { masterVideoUrl: 'Saved' } }) // We'll update with real URL if we had a bucket
+                body: JSON.stringify({ action: 'finishCampaign', campaignId: newCampaignId, data: { masterVideoUrl: 'Saved' } })
             });
 
-            setStatus({ stage: 'completed', message: 'Ad campaign ready!' });
+            setStatus({ stage: 'completed', message: 'Ad campaign ready!', progress: 100 });
             setCurrentShotId(null);
         } catch (error: any) {
             console.error("Studio Error:", error);
 
-            // Handle the specialized API Key reset case
             if (error.message?.includes("Requested entity was not found")) {
                 setHasKey(false);
                 if (window.aistudio) await window.aistudio.openSelectKey();
@@ -523,33 +539,29 @@ const App: React.FC = () => {
                                             <span className="bg-emerald-600 text-[9px] font-black px-3 py-1 rounded-full text-white shadow-lg">READY</span>
                                         </div>
                                     </div>
-                                ) : shots.some(s => s.status === 'completed') ? (
-                                    <div className="w-full h-full relative">
-                                        <video
-                                            key={currentShotId ?? 'last'}
-                                            src={shots.find(s => s.id === currentShotId)?.videoUrl || shots.filter(s => s.status === 'completed').pop()?.videoUrl}
-                                            className="w-full h-full object-cover"
-                                            autoPlay
-                                            loop
-                                            controls={false}
-                                        />
-                                        <div className="absolute inset-x-0 bottom-12 px-8 text-center pointer-events-none">
-                                            <p className="text-white text-[10px] font-bold bg-black/60 backdrop-blur-md py-2.5 px-4 rounded-xl border border-white/10 shadow-2xl leading-tight">
-                                                {shots.find(s => s.id === currentShotId)?.script || shots.filter(s => s.status === 'completed').pop()?.script}
-                                            </p>
-                                        </div>
-                                    </div>
                                 ) : (
                                     <div className="w-full h-full flex flex-col items-center justify-center p-12 text-center bg-gradient-to-b from-[#0c0c12] to-[#050508]">
                                         {status.stage === 'generating' ? (
-                                            <div className="space-y-6">
+                                            <div className="space-y-8 w-full max-w-[240px]">
                                                 <div className="relative">
-                                                    <Loader2 className="w-14 h-14 animate-spin text-orange-500/20 mx-auto" />
-                                                    <Smartphone className="absolute inset-0 m-auto w-6 h-6 text-orange-500 animate-pulse" />
+                                                    <div className="flex items-center justify-center">
+                                                        <Loader2 className="w-20 h-20 animate-spin text-orange-500/10 absolute" />
+                                                        <div className="w-16 h-16 rounded-full border-2 border-orange-500/20 flex items-center justify-center">
+                                                            <span className="text-xl font-black text-orange-500 italic">{status.progress || 0}%</span>
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                                <div className="space-y-2">
-                                                    <span className="text-orange-400 font-black tracking-tighter text-xl italic uppercase animate-pulse leading-none block">{status.message}</span>
-                                                    <span className="text-[8px] text-slate-600 font-bold uppercase tracking-[0.2em]">Live Production</span>
+                                                <div className="space-y-3">
+                                                    <span className="text-orange-400 font-black tracking-tighter text-lg italic uppercase animate-pulse leading-none block">{status.message}</span>
+                                                    <div className="space-y-1">
+                                                        <span className="text-[8px] text-slate-500 font-bold uppercase tracking-[0.2em] block">Please wait ~5-7 minutes</span>
+                                                        <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
+                                                            <div
+                                                                className="h-full bg-orange-600 transition-all duration-1000"
+                                                                style={{ width: `${status.progress || 0}%` }}
+                                                            />
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         ) : (
