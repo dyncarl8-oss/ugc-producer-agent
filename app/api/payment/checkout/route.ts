@@ -19,21 +19,18 @@ export async function POST(req: Request) {
 
         const companyId = process.env.WHOP_COMPANY_ID || process.env.NEXT_PUBLIC_WHOP_COMPANY_ID;
 
-        // Create a checkout configuration (Option 2: Embedded checkout)
-        // Since we are using a Company API Key, providing company_id at the top level 
-        // often triggers "Cannot provide company_id for this configuration".
-        // However, the nested plan object STILL needs it to know which context to create the plan in.
+
 
         const { Whop } = await import("@whop/sdk");
         const client = new Whop({ apiKey: process.env.WHOP_API_KEY });
 
+        // Create checkout configuration (Option 2: Embedded checkout)
+        // As per Whop docs: company_id goes at TOP LEVEL, plan contains price/type
         const checkoutConfig = await (client.checkoutConfigurations as any).create({
+            company_id: companyId,
             plan: {
-                company_id: companyId,
-                title: `${credits} Credits Purchase`,
                 initial_price: Number(price),
                 plan_type: "one_time",
-                currency: "usd"
             },
             metadata: {
                 user_id: userId,

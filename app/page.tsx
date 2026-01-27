@@ -330,6 +330,8 @@ const App: React.FC = () => {
 
     const handleCheckoutComplete = async (paymentId: string) => {
         console.log("Payment completed:", paymentId);
+        // Close the checkout modal
+        setCheckoutSessionId(null);
         // Refresh user credits
         try {
             const response = await fetch('/api/auth/me');
