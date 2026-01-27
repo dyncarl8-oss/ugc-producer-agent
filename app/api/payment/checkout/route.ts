@@ -12,18 +12,25 @@ export async function POST(req: Request) {
         }
 
         const { credits, price, companyId: bodyCompanyId } = await req.json();
-        const companyId = bodyCompanyId || process.env.WHOP_COMPANY_ID;
+        const companyId = bodyCompanyId || process.env.WHOP_COMPANY_ID || process.env.NEXT_PUBLIC_WHOP_COMPANY_ID;
 
-        if (!credits || !price || !companyId) {
-            return NextResponse.json({ error: "Missing required fields: credits, price, or companyId" }, { status: 400 });
+        if (!companyId) {
+            console.error("!!! EB: Missing companyId. Checked body and ENV !!!");
+            return NextResponse.json({ error: "No Company ID found. Please add WHOP_COMPANY_ID to your environment variables." }, { status: 400 });
         }
 
-        // Use Option 1 from the Whop docs: Create a plan to get a purchase_url
-        // This is more robust for one-time links and avoids the 'configuration' errors
-        const plan = await (whop.plans as any).create({
+        if (!credits || !price) {
+            return NextResponse.json({ error: "Missing required fields: credits, price" }, { status: 400 });
+        }
+
+        // Create a checkout configuration
+        // Matching the docs EXACTLY now
+        const checkoutConfig = await (whop.checkoutConfigurations as any).create({
             company_id: companyId,
-            initial_price: price,
-            plan_type: "one_time",
+            plan: {
+                initial_price: price,
+                plan_type: "one_time",
+            },
             metadata: {
                 user_id: userId,
                 credits: credits.toString(),
@@ -31,11 +38,14 @@ export async function POST(req: Request) {
             },
         });
 
-        if (!plan.purchase_url) {
-            throw new Error("Failed to generate purchase URL");
+        if (!checkoutConfig.id) {
+            throw new Error("Failed to generate checkout session");
         }
 
-        return NextResponse.json({ url: plan.purchase_url });
+        // Construct the purchase URL
+        const purchaseUrl = `https://whop.com/checkout/${checkoutConfig.id}`;
+
+        return NextResponse.json({ url: purchaseUrl });
     } catch (error: any) {
         console.error("Checkout Error:", error);
         return NextResponse.json({ error: error.message }, { status: 500 });
