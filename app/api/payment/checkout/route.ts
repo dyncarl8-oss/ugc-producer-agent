@@ -22,12 +22,10 @@ export async function POST(req: Request) {
         // We use metadata to store the userId and credit amount for the webhook to fulfill
         const checkoutConfig = await whop.checkoutConfigurations.create({
             company_id: companyId,
+            mode: "payment",
             plan: {
-                companyId: companyId, // SDK/API specifically asking for this in camelCase
                 initial_price: price,
                 plan_type: "one_time",
-                billing_period: 0,
-                currency: "usd",
             } as any,
             metadata: {
                 user_id: userId,
