@@ -442,43 +442,41 @@ const App: React.FC = () => {
 
             {/* Main Content */}
             <main className="flex-1 flex flex-col p-8 overflow-y-auto items-center">
-                <div className="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-12">
+                <div className="max-w-4xl w-full flex flex-col gap-12">
 
-                    <div className="space-y-10">
-                        <div>
-                            <h2 className="text-5xl font-black text-white tracking-tighter mb-2 italic uppercase">UGC Producer Agent</h2>
-                            <p className="text-slate-500 text-base">Generate authentic social ads shot-by-shot.</p>
-                        </div>
+                    <div className="text-center space-y-4">
+                        <h2 className="text-6xl font-black text-white tracking-tighter italic uppercase leading-none">UGC Producer</h2>
+                        <p className="text-slate-500 text-lg font-medium">Professional Social Ad Generation</p>
+                    </div>
 
-                        <div className="grid grid-cols-2 gap-8">
-                            <div className="space-y-4">
-                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                                    <Box className="w-3 h-3" /> 1. Upload Product
-                                </label>
-                                <label className={`flex flex-col items-center justify-center w-full aspect-square rounded-[40px] border-2 border-dashed transition-all cursor-pointer ${productImage ? 'border-orange-500/40 bg-orange-500/5' : 'border-white/10 hover:border-orange-500/30 bg-white/5 shadow-inner'
-                                    }`}>
-                                    {productImage ? (
-                                        <img src={productImage} alt="Product" className="w-full h-full object-contain p-10" />
-                                    ) : (
-                                        <div className="flex flex-col items-center gap-4 opacity-20">
-                                            <ShoppingBag className="w-12 h-12" />
-                                            <span className="text-[10px] font-black uppercase tracking-[0.2em]">Drop Item</span>
-                                        </div>
-                                    )}
-                                    <input type="file" className="hidden" accept="image/*" onChange={(e) => {
-                                        const file = e.target.files?.[0];
-                                        if (file) {
-                                            const r = new FileReader();
-                                            r.onload = () => setProductImage(r.result as string);
-                                            r.readAsDataURL(file);
-                                        }
-                                    }} />
-                                </label>
-                            </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="space-y-4">
+                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                                <Box className="w-3 h-3 text-orange-500" /> 1. Upload Product
+                            </label>
+                            <label className={`flex flex-col items-center justify-center w-full aspect-square rounded-[40px] border-2 border-dashed transition-all cursor-pointer ${productImage ? 'border-orange-500/40 bg-orange-500/5' : 'border-white/10 hover:border-orange-500/30 bg-white/5 shadow-inner'
+                                }`}>
+                                {productImage ? (
+                                    <img src={productImage} alt="Product" className="w-full h-full object-contain p-10" />
+                                ) : (
+                                    <div className="flex flex-col items-center gap-4 opacity-20 group">
+                                        <ShoppingBag className="w-12 h-12 group-hover:scale-110 transition-transform" />
+                                        <span className="text-[10px] font-black uppercase tracking-[0.2em]">Drop Item</span>
+                                    </div>
+                                )}
+                                <input type="file" className="hidden" accept="image/*" onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                        const r = new FileReader();
+                                        r.onload = () => setProductImage(r.result as string);
+                                        r.readAsDataURL(file);
+                                    }
+                                }} />
+                            </label>
 
-                            <div className="space-y-4">
-                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                                    <Sparkles className="w-3 h-3" /> 2. Set Vibe
+                            <div className="pt-4">
+                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2 mb-4">
+                                    <Sparkles className="w-3 h-3 text-orange-500" /> 2. Set Vibe
                                 </label>
                                 <div className="grid grid-cols-1 gap-2.5">
                                     {Object.values(AdVibe).map((v) => (
@@ -486,7 +484,7 @@ const App: React.FC = () => {
                                             key={v}
                                             onClick={() => setVibe(v)}
                                             className={`flex items-center justify-between p-4 rounded-2xl border text-left transition-all ${vibe === v
-                                                ? 'bg-indigo-600 border-indigo-400 text-white shadow-xl scale-[1.02]'
+                                                ? 'bg-orange-600 border-orange-400 text-white shadow-xl scale-[1.01]'
                                                 : 'bg-white/5 border-white/5 text-slate-400 hover:bg-white/10'
                                                 }`}
                                         >
@@ -496,131 +494,94 @@ const App: React.FC = () => {
                                     ))}
                                 </div>
                             </div>
+
+                            <div className="pt-8">
+                                <button
+                                    onClick={handleGenerateFullAd}
+                                    disabled={!productImage || status.stage === 'generating'}
+                                    className={`w-full py-8 rounded-[40px] font-black text-2xl uppercase italic tracking-tighter transition-all flex items-center justify-center gap-4 ${!productImage || status.stage === 'generating'
+                                        ? 'bg-white/5 text-slate-700 cursor-not-allowed'
+                                        : 'bg-orange-600 text-white hover:bg-orange-500 hover:scale-[1.01] shadow-[0_20px_50px_rgba(255,77,0,0.3)]'
+                                        }`}
+                                >
+                                    {status.stage === 'generating' ? <Loader2 className="w-8 h-8 animate-spin" /> : <Play className="w-8 h-8 fill-current" />}
+                                    {status.stage === 'generating' ? status.message : 'START CAMPAIGN'}
+                                </button>
+                            </div>
                         </div>
 
-                        <button
-                            onClick={handleGenerateFullAd}
-                            disabled={status.stage === 'generating'}
-                            className="w-full bg-white text-black hover:bg-slate-200 disabled:bg-white/5 disabled:text-white/10 py-6 rounded-[40px] font-black text-2xl flex items-center justify-center gap-4 transition-all shadow-2xl uppercase tracking-tighter"
-                        >
-                            {status.stage === 'generating' ? <Loader2 className="w-8 h-8 animate-spin" /> : <Play className="w-8 h-8 fill-current" />}
-                            {status.stage === 'generating' ? status.message : 'START CAMPAIGN'}
-                        </button>
+                        <div className="flex flex-col items-center">
+                            <div className="w-full aspect-[9/16] bg-[#0c0c12] rounded-[64px] border-[16px] border-[#16161c] shadow-[0_0_150px_rgba(0,0,0,0.9)] overflow-hidden relative">
+                                {/* Viewfinder HUD */}
+                                <div className="absolute top-12 inset-x-8 flex justify-between z-40 pointer-events-none">
+                                    <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full">
+                                        <div className="w-2 h-2 rounded-full bg-red-600 animate-pulse" />
+                                        <span className="text-[10px] font-bold tracking-widest text-white uppercase italic">{masterVideoUrl ? 'FINAL CUT' : 'RECORDING'}</span>
+                                    </div>
+                                </div>
 
-                        {/* Visual Storyboard */}
-                        <div className="space-y-6 pt-6">
-                            <div className="flex items-center justify-between">
-                                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
-                                    <Clapperboard className="w-4 h-4" /> Storyboard Pipeline
-                                </h3>
-                            </div>
-
-                            <div className="grid grid-cols-4 gap-4">
-                                {shots.length > 0 ? shots.map((shot) => (
-                                    <div key={shot.id} className={`p-4 rounded-[32px] border transition-all duration-500 ${currentShotId === shot.id ? 'border-orange-500 bg-orange-600/10 shadow-[0_0_40px_rgba(255,77,0,0.1)]' : 'border-white/5 bg-white/5'
-                                        }`}>
-                                        <div className="flex justify-between items-center mb-3">
-                                            <span className="text-[9px] font-black uppercase tracking-widest text-orange-400">{shot.type}</span>
-                                            {shot.status === 'completed' && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
-                                            {shot.status === 'generating' && <Loader2 className="w-3 h-3 animate-spin text-orange-400" />}
-                                            {shot.status === 'error' && <AlertCircle className="w-4 h-4 text-red-500" />}
+                                {masterVideoUrl ? (
+                                    <div className="w-full h-full relative">
+                                        <video
+                                            src={masterVideoUrl}
+                                            className="w-full h-full object-cover"
+                                            autoPlay
+                                            loop
+                                            controls
+                                        />
+                                        <div className="absolute top-4 right-4 z-50">
+                                            <span className="bg-emerald-600 text-[10px] font-black px-3 py-1 rounded-full text-white shadow-lg">FINAL AD READY</span>
                                         </div>
-                                        <div className="aspect-[9/16] bg-black/40 rounded-2xl overflow-hidden mb-3 relative flex items-center justify-center border border-white/5">
-                                            {shot.videoUrl ? (
-                                                <video src={shot.videoUrl} className="w-full h-full object-cover" controls={false} autoPlay loop muted />
-                                            ) : shot.refImage ? (
-                                                <img src={shot.refImage} className="w-full h-full object-cover" />
-                                            ) : (
-                                                <div className="flex flex-col items-center gap-2 opacity-10">
-                                                    <Smartphone className="w-6 h-6" />
+                                    </div>
+                                ) : shots.some(s => s.status === 'completed') ? (
+                                    <div className="w-full h-full relative">
+                                        <video
+                                            key={currentShotId ?? 'last'}
+                                            src={shots.find(s => s.id === currentShotId)?.videoUrl || shots.filter(s => s.status === 'completed').pop()?.videoUrl}
+                                            className="w-full h-full object-cover"
+                                            autoPlay
+                                            loop
+                                            controls={false}
+                                        />
+                                        <div className="absolute inset-x-0 bottom-16 px-10 text-center pointer-events-none">
+                                            <p className="text-white text-xs font-bold bg-black/50 backdrop-blur-sm py-3 px-4 rounded-2xl border border-white/10 shadow-2xl leading-tight">
+                                                {shots.find(s => s.id === currentShotId)?.script || shots.filter(s => s.status === 'completed').pop()?.script}
+                                            </p>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="w-full h-full flex flex-col items-center justify-center p-14 text-center">
+                                        {status.stage === 'generating' ? (
+                                            <div className="space-y-8">
+                                                <div className="relative">
+                                                    <Loader2 className="w-20 h-20 animate-spin text-orange-500/20 mx-auto" />
+                                                    <Smartphone className="absolute inset-0 m-auto w-8 h-8 text-orange-500 animate-pulse" />
                                                 </div>
-                                            )}
-                                        </div>
-                                        <p className="text-[8px] text-slate-600 leading-snug line-clamp-2 font-medium">&quot;{shot.script}&quot;</p>
+                                                <div className="space-y-3">
+                                                    <span className="text-orange-400 font-black tracking-tighter text-2xl italic uppercase animate-pulse">{status.message}</span>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="opacity-10 group">
+                                                <Smartphone className="w-24 h-24 mb-6 mx-auto group-hover:scale-110 transition-transform duration-500" />
+                                                <span className="text-xs font-black uppercase tracking-[0.4em]">Empty Studio</span>
+                                            </div>
+                                        )}
                                     </div>
-                                )) : Array.from({ length: 4 }).map((_, i) => (
-                                    <div key={i} className="aspect-[9/16] border border-white/5 rounded-[32px] flex items-center justify-center opacity-5 bg-white/5">
-                                        <Smartphone className="w-8 h-8" />
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Master Viewfinder */}
-                    <div className="flex flex-col items-center lg:sticky lg:top-8 h-fit">
-                        <div className="w-full aspect-[9/16] bg-[#0c0c12] rounded-[64px] border-[16px] border-[#16161c] shadow-[0_0_150px_rgba(0,0,0,0.9)] overflow-hidden relative">
-
-                            {/* Viewfinder HUD */}
-                            <div className="absolute top-12 inset-x-8 flex justify-between z-40 pointer-events-none">
-                                <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full">
-                                    <div className="w-2 h-2 rounded-full bg-red-600 animate-pulse" />
-                                    <span className="text-[10px] font-bold tracking-widest text-white uppercase italic">{masterVideoUrl ? 'FINAL CUT' : 'RECORDING'}</span>
-                                </div>
+                                )}
                             </div>
 
-                            {masterVideoUrl ? (
-                                <div className="w-full h-full relative">
-                                    <video
-                                        src={masterVideoUrl}
-                                        className="w-full h-full object-cover"
-                                        autoPlay
-                                        loop
-                                        controls
-                                    />
-                                    <div className="absolute top-4 right-4 z-50">
-                                        <span className="bg-emerald-600 text-[10px] font-black px-3 py-1 rounded-full text-white shadow-lg">FINAL AD READY</span>
+                            {status.stage === 'error' && (
+                                <div className="mt-8 w-full p-6 bg-red-950/20 border border-red-500/20 rounded-[32px] flex items-start gap-4 text-red-400">
+                                    <AlertCircle className="w-6 h-6 shrink-0 mt-0.5" />
+                                    <div>
+                                        <h4 className="font-bold text-xs uppercase tracking-widest mb-1">Production Error</h4>
+                                        <p className="text-[10px] leading-relaxed opacity-70">{status.message}</p>
                                     </div>
-                                </div>
-                            ) : shots.some(s => s.status === 'completed') ? (
-                                <div className="w-full h-full relative">
-                                    <video
-                                        key={currentShotId ?? 'last'}
-                                        src={shots.find(s => s.id === currentShotId)?.videoUrl || shots.filter(s => s.status === 'completed').pop()?.videoUrl}
-                                        className="w-full h-full object-cover"
-                                        autoPlay
-                                        loop
-                                        controls={false}
-                                    />
-                                    <div className="absolute inset-x-0 bottom-16 px-10 text-center pointer-events-none">
-                                        <p className="text-white text-xs font-bold bg-black/50 backdrop-blur-sm py-3 px-4 rounded-2xl border border-white/10 shadow-2xl leading-tight">
-                                            {shots.find(s => s.id === currentShotId)?.script || shots.filter(s => s.status === 'completed').pop()?.script}
-                                        </p>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="w-full h-full flex flex-col items-center justify-center p-14 text-center">
-                                    {status.stage === 'generating' ? (
-                                        <div className="space-y-8">
-                                            <div className="relative">
-                                                <Loader2 className="w-20 h-20 animate-spin text-indigo-500/20 mx-auto" />
-                                                <Smartphone className="absolute inset-0 m-auto w-8 h-8 text-indigo-500 animate-pulse" />
-                                            </div>
-                                            <div className="space-y-3">
-                                                <span className="text-indigo-400 font-black tracking-tighter text-2xl italic uppercase animate-pulse">{status.message}</span>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div className="opacity-10 group">
-                                            <Smartphone className="w-24 h-24 mb-6 mx-auto group-hover:scale-110 transition-transform duration-500" />
-                                            <span className="text-xs font-black uppercase tracking-[0.4em]">Empty Studio</span>
-                                        </div>
-                                    )}
                                 </div>
                             )}
                         </div>
-
-                        {status.stage === 'error' && (
-                            <div className="mt-8 w-full p-6 bg-red-950/20 border border-red-500/20 rounded-[32px] flex items-start gap-4 text-red-400">
-                                <AlertCircle className="w-6 h-6 shrink-0 mt-0.5" />
-                                <div>
-                                    <h4 className="font-bold text-xs uppercase tracking-widest mb-1">Production Error</h4>
-                                    <p className="text-[10px] leading-relaxed opacity-70">{status.message}</p>
-                                </div>
-                            </div>
-                        )}
                     </div>
-
                 </div>
             </main>
 
