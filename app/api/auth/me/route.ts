@@ -2,10 +2,13 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { whop } from "@/lib/whop";
-import { db } from "@/lib/db";
+import { db, initDb } from "@/lib/db";
 
 export async function GET() {
     try {
+        // Auto-initialize DB if needed
+        await initDb();
+
         const head = await headers();
         const { userId } = await whop.verifyUserToken(head);
 
