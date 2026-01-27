@@ -27,6 +27,7 @@ const App: React.FC = () => {
     const [avatarImage, setAvatarImage] = useState<string | null>(null);
     const [status, setStatus] = useState<GenerationStatus>({ stage: 'idle', message: '' });
     const [hasKey, setHasKey] = useState(false);
+    const [campaignId, setCampaignId] = useState<string | null>(null);
 
     const [shots, setShots] = useState<Shot[]>([]);
     const [currentShotId, setCurrentShotId] = useState<number | null>(null);
@@ -140,11 +141,25 @@ const App: React.FC = () => {
 
         try {
             const productB64 = productImage.split(',')[1];
+            const newCampaignId = `camp_${Date.now()}`;
+            setCampaignId(newCampaignId);
+
+            // Initial DB entry
+            await fetch('/api/campaign', {
+                method: 'POST',
+                body: JSON.stringify({ action: 'createCampaign', campaignId: newCampaignId, data: { vibe } })
+            });
 
             // 1. Vision-Enhanced Scripting
             setStatus({ stage: 'generating', message: 'Drafting viral script...' });
             const generatedShots = await VeoService.createScript(productB64, vibe, config.simulateMode);
             setShots(generatedShots);
+
+            // Save shots to DB
+            await fetch('/api/campaign', {
+                method: 'POST',
+                body: JSON.stringify({ action: 'saveShots', campaignId: newCampaignId, data: { shots: generatedShots } })
+            });
 
             const completedVideoUrls: string[] = [];
 
@@ -168,6 +183,16 @@ const App: React.FC = () => {
                 completedVideoUrls.push(videoUrl);
                 setShots(prev => prev.map(s => s.id === shot.id ? { ...s, status: 'completed', videoUrl } : s));
 
+                // Update shot in DB
+                await fetch('/api/campaign', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'updateShot',
+                        campaignId: newCampaignId,
+                        data: { type: shot.type, status: 'completed', videoUrl, refImage: refImg }
+                    })
+                });
+
                 // Add 65-second breathing room for the API before next shot
                 if (i < generatedShots.length - 1) {
                     setStatus({ stage: 'generating', message: 'API Cooloff (65s)...' });
@@ -177,6 +202,12 @@ const App: React.FC = () => {
 
             // 3. Final Stitching
             await concatenateVideos(completedVideoUrls);
+
+            // Finish campaign in DB
+            await fetch('/api/campaign', {
+                method: 'POST',
+                body: JSON.stringify({ action: 'finishCampaign', campaignId: newCampaignId, data: { masterVideoUrl: 'Saved' } }) // We'll update with real URL if we had a bucket
+            });
 
             setStatus({ stage: 'completed', message: 'Ad campaign ready!' });
             setCurrentShotId(null);
