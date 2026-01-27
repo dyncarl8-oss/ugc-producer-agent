@@ -11,10 +11,11 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const { credits, price, companyId } = await req.json();
+        const { credits, price, companyId: bodyCompanyId } = await req.json();
+        const companyId = bodyCompanyId || process.env.WHOP_COMPANY_ID;
 
         if (!credits || !price || !companyId) {
-            return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+            return NextResponse.json({ error: "Missing required fields: credits, price, or companyId" }, { status: 400 });
         }
 
         // Create a checkout configuration

@@ -301,11 +301,6 @@ const App: React.FC = () => {
     };
 
     const handleCheckout = async (credits: number, price: number) => {
-        if (!companyId) {
-            alert("No Company ID found. Please open this app through the Whop Dashboard.");
-            return;
-        }
-
         setLoadingCheckout(credits);
         try {
             const res = await fetch('/api/payment/checkout', {
@@ -815,8 +810,8 @@ const App: React.FC = () => {
                                     <div
                                         key={pkg.name}
                                         className={`group relative p-8 rounded-[38px] border transition-all hover:scale-[1.02] active:scale-[0.98] ${pkg.popular
-                                                ? 'bg-orange-600/10 border-orange-500/40 shadow-2xl shadow-orange-500/10'
-                                                : 'bg-white/5 border-white/5 hover:border-white/20'
+                                            ? 'bg-orange-600/10 border-orange-500/40 shadow-2xl shadow-orange-500/10'
+                                            : 'bg-white/5 border-white/5 hover:border-white/20'
                                             }`}
                                     >
                                         {pkg.popular && (
@@ -848,8 +843,8 @@ const App: React.FC = () => {
                                                     onClick={() => handleCheckout(pkg.credits, pkg.price)}
                                                     disabled={loadingCheckout !== null}
                                                     className={`w-full py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-lg ${pkg.popular
-                                                            ? 'bg-orange-600 text-white hover:bg-orange-500 shadow-orange-500/20'
-                                                            : 'bg-white text-black hover:bg-slate-200 shadow-white/5'
+                                                        ? 'bg-orange-600 text-white hover:bg-orange-500 shadow-orange-500/20'
+                                                        : 'bg-white text-black hover:bg-slate-200 shadow-white/5'
                                                         }`}
                                                 >
                                                     {loadingCheckout === pkg.credits ? (
