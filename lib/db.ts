@@ -21,6 +21,17 @@ export const initDb = async () => {
     )
   `);
 
+  // Ensure users table columns exist for existing tables
+  try {
+    await db.execute(`ALTER TABLE users ADD COLUMN username TEXT`);
+  } catch (e) { /* Column likely already exists */ }
+  try {
+    await db.execute(`ALTER TABLE users ADD COLUMN profile_pic_url TEXT`);
+  } catch (e) { /* Column likely already exists */ }
+  try {
+    await db.execute(`ALTER TABLE users ADD COLUMN credits INTEGER DEFAULT 1`);
+  } catch (e) { /* Column likely already exists */ }
+
   // Updated Campaigns table
   await db.execute(`
     CREATE TABLE IF NOT EXISTS campaigns (
