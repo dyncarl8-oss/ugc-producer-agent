@@ -314,35 +314,30 @@ const App: React.FC = () => {
                 </div>
 
                 {user && (
-                    <div className="mb-4 p-4 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-3">
-                        {user.profile_pic_url ? (
-                            <img
-                                src={user.profile_pic_url}
-                                alt={user.username}
-                                className="w-10 h-10 rounded-full border border-orange-500/30 object-cover"
-                                onError={(e) => {
-                                    (e.target as HTMLImageElement).style.display = 'none';
-                                    (e.target as HTMLImageElement).parentElement?.querySelector('.avatar-placeholder')?.classList.remove('hidden');
-                                }}
-                            />
-                        ) : null}
-                        <div className={`avatar-placeholder ${user.profile_pic_url ? 'hidden' : ''} w-10 h-10 rounded-full bg-orange-600/20 border border-orange-500/30 flex items-center justify-center`}>
-                            <User className="w-5 h-5 text-orange-400" />
+                    <div className="mb-8 p-4 bg-white/5 border border-white/10 rounded-2xl flex flex-col gap-4">
+                        <div className="flex items-center gap-3">
+                            {user.profile_pic_url ? (
+                                <img
+                                    src={user.profile_pic_url}
+                                    alt={user.username}
+                                    className="w-12 h-12 rounded-full border border-orange-500/30 object-cover shadow-lg"
+                                    onError={(e) => {
+                                        (e.target as HTMLImageElement).style.display = 'none';
+                                        (e.target as HTMLImageElement).parentElement?.querySelector('.avatar-placeholder')?.classList.remove('hidden');
+                                    }}
+                                />
+                            ) : null}
+                            <div className={`avatar-placeholder ${user.profile_pic_url ? 'hidden' : ''} w-12 h-12 rounded-full bg-orange-600/20 border border-orange-500/30 flex items-center justify-center shadow-lg`}>
+                                <User className="w-6 h-6 text-orange-400" />
+                            </div>
+                            <div className="flex flex-col min-w-0">
+                                <span className="text-sm font-black text-white tracking-tight leading-none mb-1 truncate">{user.username}</span>
+                                <div className="flex items-center gap-1.5 px-2 py-0.5 bg-orange-600/10 border border-orange-500/20 rounded-full w-fit">
+                                    <Sparkles className="w-2.5 h-2.5 text-orange-400" />
+                                    <span className="text-[10px] text-orange-200 font-black uppercase tracking-tighter">{user.credits} CREDITS</span>
+                                </div>
+                            </div>
                         </div>
-                        <div className="flex flex-col">
-                            <span className="text-xs font-bold text-white tracking-tight leading-none mb-1 truncate max-w-[120px]">{user.username}</span>
-                            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Verified User</span>
-                        </div>
-                    </div>
-                )}
-
-                {user && (
-                    <div className="mb-8 p-4 bg-orange-600/10 border border-orange-500/20 rounded-2xl">
-                        <div className="flex items-center justify-between mb-1">
-                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Credits Balance</span>
-                            <Sparkles className="w-3 h-3 text-orange-400" />
-                        </div>
-                        <div className="text-2xl font-black text-white italic">{user.credits} <span className="text-xs font-medium text-slate-500 not-italic uppercase tracking-tighter ml-1">Credits</span></div>
                     </div>
                 )}
 
@@ -355,14 +350,14 @@ const App: React.FC = () => {
                 </nav>
 
                 <div className="flex-1">
-                    <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-3 ml-2">Past Projects</div>
+                    <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-3 ml-2">Recent Projects</div>
                     <div className="space-y-3">
                         {projects.length === 0 ? (
                             <div className="p-4 border border-dashed border-white/10 rounded-2xl text-center">
                                 <p className="text-[10px] text-slate-600 font-medium">No projects yet</p>
                             </div>
                         ) : (
-                            projects.slice(0, 5).map(p => (
+                            projects.slice(0, 8).map(p => (
                                 <div key={p.id} className="p-3 bg-white/5 border border-white/5 rounded-xl hover:bg-white/10 transition-all cursor-pointer group">
                                     <div className="flex items-center justify-between mb-1">
                                         <span className="text-[10px] font-bold text-slate-400 truncate max-w-[120px]">{p.vibe}</span>
@@ -377,146 +372,134 @@ const App: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="space-y-8">
-                    <section>
-                        <div className="flex items-center justify-between mb-4">
-                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block">Active Creator</label>
-                            <span className="text-[10px] text-orange-400 font-bold uppercase">{selectedTemplate.split('/').pop()?.replace('.png', '')}</span>
-                        </div>
-                        <div className="relative rounded-3xl overflow-hidden border border-white/10 bg-white/5 aspect-[3/4] flex items-center justify-center group shadow-2xl">
-                            {avatarImage && <img src={avatarImage} alt="Host" className="w-full h-full object-cover transition-all duration-700" />}
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-40" />
-                            <div className="absolute bottom-4 left-4 flex items-center gap-2">
-                                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                                <span className="text-[10px] font-bold text-white">READY TO RECORD</span>
-                            </div>
-                        </div>
-                    </section>
-
-                    <section>
-                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4 block">Pick Template</label>
-                        <div className="grid grid-cols-3 gap-2">
-                            {[1, 2, 3, 4, 5, 6].map((num) => {
-                                const path = `/templates/template${num}.png`;
-                                return (
-                                    <button
-                                        key={num}
-                                        onClick={() => setSelectedTemplate(path)}
-                                        className={`aspect-square rounded-xl overflow-hidden border-2 transition-all ${selectedTemplate === path ? 'border-orange-500 scale-95 shadow-lg shadow-orange-500/20' : 'border-white/5 opacity-40 hover:opacity-100 hover:border-white/20'}`}
-                                    >
-                                        <img src={path} className="w-full h-full object-cover" alt={`Template ${num}`} />
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </section>
-
-                    <section className="space-y-3">
-                        <div className="p-4 bg-orange-600/5 rounded-2xl border border-orange-500/10">
-                            <h4 className="text-[10px] font-bold text-orange-400 uppercase mb-2">Social Format</h4>
-                            <div className="flex items-center justify-between">
-                                <span className="text-xs text-slate-400">9:16 Portrait</span>
-                                <Layers className="w-4 h-4 text-orange-500" />
-                            </div>
-                        </div>
-                        <button
-                            onClick={() => window.location.reload()}
-                            className="w-full py-3 rounded-xl border border-white/5 text-[10px] font-bold text-slate-500 hover:text-white hover:bg-white/5 transition-all flex items-center justify-center gap-2"
-                        >
-                            <RefreshCcw className="w-3 h-3" /> RESET STUDIO
-                        </button>
-                    </section>
-
+                <div className="pt-6 border-t border-white/5 space-y-3">
+                    <button
+                        onClick={() => window.location.reload()}
+                        className="w-full py-3 rounded-xl border border-white/5 text-[10px] font-bold text-slate-500 hover:text-white hover:bg-white/5 transition-all flex items-center justify-center gap-2"
+                    >
+                        <RefreshCcw className="w-3 h-3" /> RESET STUDIO
+                    </button>
                     {masterVideoUrl && (
-                        <section className="pt-4 border-t border-white/5">
-                            <button
-                                onClick={downloadMasterAd}
-                                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-all"
-                            >
-                                <Download className="w-5 h-5" /> DOWNLOAD FINAL AD
-                            </button>
-                        </section>
+                        <button
+                            onClick={downloadMasterAd}
+                            className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-all"
+                        >
+                            <Download className="w-4 h-4" /> DOWNLOAD FINAL AD
+                        </button>
                     )}
                 </div>
             </aside>
 
             {/* Main Content */}
             <main className="flex-1 flex flex-col p-8 overflow-y-auto items-center">
-                <div className="max-w-4xl w-full flex flex-col gap-12">
+                <div className="max-w-5xl w-full flex flex-col gap-10">
 
-                    <div className="text-center space-y-4">
+                    <div className="text-center space-y-3">
                         <h2 className="text-6xl font-black text-white tracking-tighter italic uppercase leading-none">UGC Producer</h2>
-                        <p className="text-slate-500 text-lg font-medium">Professional Social Ad Generation</p>
+                        <p className="text-slate-500 text-base font-medium uppercase tracking-widest">3-Step Viral Production Flow</p>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div className="space-y-4">
-                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                                <Box className="w-3 h-3 text-orange-500" /> 1. Upload Product
-                            </label>
-                            <label className={`flex flex-col items-center justify-center w-full aspect-square rounded-[40px] border-2 border-dashed transition-all cursor-pointer ${productImage ? 'border-orange-500/40 bg-orange-500/5' : 'border-white/10 hover:border-orange-500/30 bg-white/5 shadow-inner'
-                                }`}>
-                                {productImage ? (
-                                    <img src={productImage} alt="Product" className="w-full h-full object-contain p-10" />
-                                ) : (
-                                    <div className="flex flex-col items-center gap-4 opacity-20 group">
-                                        <ShoppingBag className="w-12 h-12 group-hover:scale-110 transition-transform" />
-                                        <span className="text-[10px] font-black uppercase tracking-[0.2em]">Drop Item</span>
-                                    </div>
-                                )}
-                                <input type="file" className="hidden" accept="image/*" onChange={(e) => {
-                                    const file = e.target.files?.[0];
-                                    if (file) {
-                                        const r = new FileReader();
-                                        r.onload = () => setProductImage(r.result as string);
-                                        r.readAsDataURL(file);
-                                    }
-                                }} />
-                            </label>
-
-                            <div className="pt-4">
-                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2 mb-4">
-                                    <Sparkles className="w-3 h-3 text-orange-500" /> 2. Set Vibe
+                    <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-12 items-start">
+                        {/* 3 Step Flow */}
+                        <div className="space-y-8">
+                            {/* Step 1: Upload */}
+                            <section className="space-y-4">
+                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                                    <span className="w-5 h-5 bg-orange-600 rounded-md text-white flex items-center justify-center text-[9px] font-black italic">01</span>
+                                    Upload Product
                                 </label>
-                                <div className="grid grid-cols-1 gap-2.5">
+                                <label className={`flex flex-col items-center justify-center w-full aspect-square max-h-[160px] rounded-[32px] border-2 border-dashed transition-all cursor-pointer ${productImage ? 'border-orange-500/40 bg-orange-500/5' : 'border-white/10 hover:border-orange-500/30 bg-white/5 shadow-inner'
+                                    }`}>
+                                    {productImage ? (
+                                        <img src={productImage} alt="Product" className="w-full h-full object-contain p-6" />
+                                    ) : (
+                                        <div className="flex flex-col items-center gap-3 opacity-20 group">
+                                            <ShoppingBag className="w-8 h-8 group-hover:scale-110 transition-transform" />
+                                            <span className="text-[9px] font-black uppercase tracking-[0.2em]">Drop Item</span>
+                                        </div>
+                                    )}
+                                    <input type="file" className="hidden" accept="image/*" onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) {
+                                            const r = new FileReader();
+                                            r.onload = () => setProductImage(r.result as string);
+                                            r.readAsDataURL(file);
+                                        }
+                                    }} />
+                                </label>
+                            </section>
+
+                            {/* Step 2: Vibe */}
+                            <section className="space-y-4">
+                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                                    <span className="w-5 h-5 bg-orange-600 rounded-md text-white flex items-center justify-center text-[9px] font-black italic">02</span>
+                                    Set Vibe
+                                </label>
+                                <div className="grid grid-cols-2 gap-2">
                                     {Object.values(AdVibe).map((v) => (
                                         <button
                                             key={v}
                                             onClick={() => setVibe(v)}
-                                            className={`flex items-center justify-between p-4 rounded-2xl border text-left transition-all ${vibe === v
-                                                ? 'bg-orange-600 border-orange-400 text-white shadow-xl scale-[1.01]'
+                                            className={`flex items-center justify-between px-4 py-3 rounded-xl border text-left transition-all ${vibe === v
+                                                ? 'bg-orange-600 border-orange-400 text-white shadow-lg'
                                                 : 'bg-white/5 border-white/5 text-slate-400 hover:bg-white/10'
                                                 }`}
                                         >
-                                            <span className="font-bold text-xs uppercase tracking-tight">{v}</span>
-                                            {vibe === v && <CheckCircle2 className="w-4 h-4 text-white" />}
+                                            <span className="font-bold text-[9px] uppercase tracking-tight">{v}</span>
+                                            {vibe === v && <CheckCircle2 className="w-3 h-3 text-white" />}
                                         </button>
                                     ))}
                                 </div>
-                            </div>
+                            </section>
 
-                            <div className="pt-8">
+                            {/* Step 3: Template */}
+                            <section className="space-y-4">
+                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                                    <span className="w-5 h-5 bg-orange-600 rounded-md text-white flex items-center justify-center text-[9px] font-black italic">03</span>
+                                    Select Template
+                                </label>
+                                <div className="grid grid-cols-6 gap-2">
+                                    {[1, 2, 3, 4, 5, 6].map((num) => {
+                                        const path = `/templates/template${num}.png`;
+                                        return (
+                                            <button
+                                                key={num}
+                                                onClick={() => setSelectedTemplate(path)}
+                                                className={`aspect-square rounded-xl overflow-hidden border-2 transition-all ${selectedTemplate === path ? 'border-orange-500 scale-95 shadow-lg shadow-orange-500/20' : 'border-white/5 opacity-40 hover:opacity-100 hover:border-white/20'}`}
+                                            >
+                                                <img src={path} className="w-full h-full object-cover" alt={`Template ${num}`} />
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </section>
+
+                            <div className="pt-4">
                                 <button
                                     onClick={handleGenerateFullAd}
                                     disabled={!productImage || status.stage === 'generating'}
-                                    className={`w-full py-8 rounded-[40px] font-black text-2xl uppercase italic tracking-tighter transition-all flex items-center justify-center gap-4 ${!productImage || status.stage === 'generating'
+                                    className={`w-full py-6 rounded-3xl font-black text-xl uppercase italic tracking-tighter transition-all flex items-center justify-center gap-4 ${!productImage || status.stage === 'generating'
                                         ? 'bg-white/5 text-slate-700 cursor-not-allowed'
-                                        : 'bg-orange-600 text-white hover:bg-orange-500 hover:scale-[1.01] shadow-[0_20px_50px_rgba(255,77,0,0.3)]'
+                                        : 'bg-orange-600 text-white hover:bg-orange-500 hover:scale-[1.01] shadow-[0_20px_40px_rgba(255,77,0,0.25)]'
                                         }`}
                                 >
-                                    {status.stage === 'generating' ? <Loader2 className="w-8 h-8 animate-spin" /> : <Play className="w-8 h-8 fill-current" />}
-                                    {status.stage === 'generating' ? status.message : 'START CAMPAIGN'}
+                                    {status.stage === 'generating' ? <Loader2 className="w-6 h-6 animate-spin" /> : <Play className="w-6 h-6 fill-current" />}
+                                    {status.stage === 'generating' ? status.message : 'START GENERATION'}
                                 </button>
                             </div>
                         </div>
 
+                        {/* Viewfinder Column */}
                         <div className="flex flex-col items-center">
-                            <div className="w-full aspect-[9/16] bg-[#0c0c12] rounded-[64px] border-[16px] border-[#16161c] shadow-[0_0_150px_rgba(0,0,0,0.9)] overflow-hidden relative">
+                            <div className="w-full aspect-[9/16] bg-[#0c0c12] rounded-[48px] border-[12px] border-[#16161c] shadow-[0_0_100px_rgba(0,0,0,0.8)] overflow-hidden relative">
                                 {/* Viewfinder HUD */}
-                                <div className="absolute top-12 inset-x-8 flex justify-between z-40 pointer-events-none">
-                                    <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full">
-                                        <div className="w-2 h-2 rounded-full bg-red-600 animate-pulse" />
-                                        <span className="text-[10px] font-bold tracking-widest text-white uppercase italic">{masterVideoUrl ? 'FINAL CUT' : 'RECORDING'}</span>
+                                <div className="absolute top-8 inset-x-6 flex justify-between z-40 pointer-events-none">
+                                    <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/5">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse" />
+                                        <span className="text-[8px] font-black tracking-widest text-white uppercase italic">{masterVideoUrl ? 'FINAL CUT' : 'RECORDING'}</span>
+                                    </div>
+                                    <div className="bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/5">
+                                        <span className="text-[8px] font-black tracking-widest text-orange-400 uppercase">{selectedTemplate.split('/').pop()?.replace('.png', '')}</span>
                                     </div>
                                 </div>
 
@@ -530,7 +513,7 @@ const App: React.FC = () => {
                                             controls
                                         />
                                         <div className="absolute top-4 right-4 z-50">
-                                            <span className="bg-emerald-600 text-[10px] font-black px-3 py-1 rounded-full text-white shadow-lg">FINAL AD READY</span>
+                                            <span className="bg-emerald-600 text-[9px] font-black px-3 py-1 rounded-full text-white shadow-lg">READY</span>
                                         </div>
                                     </div>
                                 ) : shots.some(s => s.status === 'completed') ? (
@@ -543,28 +526,29 @@ const App: React.FC = () => {
                                             loop
                                             controls={false}
                                         />
-                                        <div className="absolute inset-x-0 bottom-16 px-10 text-center pointer-events-none">
-                                            <p className="text-white text-xs font-bold bg-black/50 backdrop-blur-sm py-3 px-4 rounded-2xl border border-white/10 shadow-2xl leading-tight">
+                                        <div className="absolute inset-x-0 bottom-12 px-8 text-center pointer-events-none">
+                                            <p className="text-white text-[10px] font-bold bg-black/60 backdrop-blur-md py-2.5 px-4 rounded-xl border border-white/10 shadow-2xl leading-tight">
                                                 {shots.find(s => s.id === currentShotId)?.script || shots.filter(s => s.status === 'completed').pop()?.script}
                                             </p>
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="w-full h-full flex flex-col items-center justify-center p-14 text-center">
+                                    <div className="w-full h-full flex flex-col items-center justify-center p-12 text-center bg-gradient-to-b from-[#0c0c12] to-[#050508]">
                                         {status.stage === 'generating' ? (
-                                            <div className="space-y-8">
+                                            <div className="space-y-6">
                                                 <div className="relative">
-                                                    <Loader2 className="w-20 h-20 animate-spin text-orange-500/20 mx-auto" />
-                                                    <Smartphone className="absolute inset-0 m-auto w-8 h-8 text-orange-500 animate-pulse" />
+                                                    <Loader2 className="w-14 h-14 animate-spin text-orange-500/20 mx-auto" />
+                                                    <Smartphone className="absolute inset-0 m-auto w-6 h-6 text-orange-500 animate-pulse" />
                                                 </div>
-                                                <div className="space-y-3">
-                                                    <span className="text-orange-400 font-black tracking-tighter text-2xl italic uppercase animate-pulse">{status.message}</span>
+                                                <div className="space-y-2">
+                                                    <span className="text-orange-400 font-black tracking-tighter text-xl italic uppercase animate-pulse leading-none block">{status.message}</span>
+                                                    <span className="text-[8px] text-slate-600 font-bold uppercase tracking-[0.2em]">Live Production</span>
                                                 </div>
                                             </div>
                                         ) : (
                                             <div className="opacity-10 group">
-                                                <Smartphone className="w-24 h-24 mb-6 mx-auto group-hover:scale-110 transition-transform duration-500" />
-                                                <span className="text-xs font-black uppercase tracking-[0.4em]">Empty Studio</span>
+                                                <Smartphone className="w-16 h-16 mb-4 mx-auto group-hover:scale-110 transition-transform duration-500" />
+                                                <span className="text-[10px] font-black uppercase tracking-[0.4em]">Empty Studio</span>
                                             </div>
                                         )}
                                     </div>
@@ -572,11 +556,11 @@ const App: React.FC = () => {
                             </div>
 
                             {status.stage === 'error' && (
-                                <div className="mt-8 w-full p-6 bg-red-950/20 border border-red-500/20 rounded-[32px] flex items-start gap-4 text-red-400">
-                                    <AlertCircle className="w-6 h-6 shrink-0 mt-0.5" />
+                                <div className="mt-6 w-full p-4 bg-red-950/20 border border-red-500/20 rounded-2xl flex items-start gap-3 text-red-400">
+                                    <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
                                     <div>
-                                        <h4 className="font-bold text-xs uppercase tracking-widest mb-1">Production Error</h4>
-                                        <p className="text-[10px] leading-relaxed opacity-70">{status.message}</p>
+                                        <h4 className="font-bold text-[10px] uppercase tracking-widest mb-1">Production Error</h4>
+                                        <p className="text-[9px] leading-relaxed opacity-70">{status.message}</p>
                                     </div>
                                 </div>
                             )}
