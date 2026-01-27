@@ -20,13 +20,15 @@ export async function POST(req: Request) {
 
         // Create a checkout configuration
         // We use metadata to store the userId and credit amount for the webhook to fulfill
-        const checkoutConfig = await whop.checkoutConfigurations.create({
+        const checkoutConfig = await (whop.checkoutConfigurations as any).create({
             company_id: companyId,
             mode: "payment",
             plan: {
                 initial_price: price,
                 plan_type: "one_time",
-            } as any,
+                companyId: companyId, // Satisfy potential GraphQL requirements
+                currency: "usd",
+            },
             metadata: {
                 user_id: userId,
                 credits: credits.toString(),
