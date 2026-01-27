@@ -28,6 +28,8 @@ const App: React.FC = () => {
     const [status, setStatus] = useState<GenerationStatus>({ stage: 'idle', message: '' });
     const [hasKey, setHasKey] = useState(false);
     const [campaignId, setCampaignId] = useState<string | null>(null);
+    const [user, setUser] = useState<{ username: string; profile_pic_url: string } | null>(null);
+    const [loadingAuth, setLoadingAuth] = useState(true);
 
     const [shots, setShots] = useState<Shot[]>([]);
     const [currentShotId, setCurrentShotId] = useState<number | null>(null);
@@ -69,6 +71,18 @@ const App: React.FC = () => {
     };
 
     useEffect(() => {
+        const fetchUser = async () => {
+            try {
+                const response = await fetch('/api/auth/me');
+                if (response.ok) {
+                    const data = await response.json();
+                    setUser(data);
+                }
+            } catch (e) { console.error("Failed to fetch Whop user"); }
+            finally { setLoadingAuth(false); }
+        };
+        fetchUser();
+
         const checkKey = async () => {
             if (window.aistudio) {
                 const selected = await window.aistudio.hasSelectedApiKey();
@@ -237,6 +251,29 @@ const App: React.FC = () => {
         document.body.removeChild(a);
     };
 
+    if (loadingAuth) {
+        return (
+            <div className="flex items-center justify-center h-screen bg-[#030305] text-indigo-500">
+                <Loader2 className="w-12 h-12 animate-spin" />
+            </div>
+        );
+    }
+
+    if (!user && status.stage !== 'generating') {
+        return (
+            <div className="flex flex-col items-center justify-center h-screen bg-[#030305] text-slate-100 p-8 text-center">
+                <div className="w-20 h-20 bg-indigo-600 rounded-3xl flex items-center justify-center mb-8 shadow-2xl shadow-indigo-500/20">
+                    <ShieldAlert className="w-10 h-10 text-white" />
+                </div>
+                <h2 className="text-3xl font-black uppercase tracking-tighter mb-4 italic">Security Checkpoint</h2>
+                <p className="text-slate-500 max-w-md mx-auto mb-8 font-medium">Please open VlogStudio through the Whop Dashboard to authenticate your session.</p>
+                <div className="flex gap-4">
+                    <a href="https://whop.com" className="bg-white text-black px-8 py-3 rounded-2xl font-black uppercase text-sm hover:bg-slate-200 transition-all">Go to Whop</a>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="flex h-screen bg-[#030305] text-slate-100 font-sans overflow-hidden">
             {/* Sidebar */}
@@ -250,6 +287,16 @@ const App: React.FC = () => {
                         <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-widest">Handheld Engine</span>
                     </div>
                 </div>
+
+                {user && (
+                    <div className="mb-10 p-4 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-3">
+                        <img src={user.profile_pic_url} alt={user.username} className="w-10 h-10 rounded-full border border-indigo-500/30" />
+                        <div className="flex flex-col">
+                            <span className="text-xs font-bold text-white tracking-tight leading-none mb-1">{user.username}</span>
+                            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Verified Creator</span>
+                        </div>
+                    </div>
+                )}
 
                 <div className="space-y-8">
                     <section>
