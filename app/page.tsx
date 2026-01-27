@@ -391,14 +391,6 @@ const App: React.FC = () => {
                     >
                         <RefreshCcw className="w-3 h-3" /> RESET STUDIO
                     </button>
-                    {masterVideoUrl && (
-                        <button
-                            onClick={downloadMasterAd}
-                            className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-all"
-                        >
-                            <Download className="w-4 h-4" /> DOWNLOAD FINAL AD
-                        </button>
-                    )}
                 </div>
             </aside>
 
@@ -515,16 +507,6 @@ const App: React.FC = () => {
                         {/* Viewfinder Column */}
                         <div className="flex flex-col items-center">
                             <div className="w-full aspect-[9/16] bg-[#0c0c12] rounded-[48px] border-[12px] border-[#16161c] shadow-[0_0_100px_rgba(0,0,0,0.8)] overflow-hidden relative">
-                                {/* Viewfinder HUD */}
-                                <div className="absolute top-8 inset-x-6 flex justify-between z-40 pointer-events-none">
-                                    <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/5">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse" />
-                                        <span className="text-[8px] font-black tracking-widest text-white uppercase italic">{masterVideoUrl ? 'FINAL CUT' : 'RECORDING'}</span>
-                                    </div>
-                                    <div className="bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/5">
-                                        <span className="text-[8px] font-black tracking-widest text-orange-400 uppercase">{selectedTemplate.split('/').pop()?.replace('.png', '')}</span>
-                                    </div>
-                                </div>
 
                                 {masterVideoUrl ? (
                                     <div className="w-full h-full relative group/player">
