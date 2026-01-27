@@ -527,17 +527,76 @@ const App: React.FC = () => {
                                 </div>
 
                                 {masterVideoUrl ? (
-                                    <div className="w-full h-full relative">
+                                    <div className="w-full h-full relative group/player">
                                         <video
+                                            id="main-video-player"
                                             src={masterVideoUrl}
                                             className="w-full h-full object-cover"
                                             autoPlay
                                             loop
-                                            controls
+                                            controls={false}
+                                            onClick={(e) => {
+                                                const v = e.currentTarget;
+                                                if (v.paused) v.play();
+                                                else v.pause();
+                                            }}
                                         />
-                                        <div className="absolute top-4 right-4 z-50">
-                                            <span className="bg-emerald-600 text-[9px] font-black px-3 py-1 rounded-full text-white shadow-lg">READY</span>
+
+                                        {/* Custom HUD: Top Right Download */}
+                                        <div className="absolute top-6 right-6 z-50">
+                                            <button
+                                                onClick={downloadMasterAd}
+                                                className="bg-orange-600 hover:bg-orange-500 text-white px-4 py-2 rounded-full font-black text-[10px] uppercase tracking-tighter shadow-xl shadow-orange-500/40 transition-all flex items-center gap-2 hover:scale-105 active:scale-95"
+                                            >
+                                                <Download className="w-3 h-3" />
+                                                Download
+                                            </button>
                                         </div>
+
+                                        {/* Custom Player Controls */}
+                                        <div className="absolute inset-x-0 bottom-0 p-6 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover/player:opacity-100 transition-opacity duration-300 pointer-events-none">
+                                            <div className="flex flex-col gap-3 pointer-events-auto">
+                                                <div className="w-full h-1 bg-white/20 rounded-full overflow-hidden cursor-pointer relative group/progress" onClick={(e) => {
+                                                    const rect = e.currentTarget.getBoundingClientRect();
+                                                    const pos = (e.clientX - rect.left) / rect.width;
+                                                    const v = document.getElementById('main-video-player') as HTMLVideoElement;
+                                                    if (v) v.currentTime = pos * v.duration;
+                                                }}>
+                                                    <div
+                                                        id="video-progress-bar"
+                                                        className="absolute inset-y-0 left-0 bg-orange-600 rounded-full"
+                                                        style={{ width: '0%' }}
+                                                    />
+                                                </div>
+                                                <div className="flex items-center justify-between">
+                                                    <button
+                                                        className="text-white hover:text-orange-400 transition-colors"
+                                                        onClick={() => {
+                                                            const v = document.getElementById('main-video-player') as HTMLVideoElement;
+                                                            if (v) {
+                                                                if (v.paused) v.play();
+                                                                else v.pause();
+                                                            }
+                                                        }}
+                                                    >
+                                                        <Play className="w-4 h-4 fill-current" />
+                                                    </button>
+                                                    <span className="text-[10px] font-bold text-white/50 tracking-widest">VEOS VIDEO PLAYER</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <script dangerouslySetInnerHTML={{
+                                            __html: `
+                                            setInterval(() => {
+                                                const v = document.getElementById('main-video-player');
+                                                const bar = document.getElementById('video-progress-bar');
+                                                if (v && bar) {
+                                                    const pct = (v.currentTime / v.duration) * 100;
+                                                    bar.style.width = pct + '%';
+                                                }
+                                            }, 100);
+                                        `}} />
                                     </div>
                                 ) : (
                                     <div className="w-full h-full flex flex-col items-center justify-center p-12 text-center bg-gradient-to-b from-[#0c0c12] to-[#050508]">
