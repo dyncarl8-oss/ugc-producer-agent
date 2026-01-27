@@ -7,6 +7,7 @@ import { AdVibe, AspectRatio, Config, GenerationStatus } from '../types';
 import { VeoService, Shot } from '../services/veoService';
 import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { fetchFile, toBlobURL } from '@ffmpeg/util';
+import { CheckoutModal } from '../components/CheckoutModal';
 
 declare global {
     var aistudio: {
@@ -45,6 +46,7 @@ const App: React.FC = () => {
     const [modalVideoUrl, setModalVideoUrl] = useState<string | null>(null);
     const [showPricingModal, setShowPricingModal] = useState(false);
     const [loadingCheckout, setLoadingCheckout] = useState<number | null>(null);
+    const [checkoutSessionId, setCheckoutSessionId] = useState<string | null>(null);
     const params = useParams();
     const companyId = params?.companyId as string || '';
 
@@ -311,7 +313,9 @@ const App: React.FC = () => {
 
             if (res.ok) {
                 const data = await res.json();
-                window.open(data.url, '_blank');
+                // Show embedded checkout modal
+                setCheckoutSessionId(data.sessionId);
+                setShowPricingModal(false);
             } else {
                 const err = await res.json();
                 alert(`Error: ${err.error || 'Failed to initiate checkout'}`);
@@ -321,6 +325,21 @@ const App: React.FC = () => {
         } finally {
             setLoadingCheckout(null);
         }
+    };
+
+    const handleCheckoutComplete = async (paymentId: string) => {
+        console.log("Payment completed:", paymentId);
+        // Refresh user credits
+        try {
+            const response = await fetch('/api/auth/me');
+            if (response.ok) {
+                const data = await response.json();
+                setUser(data);
+            }
+        } catch (e) {
+            console.error("Failed to refresh user:", e);
+        }
+        setCheckoutSessionId(null);
     };
 
     if (loadingAuth) {
@@ -879,6 +898,15 @@ const App: React.FC = () => {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* Checkout Modal */}
+            {checkoutSessionId && (
+                <CheckoutModal
+                    sessionId={checkoutSessionId}
+                    onClose={() => setCheckoutSessionId(null)}
+                    onComplete={handleCheckoutComplete}
+                />
             )}
 
             <style dangerouslySetInnerHTML={{

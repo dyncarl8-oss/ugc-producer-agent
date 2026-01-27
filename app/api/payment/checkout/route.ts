@@ -43,10 +43,8 @@ export async function POST(req: Request) {
             throw new Error("Failed to generate checkout session");
         }
 
-        // Construct the purchase URL
-        const purchaseUrl = `https://whop.com/checkout/${checkoutConfig.id}`;
-
-        return NextResponse.json({ url: purchaseUrl });
+        // Return session ID for embedded checkout
+        return NextResponse.json({ sessionId: checkoutConfig.id });
     } catch (error: any) {
         console.error("Checkout Error:", error);
         return NextResponse.json({ error: error.message }, { status: 500 });
