@@ -12,12 +12,12 @@ export async function GET() {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const user = await whop.users.retrieve({ id: userId });
+        const user = await whop.users.retrieve(userId);
 
         return NextResponse.json({
             id: user.id,
             username: user.username,
-            profile_pic_url: user.profile_pic_url,
+            profile_pic_url: user.profile_picture?.url,
         });
     } catch (error: any) {
         console.error("Whop Auth Error:", error);
