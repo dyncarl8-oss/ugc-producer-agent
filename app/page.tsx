@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Loader2, Key, ShieldAlert, Smartphone, Sparkles, User, Box, ShoppingBag, Clapperboard, CheckCircle2, AlertCircle, Layers, RefreshCcw, Download, Zap } from 'lucide-react';
+import { useParams } from 'next/navigation';
+import { Play, Loader2, Key, ShieldAlert, Smartphone, Sparkles, User, Box, ShoppingBag, Clapperboard, CheckCircle2, AlertCircle, Layers, RefreshCcw, Download, Zap, Plus, CreditCard, ChevronRight } from 'lucide-react';
 import { AdVibe, AspectRatio, Config, GenerationStatus } from '../types';
 import { VeoService, Shot } from '../services/veoService';
 import { FFmpeg } from '@ffmpeg/ffmpeg';
@@ -42,6 +43,10 @@ const App: React.FC = () => {
     const [ffmpegLoaded, setFfmpegLoaded] = useState(false);
     const [selectedProject, setSelectedProject] = useState<any | null>(null);
     const [modalVideoUrl, setModalVideoUrl] = useState<string | null>(null);
+    const [showPricingModal, setShowPricingModal] = useState(false);
+    const [loadingCheckout, setLoadingCheckout] = useState<number | null>(null);
+    const params = useParams();
+    const companyId = params?.companyId as string || '';
 
     useEffect(() => {
         const loadAvatar = async (path: string) => {
@@ -295,6 +300,34 @@ const App: React.FC = () => {
         document.body.removeChild(a);
     };
 
+    const handleCheckout = async (credits: number, price: number) => {
+        if (!companyId) {
+            alert("No Company ID found. Please open this app through the Whop Dashboard.");
+            return;
+        }
+
+        setLoadingCheckout(credits);
+        try {
+            const res = await fetch('/api/payment/checkout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ credits, price, companyId })
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                window.open(data.url, '_blank');
+            } else {
+                const err = await res.json();
+                alert(`Error: ${err.error || 'Failed to initiate checkout'}`);
+            }
+        } catch (e) {
+            console.error("Checkout Request Failed:", e);
+        } finally {
+            setLoadingCheckout(null);
+        }
+    };
+
     if (loadingAuth) {
         return (
             <div className="flex items-center justify-center h-screen bg-[#030305] text-orange-500">
@@ -360,6 +393,15 @@ const App: React.FC = () => {
                                 <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">Verified Account</span>
                             </div>
                         </div>
+
+                        {/* Top Up Credits Button */}
+                        <button
+                            onClick={() => setShowPricingModal(true)}
+                            className="w-full mt-2 py-2.5 bg-orange-600/10 hover:bg-orange-600/20 border border-orange-500/30 rounded-xl flex items-center justify-center gap-2 group transition-all"
+                        >
+                            <Plus className="w-3 h-3 text-orange-500 group-hover:scale-125 transition-transform" />
+                            <span className="text-[10px] font-black text-orange-200 uppercase tracking-widest">Buy Credits</span>
+                        </button>
                     </div>
                 )}
 
@@ -738,6 +780,108 @@ const App: React.FC = () => {
                                 </div>
                             </div>
                         )}
+                    </div>
+                </div>
+            )}
+
+            {/* Pricing Modal */}
+            {showPricingModal && (
+                <div className="fixed inset-0 z-[150] flex items-center justify-center p-6 bg-black/90 backdrop-blur-2xl animate-in fade-in duration-300">
+                    <div className="max-w-4xl w-full bg-[#0c0c12]/50 border border-white/10 rounded-[48px] p-10 relative overflow-hidden shadow-[0_0_100px_rgba(255,100,0,0.1)]">
+                        {/* Glow and Patterns */}
+                        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-orange-600/10 blur-[120px] rounded-full -translate-y-1/2 translate-x-1/2" />
+
+                        <div className="relative z-10">
+                            <div className="flex items-center justify-between mb-12">
+                                <div className="space-y-2">
+                                    <h2 className="text-4xl font-black text-white italic uppercase tracking-tighter">Fuel Your Production</h2>
+                                    <p className="text-slate-500 font-medium uppercase tracking-[0.2em] text-xs">Select a credits package to continue creating</p>
+                                </div>
+                                <button
+                                    onClick={() => setShowPricingModal(false)}
+                                    className="w-12 h-12 bg-white/5 hover:bg-white/10 rounded-full flex items-center justify-center border border-white/10 transition-all"
+                                >
+                                    <RefreshCcw className="w-5 h-5 text-white rotate-45" />
+                                </button>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                {[
+                                    { name: 'Starter', credits: 3, price: 6, emoji: '⚡️', desc: 'Test the vibes' },
+                                    { name: 'Popular', credits: 5, price: 10, emoji: '💎', popular: true, desc: 'Most production choice' },
+                                    { name: 'Pro', credits: 12, price: 20, emoji: '🚀', desc: 'Bulk generation power' },
+                                    { name: 'Business', credits: 18, price: 30, emoji: '👑', desc: 'Elite social agency' },
+                                ].map((pkg) => (
+                                    <div
+                                        key={pkg.name}
+                                        className={`group relative p-8 rounded-[38px] border transition-all hover:scale-[1.02] active:scale-[0.98] ${pkg.popular
+                                                ? 'bg-orange-600/10 border-orange-500/40 shadow-2xl shadow-orange-500/10'
+                                                : 'bg-white/5 border-white/5 hover:border-white/20'
+                                            }`}
+                                    >
+                                        {pkg.popular && (
+                                            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-orange-600 text-white px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest shadow-lg">
+                                                Best Seller
+                                            </div>
+                                        )}
+
+                                        <div className="flex flex-col h-full">
+                                            <div className="mb-6">
+                                                <div className="text-3xl mb-4 group-hover:scale-125 transition-transform duration-500 origin-left inline-block">{pkg.emoji}</div>
+                                                <h3 className="text-xl font-bold text-white mb-1">{pkg.name}</h3>
+                                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{pkg.desc}</p>
+                                            </div>
+
+                                            <div className="mt-auto space-y-6">
+                                                <div className="space-y-1">
+                                                    <div className="flex items-end gap-1">
+                                                        <span className="text-4xl font-black text-white italic">${pkg.price}</span>
+                                                        <span className="text-slate-500 font-bold uppercase text-[10px] mb-2 tracking-widest">USD</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <Zap className="w-3 h-3 text-orange-500 fill-orange-500" />
+                                                        <span className="text-sm font-black text-white italic">{pkg.credits} Production Credits</span>
+                                                    </div>
+                                                </div>
+
+                                                <button
+                                                    onClick={() => handleCheckout(pkg.credits, pkg.price)}
+                                                    disabled={loadingCheckout !== null}
+                                                    className={`w-full py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-lg ${pkg.popular
+                                                            ? 'bg-orange-600 text-white hover:bg-orange-500 shadow-orange-500/20'
+                                                            : 'bg-white text-black hover:bg-slate-200 shadow-white/5'
+                                                        }`}
+                                                >
+                                                    {loadingCheckout === pkg.credits ? (
+                                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                                    ) : (
+                                                        <>
+                                                            Top Up Now <ChevronRight className="w-3 h-3" />
+                                                        </>
+                                                    )}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="mt-12 pt-12 border-t border-white/5 flex items-center justify-between">
+                                <div className="flex items-center gap-6">
+                                    <div className="flex items-center gap-2 text-slate-500">
+                                        <CreditCard className="w-4 h-4" />
+                                        <span className="text-[10px] font-bold uppercase tracking-widest">Secure Payment by Whop</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-slate-500">
+                                        <Zap className="w-4 h-4" />
+                                        <span className="text-[10px] font-bold uppercase tracking-widest">Instant Fulfillment</span>
+                                    </div>
+                                </div>
+                                <div className="text-[9px] text-slate-600 font-medium max-w-[200px] text-right">
+                                    Credits are automatically added to your account upon successful transaction.
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}
