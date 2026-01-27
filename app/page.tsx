@@ -515,7 +515,17 @@ const App: React.FC = () => {
                                         : 'bg-orange-600 text-white hover:bg-orange-500 hover:scale-[1.01] shadow-[0_20px_40px_rgba(255,77,0,0.25)]'
                                         }`}
                                 >
-                                    {status.stage === 'generating' ? <Loader2 className="w-6 h-6 animate-spin" /> : <Play className="w-6 h-6 fill-current" />}
+                                    {status.stage === 'generating' ? (
+                                        <Loader2 className="w-6 h-6 animate-spin" />
+                                    ) : (
+                                        <div className="flex items-center gap-4">
+                                            <Play className="w-6 h-6 fill-current" />
+                                            <div className="flex items-center gap-1.5 px-3 py-1 bg-white/10 rounded-full border border-white/10 shrink-0">
+                                                <Zap className="w-3.5 h-3.5 text-orange-400 fill-orange-400" />
+                                                <span className="text-xs font-black tracking-normal italic">1</span>
+                                            </div>
+                                        </div>
+                                    )}
                                     {status.stage === 'generating' ? status.message : 'START GENERATION'}
                                 </button>
                             </div>
