@@ -74,6 +74,7 @@ const App: React.FC = () => {
     useEffect(() => {
         const fetchUser = async () => {
             try {
+                const response = await fetch('/api/auth/me');
                 if (response.ok) {
                     const data = await response.json();
                     setUser(data);
