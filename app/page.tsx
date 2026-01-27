@@ -76,6 +76,7 @@ const App: React.FC = () => {
                 const response = await fetch('/api/auth/me');
                 if (response.ok) {
                     const data = await response.json();
+                    console.log("Client: Received user data:", data);
                     setUser(data);
                 }
             } catch (e) { console.error("Failed to fetch Whop user"); }
@@ -290,7 +291,20 @@ const App: React.FC = () => {
 
                 {user && (
                     <div className="mb-10 p-4 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-3">
-                        <img src={user.profile_pic_url} alt={user.username} className="w-10 h-10 rounded-full border border-indigo-500/30" />
+                        {user.profile_pic_url ? (
+                            <img
+                                src={user.profile_pic_url}
+                                alt={user.username}
+                                className="w-10 h-10 rounded-full border border-indigo-500/30 object-cover"
+                                onError={(e) => {
+                                    (e.target as HTMLImageElement).style.display = 'none';
+                                    (e.target as HTMLImageElement).parentElement?.querySelector('.avatar-placeholder')?.classList.remove('hidden');
+                                }}
+                            />
+                        ) : null}
+                        <div className={`avatar-placeholder ${user.profile_pic_url ? 'hidden' : ''} w-10 h-10 rounded-full bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center`}>
+                            <User className="w-5 h-5 text-indigo-400" />
+                        </div>
                         <div className="flex flex-col">
                             <span className="text-xs font-bold text-white tracking-tight leading-none mb-1">{user.username}</span>
                             <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Verified Creator</span>
