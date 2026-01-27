@@ -7,7 +7,7 @@ import { AdVibe, AspectRatio, Config, GenerationStatus } from '../types';
 import { VeoService, Shot } from '../services/veoService';
 import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { fetchFile, toBlobURL } from '@ffmpeg/util';
-import { CheckoutModal } from '../components/CheckoutModal';
+
 
 declare global {
     var aistudio: {
@@ -46,7 +46,6 @@ const App: React.FC = () => {
     const [modalVideoUrl, setModalVideoUrl] = useState<string | null>(null);
     const [showPricingModal, setShowPricingModal] = useState(false);
     const [loadingCheckout, setLoadingCheckout] = useState<number | null>(null);
-    const [checkoutSessionId, setCheckoutSessionId] = useState<string | null>(null);
     const params = useParams();
     const companyId = params?.companyId as string || '';
 
@@ -313,8 +312,8 @@ const App: React.FC = () => {
 
             if (res.ok) {
                 const data = await res.json();
-                // Show embedded checkout modal
-                setCheckoutSessionId(data.sessionId);
+                // Redirect to the Whop checkout page
+                window.open(data.url, '_blank');
                 setShowPricingModal(false);
             } else {
                 const err = await res.json();
@@ -339,7 +338,7 @@ const App: React.FC = () => {
         } catch (e) {
             console.error("Failed to refresh user:", e);
         }
-        setCheckoutSessionId(null);
+
     };
 
     if (loadingAuth) {
@@ -900,14 +899,7 @@ const App: React.FC = () => {
                 </div>
             )}
 
-            {/* Checkout Modal */}
-            {checkoutSessionId && (
-                <CheckoutModal
-                    sessionId={checkoutSessionId}
-                    onClose={() => setCheckoutSessionId(null)}
-                    onComplete={handleCheckoutComplete}
-                />
-            )}
+
 
             <style dangerouslySetInnerHTML={{
                 __html: `

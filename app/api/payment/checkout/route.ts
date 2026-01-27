@@ -47,9 +47,13 @@ export async function POST(req: Request) {
         }
 
         console.log("Whop Checkout Configuration created successfully:", checkoutConfig.id);
+        console.log("Checkout URL:", checkoutConfig.purchase_url);
 
-        // Return session ID for embedded checkout
-        return NextResponse.json({ sessionId: checkoutConfig.id });
+        // Return session ID and full purchase URL
+        return NextResponse.json({
+            sessionId: checkoutConfig.id,
+            url: checkoutConfig.purchase_url
+        });
     } catch (error: any) {
         console.error("Checkout Error:", error);
         return NextResponse.json({ error: error.message }, { status: 500 });
