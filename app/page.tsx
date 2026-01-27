@@ -7,7 +7,7 @@ import { AdVibe, AspectRatio, Config, GenerationStatus } from '../types';
 import { VeoService, Shot } from '../services/veoService';
 import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { fetchFile, toBlobURL } from '@ffmpeg/util';
-// CheckoutModal removed - using redirect to Whop checkout URL instead
+import { WhopCheckoutEmbed } from "@whop/checkout/react";
 
 
 declare global {
@@ -314,12 +314,9 @@ const App: React.FC = () => {
 
             if (res.ok) {
                 const data = await res.json();
-                // Redirect to Whop checkout URL (embedded checkout is blocked by x-frame-options)
-                if (data.url) {
-                    window.location.href = data.url;
-                } else {
-                    alert('Error: No checkout URL returned');
-                }
+                // Enable embedded checkout
+                setCheckoutSessionId(data.sessionId);
+                setShowPricingModal(false);
             } else {
                 const err = await res.json();
                 alert(`Error: ${err.error || 'Failed to initiate checkout'}`);
@@ -906,7 +903,26 @@ const App: React.FC = () => {
                 </div>
             )}
 
-            {/* Checkout now redirects to Whop URL - no modal needed */}
+            {/* Embedded Checkout Overlay */}
+            {checkoutSessionId && (
+                <div className="fixed inset-0 z-[200] bg-black/80 flex items-center justify-center p-4">
+                    <div className="relative w-full max-w-md bg-[#0c0c12] rounded-3xl border border-white/10 overflow-hidden shadow-2xl">
+                        <button
+                            onClick={() => setCheckoutSessionId(null)}
+                            className="absolute top-4 right-4 z-50 p-2 bg-white/5 rounded-full hover:bg-white/10"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+                        </button>
+                        <div className="p-4" style={{ minHeight: '600px' }}>
+                            <WhopCheckoutEmbed
+                                sessionId={checkoutSessionId}
+                                returnUrl={typeof window !== 'undefined' ? window.location.href : ''}
+                                onComplete={handleCheckoutComplete}
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
 
 
             <style dangerouslySetInnerHTML={{

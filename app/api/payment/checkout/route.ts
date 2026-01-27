@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { whop } from "@/lib/whop";
+import Whop from "@whop/sdk";
 
 export async function POST(req: Request) {
     try {
@@ -17,40 +18,29 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Missing required fields: credits, price" }, { status: 400 });
         }
 
-        const companyId = process.env.WHOP_COMPANY_ID || process.env.NEXT_PUBLIC_WHOP_COMPANY_ID;
+        // Create Whop client with Company API Key
+        const client = new Whop({
+            apiKey: process.env.WHOP_API_KEY,
+        });
 
-
-
-        const { Whop } = await import("@whop/sdk");
-        const client = new Whop({ apiKey: process.env.WHOP_API_KEY });
-
-        // Create checkout configuration (Option 2: Embedded checkout)
-        // API requires: plan.companyId and plan.currency
+        // Create checkout configuration exactly per Whop docs
         const checkoutConfig = await (client.checkoutConfigurations as any).create({
+            company_id: process.env.WHOP_COMPANY_ID!,
             plan: {
-                companyId: companyId,
-                initialPrice: Number(price),
-                planType: "one_time",
-                currency: "usd",
+                initial_price: Number(price),
+                plan_type: "one_time",
             },
             metadata: {
                 user_id: userId,
                 credits: credits.toString(),
-                type: "credit_purchase"
+                type: "credit_purchase",
             },
         });
 
-        if (!checkoutConfig.id) {
-            throw new Error("Failed to generate checkout session (No ID returned)");
-        }
+        console.log("Checkout config created:", checkoutConfig.id);
 
-        console.log("Whop Checkout Configuration created successfully:", checkoutConfig.id);
-        console.log("Checkout URL:", checkoutConfig.purchase_url);
-
-        // Return session ID and full purchase URL
         return NextResponse.json({
             sessionId: checkoutConfig.id,
-            url: checkoutConfig.purchase_url
         });
     } catch (error: any) {
         console.error("Checkout Error:", error);
