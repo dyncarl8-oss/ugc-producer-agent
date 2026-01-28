@@ -811,53 +811,43 @@ const App: React.FC = () => {
 
                                 {checkoutSessionId ? (
                                     <div className="w-full flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                        <div className="w-full h-[550px] overflow-hidden rounded-3xl border border-white/10 bg-black/40 shadow-2xl relative group">
-                                            <WhopCheckoutEmbed
-                                                key={checkoutSessionId}
-                                                sessionId={checkoutSessionId}
-                                                returnUrl={typeof window !== 'undefined' ? window.location.origin + window.location.pathname : ""}
-                                                onComplete={(paymentId) => {
-                                                    console.log("Checkout complete! Payment ID:", paymentId);
-                                                    setShowPaymentModal(false);
-                                                    setCheckoutSessionId(null);
-                                                    setCheckoutPurchaseUrl(null);
-                                                    window.location.reload();
-                                                }}
-                                            />
+                                        <div className="w-full h-[650px] overflow-hidden rounded-3xl border border-white/10 bg-black/40 shadow-2xl relative group">
+                                            {checkoutPurchaseUrl ? (
+                                                <iframe
+                                                    src={checkoutPurchaseUrl}
+                                                    className="w-full h-full border-0"
+                                                    allow="payment; publickey-credentials-get"
+                                                    sandbox="allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts allow-downloads"
+                                                />
+                                            ) : (
+                                                <WhopCheckoutEmbed
+                                                    key={checkoutSessionId}
+                                                    sessionId={checkoutSessionId}
+                                                    returnUrl={typeof window !== 'undefined' ? window.location.origin + window.location.pathname : ""}
+                                                    onComplete={(paymentId) => {
+                                                        console.log("Checkout complete! Payment ID:", paymentId);
+                                                        setShowPaymentModal(false);
+                                                        setCheckoutSessionId(null);
+                                                        setCheckoutPurchaseUrl(null);
+                                                        window.location.reload();
+                                                    }}
+                                                />
+                                            )}
 
                                             {/* Overlay helper if iframe is blocked */}
                                             <div className="absolute inset-0 flex items-center justify-center pointer-events-none group-active:opacity-0 transition-opacity">
                                                 <p className="text-[10px] text-white/5 font-medium uppercase tracking-[0.5em]">Secure Checkout Loading</p>
                                             </div>
                                         </div>
-
-                                        <div className="p-4 bg-orange-500/10 border border-orange-500/20 rounded-3xl flex flex-col items-center gap-3 backdrop-blur-xl">
-                                            <div className="flex items-center gap-2">
-                                                <span className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-pulse" />
-                                                <p className="text-[10px] text-orange-200 font-black uppercase tracking-widest">Connection blocked by browser?</p>
-                                            </div>
-                                            <a
-                                                href={checkoutPurchaseUrl || `https://whop.com/checkout/${checkoutSessionId}`}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="w-full py-4 bg-orange-600 hover:bg-orange-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-3 shadow-lg shadow-orange-950/20 active:scale-[0.98]"
-                                            >
-                                                <ShoppingBag className="w-4 h-4" />
-                                                Complete in Secure Tab
-                                            </a>
-                                            <p className="text-[9px] text-orange-200/50 text-center font-medium leading-relaxed">
-                                                If the window above is blank, please used the button to complete your purchase securely on Whop.com
-                                            </p>
-                                        </div>
-
                                         <button
                                             onClick={() => {
+                                                setShowPaymentModal(false);
                                                 setCheckoutSessionId(null);
                                                 setCheckoutPurchaseUrl(null);
                                             }}
                                             className="text-[10px] text-slate-500 hover:text-white transition-colors uppercase font-bold tracking-widest pt-2"
                                         >
-                                            ← Back to packages
+                                            Close
                                         </button>
                                     </div>
                                 ) : (
