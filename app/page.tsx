@@ -792,120 +792,122 @@ const App: React.FC = () => {
 
             {/* Payment Modal */}
             {showPaymentModal && (
-                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl animate-in fade-in duration-300">
-                    <div className="bg-[#0c0c12] border border-white/10 rounded-[40px] w-full max-w-2xl overflow-hidden shadow-2xl">
-                        <div className="p-8 flex flex-col items-center text-center relative">
-                            <button
-                                onClick={() => { setShowPaymentModal(false); setCheckoutSessionId(null); }}
-                                className="absolute top-6 right-6 w-10 h-10 bg-white/5 hover:bg-white/10 rounded-full flex items-center justify-center border border-white/10 transition-all"
-                            >
-                                <RefreshCcw className="w-4 h-4 text-white rotate-45" />
-                            </button>
+                <div className="fixed inset-0 z-[200] overflow-y-auto bg-black/90 backdrop-blur-xl animate-in fade-in duration-300">
+                    <div className="flex min-h-full items-center justify-center p-4 sm:p-6 py-12">
+                        <div className="bg-[#0c0c12] border border-white/10 rounded-[40px] w-full max-w-2xl shadow-2xl relative overflow-hidden">
+                            <div className="p-8 flex flex-col items-center text-center relative">
+                                <button
+                                    onClick={() => { setShowPaymentModal(false); setCheckoutSessionId(null); }}
+                                    className="absolute top-6 right-6 w-10 h-10 bg-white/5 hover:bg-white/10 rounded-full flex items-center justify-center border border-white/10 transition-all"
+                                >
+                                    <RefreshCcw className="w-4 h-4 text-white rotate-45" />
+                                </button>
 
-                            <div className="w-16 h-16 bg-orange-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-orange-500/20">
-                                <Zap className="w-8 h-8 text-white fill-white" />
-                            </div>
-                            <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter mb-2">Fuel Your Production</h2>
-                            <p className="text-slate-500 text-sm font-medium mb-10 max-w-md">Select a credit package to start generating high-converting viral UGC ads.</p>
+                                <div className="w-16 h-16 bg-orange-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-orange-500/20">
+                                    <Zap className="w-8 h-8 text-white fill-white" />
+                                </div>
+                                <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter mb-2">Fuel Your Production</h2>
+                                <p className="text-slate-500 text-sm font-medium mb-10 max-w-md">Select a credit package to start generating high-converting viral UGC ads.</p>
 
-                            {checkoutSessionId ? (
-                                <div className="w-full flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                    <div className="w-full h-[550px] overflow-hidden rounded-3xl border border-white/10 bg-black/40 shadow-2xl relative group">
-                                        <WhopCheckoutEmbed
-                                            key={checkoutSessionId}
-                                            sessionId={checkoutSessionId}
-                                            returnUrl={typeof window !== 'undefined' ? window.location.origin + window.location.pathname : ""}
-                                            onComplete={(paymentId) => {
-                                                console.log("Checkout complete! Payment ID:", paymentId);
-                                                setShowPaymentModal(false);
+                                {checkoutSessionId ? (
+                                    <div className="w-full flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                        <div className="w-full h-[550px] overflow-hidden rounded-3xl border border-white/10 bg-black/40 shadow-2xl relative group">
+                                            <WhopCheckoutEmbed
+                                                key={checkoutSessionId}
+                                                sessionId={checkoutSessionId}
+                                                returnUrl={typeof window !== 'undefined' ? window.location.origin + window.location.pathname : ""}
+                                                onComplete={(paymentId) => {
+                                                    console.log("Checkout complete! Payment ID:", paymentId);
+                                                    setShowPaymentModal(false);
+                                                    setCheckoutSessionId(null);
+                                                    setCheckoutPurchaseUrl(null);
+                                                    window.location.reload();
+                                                }}
+                                            />
+
+                                            {/* Overlay helper if iframe is blocked */}
+                                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none group-active:opacity-0 transition-opacity">
+                                                <p className="text-[10px] text-white/5 font-medium uppercase tracking-[0.5em]">Secure Checkout Loading</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="p-4 bg-orange-500/10 border border-orange-500/20 rounded-3xl flex flex-col items-center gap-3 backdrop-blur-xl">
+                                            <div className="flex items-center gap-2">
+                                                <span className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-pulse" />
+                                                <p className="text-[10px] text-orange-200 font-black uppercase tracking-widest">Connection blocked by browser?</p>
+                                            </div>
+                                            <a
+                                                href={checkoutPurchaseUrl || `https://whop.com/checkout/${checkoutSessionId}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="w-full py-4 bg-orange-600 hover:bg-orange-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-3 shadow-lg shadow-orange-950/20 active:scale-[0.98]"
+                                            >
+                                                <ShoppingBag className="w-4 h-4" />
+                                                Complete in Secure Tab
+                                            </a>
+                                            <p className="text-[9px] text-orange-200/50 text-center font-medium leading-relaxed">
+                                                If the window above is blank, please used the button to complete your purchase securely on Whop.com
+                                            </p>
+                                        </div>
+
+                                        <button
+                                            onClick={() => {
                                                 setCheckoutSessionId(null);
                                                 setCheckoutPurchaseUrl(null);
-                                                window.location.reload();
                                             }}
-                                        />
-
-                                        {/* Overlay helper if iframe is blocked */}
-                                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none group-active:opacity-0 transition-opacity">
-                                            <p className="text-[10px] text-white/5 font-medium uppercase tracking-[0.5em]">Secure Checkout Loading</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="p-4 bg-orange-500/10 border border-orange-500/20 rounded-3xl flex flex-col items-center gap-3 backdrop-blur-xl">
-                                        <div className="flex items-center gap-2">
-                                            <span className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-pulse" />
-                                            <p className="text-[10px] text-orange-200 font-black uppercase tracking-widest">Connection blocked by browser?</p>
-                                        </div>
-                                        <a
-                                            href={checkoutPurchaseUrl || `https://whop.com/checkout/${checkoutSessionId}`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="w-full py-4 bg-orange-600 hover:bg-orange-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-3 shadow-lg shadow-orange-950/20 active:scale-[0.98]"
+                                            className="text-[10px] text-slate-500 hover:text-white transition-colors uppercase font-bold tracking-widest pt-2"
                                         >
-                                            <ShoppingBag className="w-4 h-4" />
-                                            Complete in Secure Tab
-                                        </a>
-                                        <p className="text-[9px] text-orange-200/50 text-center font-medium leading-relaxed">
-                                            If the window above is blank, please used the button to complete your purchase securely on Whop.com
-                                        </p>
-                                    </div>
-
-                                    <button
-                                        onClick={() => {
-                                            setCheckoutSessionId(null);
-                                            setCheckoutPurchaseUrl(null);
-                                        }}
-                                        className="text-[10px] text-slate-500 hover:text-white transition-colors uppercase font-bold tracking-widest pt-2"
-                                    >
-                                        ← Back to packages
-                                    </button>
-                                </div>
-                            ) : (
-                                <div className="grid grid-cols-2 gap-4 w-full">
-                                    {[
-                                        { id: 'pack_3', credits: 3, price: 6, label: 'Starter' },
-                                        { id: 'pack_5', credits: 5, price: 10, label: 'Standard' },
-                                        { id: 'pack_12', credits: 12, price: 20, label: 'Pro', popular: true },
-                                        { id: 'pack_18', credits: 18, price: 30, label: 'Agency' },
-                                    ].map((pkg) => (
-                                        <button
-                                            key={pkg.id}
-                                            onClick={() => handleBuyCredits(pkg.id)}
-                                            disabled={loadingCheckout}
-                                            className={`relative p-6 bg-white/5 border border-white/10 rounded-3xl text-left hover:border-orange-500/50 hover:bg-white/10 transition-all group ${pkg.popular ? 'border-orange-500/40 bg-orange-600/5' : ''}`}
-                                        >
-                                            {pkg.popular && (
-                                                <div className="absolute top-4 right-4 bg-orange-600 px-2 py-0.5 rounded-full">
-                                                    <span className="text-[8px] font-black text-white uppercase tracking-widest">Popular</span>
-                                                </div>
-                                            )}
-                                            <div className="flex items-center gap-3 mb-4">
-                                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${pkg.popular ? 'bg-orange-600 text-white' : 'bg-white/10 text-slate-400'}`}>
-                                                    <Zap className={`w-5 h-5 ${pkg.popular ? 'fill-white' : ''}`} />
-                                                </div>
-                                                <div>
-                                                    <h3 className="text-xs font-black text-white uppercase tracking-widest leading-none mb-1">{pkg.label}</h3>
-                                                    <span className="text-2xl font-black text-white italic tracking-tighter">${pkg.price}</span>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-xl font-black text-orange-500 italic">{pkg.credits} CREDITS</span>
-                                                <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <ChevronRight className="w-4 h-4 text-orange-500" />
-                                                </div>
-                                            </div>
+                                            ← Back to packages
                                         </button>
-                                    ))}
-                                </div>
-                            )}
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-2 gap-4 w-full">
+                                        {[
+                                            { id: 'pack_3', credits: 3, price: 6, label: 'Starter' },
+                                            { id: 'pack_5', credits: 5, price: 10, label: 'Standard' },
+                                            { id: 'pack_12', credits: 12, price: 20, label: 'Pro', popular: true },
+                                            { id: 'pack_18', credits: 18, price: 30, label: 'Agency' },
+                                        ].map((pkg) => (
+                                            <button
+                                                key={pkg.id}
+                                                onClick={() => handleBuyCredits(pkg.id)}
+                                                disabled={loadingCheckout}
+                                                className={`relative p-6 bg-white/5 border border-white/10 rounded-3xl text-left hover:border-orange-500/50 hover:bg-white/10 transition-all group ${pkg.popular ? 'border-orange-500/40 bg-orange-600/5' : ''}`}
+                                            >
+                                                {pkg.popular && (
+                                                    <div className="absolute top-4 right-4 bg-orange-600 px-2 py-0.5 rounded-full">
+                                                        <span className="text-[8px] font-black text-white uppercase tracking-widest">Popular</span>
+                                                    </div>
+                                                )}
+                                                <div className="flex items-center gap-3 mb-4">
+                                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${pkg.popular ? 'bg-orange-600 text-white' : 'bg-white/10 text-slate-400'}`}>
+                                                        <Zap className={`w-5 h-5 ${pkg.popular ? 'fill-white' : ''}`} />
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="text-xs font-black text-white uppercase tracking-widest leading-none mb-1">{pkg.label}</h3>
+                                                        <span className="text-2xl font-black text-white italic tracking-tighter">${pkg.price}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-xl font-black text-orange-500 italic">{pkg.credits} CREDITS</span>
+                                                    <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <ChevronRight className="w-4 h-4 text-orange-500" />
+                                                    </div>
+                                                </div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
 
-                            {loadingCheckout && (
-                                <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-10 rounded-[40px]">
-                                    <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
-                                </div>
-                            )}
-                        </div>
-                        <div className="p-4 bg-white/5 border-t border-white/5 text-center">
-                            <p className="text-[9px] text-slate-600 font-bold uppercase tracking-[0.2em]">Secure payments powered by Whop</p>
+                                {loadingCheckout && (
+                                    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-10 rounded-[40px]">
+                                        <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
+                                    </div>
+                                )}
+                            </div>
+                            <div className="p-4 bg-white/5 border-t border-white/5 text-center">
+                                <p className="text-[9px] text-slate-600 font-bold uppercase tracking-[0.2em]">Secure payments powered by Whop</p>
+                            </div>
                         </div>
                     </div>
                 </div>
