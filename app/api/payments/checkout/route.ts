@@ -4,10 +4,11 @@ import { headers } from "next/headers";
 import { whop } from "@/lib/whop";
 
 const PACKAGES = {
-    pack_3: { credits: 3, price: 6.0 },
-    pack_5: { credits: 5, price: 10.0 },
-    pack_12: { credits: 12, price: 20.0 },
-    pack_18: { credits: 18, price: 30.0 },
+    // TODO: Revert prices to real values after testing
+    pack_3: { credits: 3, price: 0.0 }, // Was 6.0
+    pack_5: { credits: 5, price: 0.0 }, // Was 10.0
+    pack_12: { credits: 12, price: 0.0 }, // Was 20.0
+    pack_18: { credits: 18, price: 0.0 }, // Was 30.0
 };
 
 export async function POST(req: Request) {
