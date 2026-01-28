@@ -24,14 +24,6 @@ export async function POST(req: Request) {
         const { packageId } = await req.json();
         console.log("Package ID requested:", packageId);
 
-        // Debugging: List products to see what's available
-        try {
-            const products = await whop.products.list({ company_id: process.env.WHOP_COMPANY_ID! });
-            console.log("Available Products:", JSON.stringify(products.data.map((p: any) => ({ id: p.id, name: p.name, visibility: p.visibility })), null, 2));
-        } catch (listErr) {
-            console.error("Failed to list products:", listErr);
-        }
-
         const pkg = PACKAGES[packageId as keyof typeof PACKAGES];
 
         if (!pkg) {
@@ -41,48 +33,30 @@ export async function POST(req: Request) {
 
         console.log("Creating checkout config for package:", pkg);
 
-        console.log("Creating checkout config for package (v1):", pkg);
-
         try {
-            // Switching to v1 as suggested by Whop support
-            const response = await fetch("https://api.whop.com/api/v1/checkout_configurations", {
-                method: "POST",
-                headers: {
-                    "Authorization": `Bearer ${process.env.WHOP_API_KEY}`,
-                    "Content-Type": "application/json",
+            // Use Whop SDK to create checkout configuration (Option 2)
+            // Note: The installed SDK types require company_id and currency INSIDE the plan object.
+            const checkoutConfig = await whop.checkoutConfigurations.create({
+                plan: {
+                    company_id: process.env.WHOP_COMPANY_ID || process.env.NEXT_PUBLIC_WHOP_COMPANY_ID || "",
+                    initial_price: pkg.price,
+                    plan_type: "one_time",
+                    currency: "usd",
+                    title: `Credits: ${pkg.credits}`,
                 },
-                body: JSON.stringify({
-                    company_id: process.env.WHOP_COMPANY_ID,
-                    plan: {
-                        initial_price: pkg.price,
-                        plan_type: "one_time",
-                        currency: "usd",
-                    },
-                    metadata: {
-                        userId: userId,
-                        packageId: packageId,
-                        credits: pkg.credits,
-                    },
-                }),
+                metadata: {
+                    userId: userId,
+                    packageId: packageId,
+                    credits: String(pkg.credits),
+                    // Note: ensure metadata values are strings if required by SDK, though usually flexible
+                },
             });
 
-            const data = await response.json();
-
-            if (!response.ok) {
-                console.error("--- WHOP API ERROR (v1 Fetch) ---");
-                console.error("Status:", response.status);
-                console.error("Details:", JSON.stringify(data, null, 2));
-                return NextResponse.json({
-                    error: "Whop API v1 Error",
-                    details: data
-                }, { status: response.status });
-            }
-
-            console.log("Whop Checkout Config Created Successfully (v1):", data.id);
-            return NextResponse.json({ sessionId: data.id });
-        } catch (fetchError: any) {
-            console.error("Fetch Execution Error (v1):", fetchError);
-            throw fetchError;
+            console.log("Whop Checkout Config Created Successfully:", checkoutConfig.id);
+            return NextResponse.json({ sessionId: checkoutConfig.id });
+        } catch (sdkError: any) {
+            console.error("SDK Execution Error:", sdkError);
+            throw sdkError;
         }
     } catch (error: any) {
         console.error("Checkout Route Error:", error);

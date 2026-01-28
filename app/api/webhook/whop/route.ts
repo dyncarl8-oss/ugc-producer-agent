@@ -1,37 +1,43 @@
 import { NextResponse } from "next/server";
+import { whop } from "@/lib/whop";
 import { db } from "@/lib/db";
 
 export async function POST(req: Request) {
     try {
-        const body = await req.json();
-        const { action, data } = body;
+        const bodyText = await req.text();
+        // Convert headers to a plain object for the SDK
+        const headerMap: Record<string, string> = {};
+        req.headers.forEach((value, key) => {
+            headerMap[key] = value;
+        });
 
-        // Whop webhooks send the event type in action or similar field depending on config
-        // But the guide says "Handle payment webhooks" and shows payment.succeeded
+        // Verify and unwrap the webhook payload
+        const webhookData = whop.webhooks.unwrap(bodyText, { headers: headerMap });
 
-        // Safety check for Whop Webhook Signature would be good here, 
-        // but for now let's focus on functionality if it's a trusted internal test or simple setup.
-
-        if (action === "payment.succeeded" || (body.event === "payment.succeeded")) {
-            const metadata = data?.metadata || body.data?.metadata;
-            const userId = metadata?.userId || metadata?.user_id;
-            const creditsToAdd = parseInt(metadata?.credits || "0");
+        if (webhookData.type === "payment.succeeded") {
+            const payment = webhookData.data;
+            const metadata = payment.metadata || {};
+            const userId = metadata.userId || metadata.user_id; // Check both casing conventions 
+            const creditsToAdd = parseInt(String(metadata.credits || "0"));
 
             if (userId && creditsToAdd > 0) {
-                console.log(`Updating credits for user ${userId}: +${creditsToAdd}`);
+                console.log(`[Webhook] Updating credits for user ${userId}: +${creditsToAdd}`);
 
                 await db.execute({
                     sql: "UPDATE users SET credits = credits + ? WHERE id = ?",
-                    args: [creditsToAdd, userId]
+                    args: [creditsToAdd, String(userId)]
                 });
-
-                return NextResponse.json({ success: true });
+            } else {
+                console.warn("[Webhook] Payment succeeded but missing userId or credits metadata", metadata);
             }
         }
 
-        return NextResponse.json({ success: true, message: "Webhook received but no action taken" });
+        return NextResponse.json({ success: true });
     } catch (error: any) {
         console.error("Webhook Error:", error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        // Return 200 even on error to prevent Whop from retrying if it's a semantic error, 
+        // but 500 if it's a server error might be appropriate. 
+        // For signature verification failure, it throws.
+        return NextResponse.json({ error: error.message }, { status: 400 });
     }
 }
