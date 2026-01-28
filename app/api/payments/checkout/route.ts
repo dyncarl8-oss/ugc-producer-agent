@@ -34,16 +34,18 @@ export async function POST(req: Request) {
 
         try {
             // Reverting to SDK but following the EXACT structure in the provided doc snippet
+            // Added company_id and currency back to plan as required by latest 400 error
             const checkoutConfig = await whop.checkoutConfigurations.create({
                 company_id: process.env.WHOP_COMPANY_ID!,
-                mode: "payment",
                 plan: {
+                    company_id: process.env.WHOP_COMPANY_ID!,
                     initial_price: pkg.price,
                     plan_type: "one_time",
+                    currency: "usd",
                 } as any,
                 metadata: {
-                    user_id: userId,
-                    package_id: packageId,
+                    userId: userId, // Using camelCase in metadata to be safe
+                    packageId: packageId,
                     credits: pkg.credits,
                 },
             } as any);
