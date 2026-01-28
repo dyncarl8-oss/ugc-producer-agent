@@ -809,6 +809,7 @@ const App: React.FC = () => {
                             {checkoutSessionId ? (
                                 <div className="w-full h-[600px] overflow-hidden rounded-2xl border border-white/5 bg-black/20">
                                     <WhopCheckoutEmbed
+                                        key={checkoutSessionId}
                                         sessionId={checkoutSessionId}
                                         returnUrl={typeof window !== 'undefined' ? window.location.origin + window.location.pathname : ""}
                                         onComplete={(paymentId) => {
