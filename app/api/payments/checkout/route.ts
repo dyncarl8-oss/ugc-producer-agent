@@ -1,3 +1,4 @@
+// Forces a clean redeploy after syntax error fix
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { whop } from "@/lib/whop";
