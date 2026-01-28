@@ -811,44 +811,32 @@ const App: React.FC = () => {
 
                                 {checkoutSessionId ? (
                                     <div className="w-full flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                        <div className="w-full h-[650px] overflow-hidden rounded-3xl border border-white/10 bg-black/40 shadow-2xl relative group">
-                                            {checkoutPurchaseUrl ? (
-                                                <iframe
-                                                    src={checkoutPurchaseUrl}
-                                                    className="w-full h-full border-0"
-                                                    allow="payment; publickey-credentials-get"
-                                                    sandbox="allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts allow-downloads"
-                                                />
-                                            ) : (
-                                                <WhopCheckoutEmbed
-                                                    key={checkoutSessionId}
-                                                    sessionId={checkoutSessionId}
-                                                    returnUrl={typeof window !== 'undefined' ? window.location.origin + window.location.pathname : ""}
-                                                    onComplete={(paymentId) => {
-                                                        console.log("Checkout complete! Payment ID:", paymentId);
-                                                        setShowPaymentModal(false);
-                                                        setCheckoutSessionId(null);
-                                                        setCheckoutPurchaseUrl(null);
-                                                        window.location.reload();
-                                                    }}
-                                                />
-                                            )}
-
-                                            {/* Overlay helper if iframe is blocked */}
-                                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none group-active:opacity-0 transition-opacity">
-                                                <p className="text-[10px] text-white/5 font-medium uppercase tracking-[0.5em]">Secure Checkout Loading</p>
-                                            </div>
+                                        <div className="w-full h-[700px] rounded-3xl border border-white/10 bg-black/40 shadow-2xl relative group overflow-hidden">
+                                            <WhopCheckoutEmbed
+                                                key={checkoutSessionId}
+                                                sessionId={checkoutSessionId}
+                                                returnUrl={typeof window !== 'undefined' ? window.location.origin + window.location.pathname : ""}
+                                                onComplete={(paymentId) => {
+                                                    console.log("Checkout complete! Payment ID:", paymentId);
+                                                    setShowPaymentModal(false);
+                                                    setCheckoutSessionId(null);
+                                                    setCheckoutPurchaseUrl(null);
+                                                    window.location.reload();
+                                                }}
+                                            />
                                         </div>
-                                        <button
-                                            onClick={() => {
-                                                setShowPaymentModal(false);
-                                                setCheckoutSessionId(null);
-                                                setCheckoutPurchaseUrl(null);
-                                            }}
-                                            className="text-[10px] text-slate-500 hover:text-white transition-colors uppercase font-bold tracking-widest pt-2"
-                                        >
-                                            Close
-                                        </button>
+                                        <div className="flex justify-center">
+                                            <button
+                                                onClick={() => {
+                                                    setShowPaymentModal(false);
+                                                    setCheckoutSessionId(null);
+                                                    setCheckoutPurchaseUrl(null);
+                                                }}
+                                                className="px-6 py-2 bg-white/5 hover:bg-white/10 text-[10px] text-slate-400 hover:text-white rounded-full transition-all uppercase font-bold tracking-widest border border-white/5"
+                                            >
+                                                Close Checkout
+                                            </button>
+                                        </div>
                                     </div>
                                 ) : (
                                     <div className="grid grid-cols-2 gap-4 w-full">
@@ -901,7 +889,8 @@ const App: React.FC = () => {
                         </div>
                     </div>
                 </div>
-            )}
+            )
+            }
 
             <style dangerouslySetInnerHTML={{
                 __html: `
@@ -909,7 +898,7 @@ const App: React.FC = () => {
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.05); border-radius: 10px; }
       `}} />
-        </div>
+        </div >
     );
 };
 
