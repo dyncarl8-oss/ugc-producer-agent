@@ -806,9 +806,9 @@ const App: React.FC = () => {
                                     </div>
                                     <button
                                         onClick={() => { setShowPaymentModal(false); setCheckoutSessionId(null); setCheckoutPurchaseUrl(null); }}
-                                        className="transition-colors hover:text-gray-300"
+                                        className="transition-colors text-white/20 hover:text-white"
                                     >
-                                        <X className="w-5 h-5 text-white" />
+                                        <X className="w-5 h-5" />
                                     </button>
                                 </div>
 
@@ -833,12 +833,12 @@ const App: React.FC = () => {
                         <div className="fixed inset-0 z-[200] overflow-y-auto bg-black/90 backdrop-blur-xl animate-in fade-in duration-300">
                             <div className="flex min-h-full items-center justify-center p-4 sm:p-6 py-12">
                                 <div className="bg-[#0c0c12] border border-white/10 rounded-[40px] w-full max-w-xl shadow-2xl relative overflow-hidden">
-                                    <div className="p-8 flex flex-col items-center text-center relative">
+                                    <div className="p-8 pb-4 flex flex-col items-center text-center relative">
                                         <button
                                             onClick={() => { setShowPaymentModal(false); setCheckoutSessionId(null); }}
-                                            className="absolute top-6 right-6 w-10 h-10 bg-white/5 hover:bg-white/10 rounded-full flex items-center justify-center border border-white/10 transition-all"
+                                            className="absolute top-6 right-6 transition-colors text-white/20 hover:text-white"
                                         >
-                                            <X className="w-4 h-4 text-white" />
+                                            <X className="w-5 h-5" />
                                         </button>
 
                                         <div className="w-16 h-16 bg-orange-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-orange-500/20">
