@@ -46,7 +46,7 @@ export async function POST(req: Request) {
                     package_id: packageId,
                     credits: pkg.credits,
                 },
-            });
+            } as any);
 
             console.log("Whop Checkout Config Created Successfully:", checkoutConfig.id);
             return NextResponse.json({ sessionId: checkoutConfig.id });
