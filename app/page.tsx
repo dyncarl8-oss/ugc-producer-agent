@@ -7,6 +7,7 @@ import { AdVibe, AspectRatio, Config, GenerationStatus } from '../types';
 import { VeoService, Shot } from '../services/veoService';
 import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { fetchFile, toBlobURL } from '@ffmpeg/util';
+import { WhopCheckoutEmbed } from "@whop/checkout/react";
 
 
 
@@ -45,6 +46,9 @@ const App: React.FC = () => {
     const [ffmpegLoaded, setFfmpegLoaded] = useState(false);
     const [selectedProject, setSelectedProject] = useState<any | null>(null);
     const [modalVideoUrl, setModalVideoUrl] = useState<string | null>(null);
+    const [showPaymentModal, setShowPaymentModal] = useState(false);
+    const [checkoutSessionId, setCheckoutSessionId] = useState<string | null>(null);
+    const [loadingCheckout, setLoadingCheckout] = useState(false);
 
     const params = useParams();
     const companyId = params?.companyId as string || '';
@@ -301,6 +305,24 @@ const App: React.FC = () => {
         document.body.removeChild(a);
     };
 
+    const handleBuyCredits = async (packageId: string) => {
+        setLoadingCheckout(true);
+        try {
+            const response = await fetch('/api/payments/checkout', {
+                method: 'POST',
+                body: JSON.stringify({ packageId })
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setCheckoutSessionId(data.sessionId);
+            }
+        } catch (e) {
+            console.error("Failed to create checkout session", e);
+        } finally {
+            setLoadingCheckout(false);
+        }
+    };
+
 
 
     if (loadingAuth) {
@@ -369,7 +391,13 @@ const App: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Top Up Credits Button Removed */}
+                        <button
+                            onClick={() => setShowPaymentModal(true)}
+                            className="w-full py-2.5 bg-orange-600/10 border border-orange-500/20 rounded-xl flex items-center justify-center gap-2 hover:bg-orange-600/20 transition-all group"
+                        >
+                            <Plus className="w-3.5 h-3.5 text-orange-500 group-hover:scale-110 transition-transform" />
+                            <span className="text-[10px] font-black text-orange-200 uppercase tracking-widest">Top Up Credits</span>
+                        </button>
                     </div>
                 )}
 
@@ -754,6 +782,89 @@ const App: React.FC = () => {
 
 
 
+
+            {/* Payment Modal */}
+            {showPaymentModal && (
+                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl animate-in fade-in duration-300">
+                    <div className="bg-[#0c0c12] border border-white/10 rounded-[40px] w-full max-w-2xl overflow-hidden shadow-2xl">
+                        <div className="p-8 flex flex-col items-center text-center relative">
+                            <button
+                                onClick={() => { setShowPaymentModal(false); setCheckoutSessionId(null); }}
+                                className="absolute top-6 right-6 w-10 h-10 bg-white/5 hover:bg-white/10 rounded-full flex items-center justify-center border border-white/10 transition-all"
+                            >
+                                <RefreshCcw className="w-4 h-4 text-white rotate-45" />
+                            </button>
+
+                            <div className="w-16 h-16 bg-orange-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-orange-500/20">
+                                <Zap className="w-8 h-8 text-white fill-white" />
+                            </div>
+                            <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter mb-2">Fuel Your Production</h2>
+                            <p className="text-slate-500 text-sm font-medium mb-10 max-w-md">Select a credit package to start generating high-converting viral UGC ads.</p>
+
+                            {checkoutSessionId ? (
+                                <div className="w-full h-[500px] overflow-hidden rounded-2xl border border-white/5 bg-black/20">
+                                    <WhopCheckoutEmbed
+                                        sessionId={checkoutSessionId}
+                                        returnUrl={window.location.href}
+                                        onComplete={() => {
+                                            setShowPaymentModal(false);
+                                            setCheckoutSessionId(null);
+                                            // Refresh user data to show new credits
+                                            window.location.reload();
+                                        }}
+                                    />
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-2 gap-4 w-full">
+                                    {[
+                                        { id: 'pack_3', credits: 3, price: 6, label: 'Starter' },
+                                        { id: 'pack_5', credits: 5, price: 10, label: 'Standard' },
+                                        { id: 'pack_12', credits: 12, price: 20, label: 'Pro', popular: true },
+                                        { id: 'pack_18', credits: 18, price: 30, label: 'Agency' },
+                                    ].map((pkg) => (
+                                        <button
+                                            key={pkg.id}
+                                            onClick={() => handleBuyCredits(pkg.id)}
+                                            disabled={loadingCheckout}
+                                            className={`relative p-6 bg-white/5 border border-white/10 rounded-3xl text-left hover:border-orange-500/50 hover:bg-white/10 transition-all group ${pkg.popular ? 'border-orange-500/40 bg-orange-600/5' : ''}`}
+                                        >
+                                            {pkg.popular && (
+                                                <div className="absolute top-4 right-4 bg-orange-600 px-2 py-0.5 rounded-full">
+                                                    <span className="text-[8px] font-black text-white uppercase tracking-widest">Popular</span>
+                                                </div>
+                                            )}
+                                            <div className="flex items-center gap-3 mb-4">
+                                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${pkg.popular ? 'bg-orange-600 text-white' : 'bg-white/10 text-slate-400'}`}>
+                                                    <Zap className={`w-5 h-5 ${pkg.popular ? 'fill-white' : ''}`} />
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-xs font-black text-white uppercase tracking-widest leading-none mb-1">{pkg.label}</h3>
+                                                    <span className="text-2xl font-black text-white italic tracking-tighter">${pkg.price}</span>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-xl font-black text-orange-500 italic">{pkg.credits} CREDITS</span>
+                                                <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <ChevronRight className="w-4 h-4 text-orange-500" />
+                                                </div>
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+
+                            {loadingCheckout && (
+                                <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-10 rounded-[40px]">
+                                    <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
+                                </div>
+                            )}
+                        </div>
+                        <div className="p-4 bg-white/5 border-t border-white/5 text-center">
+                            <p className="text-[9px] text-slate-600 font-bold uppercase tracking-[0.2em]">Secure payments powered by Whop</p>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <style dangerouslySetInnerHTML={{
                 __html: `
