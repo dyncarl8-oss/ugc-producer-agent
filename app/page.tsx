@@ -794,9 +794,26 @@ const App: React.FC = () => {
             {showPaymentModal && (
                 <>
                     {checkoutSessionId ? (
-                        <div className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-xl animate-in fade-in duration-300 flex flex-col">
-                            <div className="flex-1 w-full h-full relative p-4 md:p-10 flex items-center justify-center">
-                                <div className="w-full max-w-4xl h-full rounded-2xl overflow-hidden bg-white shadow-2xl">
+                        <div className="fixed inset-0 z-[200] bg-black/90 backdrop-blur-xl animate-in fade-in duration-300 flex items-center justify-center p-4">
+                            <div className="w-full max-w-md bg-white rounded-3xl overflow-hidden shadow-2xl flex flex-col h-[85vh] animate-in zoom-in-95 duration-300">
+                                {/* Header */}
+                                <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-white shrink-0">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-8 h-8 bg-orange-600 rounded-lg flex items-center justify-center">
+                                            <Zap className="w-4 h-4 text-white fill-white" />
+                                        </div>
+                                        <span className="text-sm font-black text-gray-900 uppercase tracking-wide">Secure Checkout</span>
+                                    </div>
+                                    <button
+                                        onClick={() => { setShowPaymentModal(false); setCheckoutSessionId(null); setCheckoutPurchaseUrl(null); }}
+                                        className="w-8 h-8 bg-gray-50 hover:bg-gray-100 rounded-full flex items-center justify-center transition-colors border border-gray-100"
+                                    >
+                                        <RefreshCcw className="w-4 h-4 text-gray-500 rotate-45" />
+                                    </button>
+                                </div>
+
+                                {/* Embed Container */}
+                                <div className="flex-1 bg-gray-50 relative">
                                     <WhopCheckoutEmbed
                                         key={checkoutSessionId}
                                         sessionId={checkoutSessionId}
@@ -810,18 +827,6 @@ const App: React.FC = () => {
                                         }}
                                     />
                                 </div>
-                            </div>
-                            <div className="p-4 flex justify-center pb-8">
-                                <button
-                                    onClick={() => {
-                                        setShowPaymentModal(false);
-                                        setCheckoutSessionId(null);
-                                        setCheckoutPurchaseUrl(null);
-                                    }}
-                                    className="px-8 py-3 bg-white/10 hover:bg-white/20 text-white rounded-full font-bold uppercase tracking-widest text-xs transition-all border border-white/10"
-                                >
-                                    Close Checkout
-                                </button>
                             </div>
                         </div>
                     ) : (
