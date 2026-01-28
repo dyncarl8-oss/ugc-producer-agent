@@ -11,11 +11,15 @@ const nextConfig = {
                 headers: [
                     {
                         key: 'Cross-Origin-Embedder-Policy',
-                        value: 'unsafe-none',
+                        value: 'credentialless',
                     },
                     {
                         key: 'Cross-Origin-Opener-Policy',
-                        value: 'unsafe-none',
+                        value: 'same-origin-allow-popups',
+                    },
+                    {
+                        key: 'Cross-Origin-Resource-Policy',
+                        value: 'cross-origin',
                     },
                 ],
             },

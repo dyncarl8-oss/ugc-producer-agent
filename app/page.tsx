@@ -48,6 +48,7 @@ const App: React.FC = () => {
     const [modalVideoUrl, setModalVideoUrl] = useState<string | null>(null);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [checkoutSessionId, setCheckoutSessionId] = useState<string | null>(null);
+    const [checkoutPurchaseUrl, setCheckoutPurchaseUrl] = useState<string | null>(null);
     const [loadingCheckout, setLoadingCheckout] = useState(false);
 
     const params = useParams();
@@ -317,6 +318,7 @@ const App: React.FC = () => {
                 const data = await response.json();
                 console.log("Checkout Session ID received:", data.sessionId);
                 setCheckoutSessionId(data.sessionId);
+                setCheckoutPurchaseUrl(data.purchaseUrl);
             } else {
                 const err = await response.json();
                 console.error("Checkout API Error:", err);
@@ -807,19 +809,33 @@ const App: React.FC = () => {
                             <p className="text-slate-500 text-sm font-medium mb-10 max-w-md">Select a credit package to start generating high-converting viral UGC ads.</p>
 
                             {checkoutSessionId ? (
-                                <div className="w-full h-[600px] overflow-hidden rounded-2xl border border-white/5 bg-black/20">
-                                    <WhopCheckoutEmbed
-                                        key={checkoutSessionId}
-                                        sessionId={checkoutSessionId}
-                                        returnUrl={typeof window !== 'undefined' ? window.location.origin + window.location.pathname : ""}
-                                        onComplete={(paymentId) => {
-                                            console.log("Checkout complete! Payment ID:", paymentId);
-                                            setShowPaymentModal(false);
-                                            setCheckoutSessionId(null);
-                                            // Refresh user data to show new credits
-                                            window.location.reload();
-                                        }}
-                                    />
+                                <div className="w-full flex flex-col gap-4">
+                                    <div className="w-full h-[550px] overflow-hidden rounded-2xl border border-white/5 bg-black/20 relative">
+                                        <WhopCheckoutEmbed
+                                            key={checkoutSessionId}
+                                            sessionId={checkoutSessionId}
+                                            returnUrl={typeof window !== 'undefined' ? window.location.origin + window.location.pathname : ""}
+                                            onComplete={(paymentId) => {
+                                                console.log("Checkout complete! Payment ID:", paymentId);
+                                                setShowPaymentModal(false);
+                                                setCheckoutSessionId(null);
+                                                setCheckoutPurchaseUrl(null);
+                                                window.location.reload();
+                                            }}
+                                        />
+                                    </div>
+                                    <div className="p-4 bg-orange-600/10 border border-orange-500/20 rounded-2xl flex flex-col items-center gap-2">
+                                        <p className="text-[10px] text-orange-200 font-bold uppercase tracking-widest">Can't see the checkout?</p>
+                                        <a
+                                            href={checkoutPurchaseUrl || `https://whop.com/checkout/${checkoutSessionId}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="px-6 py-2 bg-orange-600 text-white rounded-full font-black text-[10px] uppercase tracking-tighter hover:bg-orange-500 transition-all flex items-center gap-2"
+                                        >
+                                            <ShoppingBag className="w-3 h-3" />
+                                            Open in New Tab
+                                        </a>
+                                    </div>
                                 </div>
                             ) : (
                                 <div className="grid grid-cols-2 gap-4 w-full">

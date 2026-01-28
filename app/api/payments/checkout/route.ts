@@ -51,7 +51,10 @@ export async function POST(req: Request) {
             });
 
             console.log("Whop Checkout Config Created Successfully:", checkoutConfig.id);
-            return NextResponse.json({ sessionId: checkoutConfig.id });
+            return NextResponse.json({
+                sessionId: checkoutConfig.id,
+                purchaseUrl: (checkoutConfig as any).purchase_url
+            });
         } catch (sdkError: any) {
             console.error("SDK Execution Error:", sdkError);
             throw sdkError;
