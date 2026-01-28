@@ -794,7 +794,7 @@ const App: React.FC = () => {
             {showPaymentModal && (
                 <>
                     {checkoutSessionId ? (
-                        <div className="fixed inset-0 z-[200] bg-black/90 backdrop-blur-xl animate-in fade-in duration-300 flex items-center justify-center p-4">
+                        <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm animate-in fade-in duration-300 flex items-center justify-center p-4">
                             <div className="w-full max-w-md bg-[#0c0c12] border border-white/10 rounded-3xl overflow-hidden shadow-2xl flex flex-col h-[85vh] animate-in zoom-in-95 duration-300">
                                 {/* Header */}
                                 <div className="px-6 py-4 border-b border-white/5 flex justify-between items-center bg-[#0c0c12] shrink-0">
@@ -802,7 +802,7 @@ const App: React.FC = () => {
                                         <div className="w-8 h-8 bg-orange-600 rounded-lg flex items-center justify-center">
                                             <Zap className="w-4 h-4 text-white fill-white" />
                                         </div>
-                                        <span className="text-sm font-black text-white uppercase tracking-wide">Fuel Your Production</span>
+                                        <span className="text-sm font-black text-white uppercase tracking-wide">Secure Checkout</span>
                                     </div>
                                     <button
                                         onClick={() => { setShowPaymentModal(false); setCheckoutSessionId(null); setCheckoutPurchaseUrl(null); }}
