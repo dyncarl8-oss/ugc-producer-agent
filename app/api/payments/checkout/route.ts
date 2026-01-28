@@ -32,39 +32,48 @@ export async function POST(req: Request) {
 
         console.log("Creating checkout config for package:", pkg);
 
+        console.log("Creating checkout config for package (v1):", pkg);
+
         try {
-            // REMOVED top-level company_id as it triggers "Cannot provide company_id for this configuration"
-            // But KEEPING it in plan as GraphQL requires it there.
-            const checkoutConfig = await whop.checkoutConfigurations.create({
-                plan: {
-                    company_id: process.env.WHOP_COMPANY_ID!,
-                    companyId: process.env.WHOP_COMPANY_ID!,
-                    initial_price: pkg.price,
-                    initialPrice: pkg.price,
-                    plan_type: "one_time",
-                    planType: "one_time",
-                    currency: "usd",
-                } as any,
-                metadata: {
-                    userId: userId,
-                    packageId: packageId,
-                    credits: pkg.credits,
+            // Switching to v1 as suggested by Whop support
+            const response = await fetch("https://api.whop.com/api/v1/checkout_configurations", {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${process.env.WHOP_API_KEY}`,
+                    "Content-Type": "application/json",
                 },
-            } as any);
+                body: JSON.stringify({
+                    company_id: process.env.WHOP_COMPANY_ID,
+                    plan: {
+                        initial_price: pkg.price,
+                        plan_type: "one_time",
+                        currency: "usd",
+                    },
+                    metadata: {
+                        userId: userId,
+                        packageId: packageId,
+                        credits: pkg.credits,
+                    },
+                }),
+            });
 
-            console.log("Whop Checkout Config Created Successfully:", checkoutConfig.id);
-            return NextResponse.json({ sessionId: checkoutConfig.id });
-        } catch (sdkError: any) {
-            console.error("--- WHOP SDK ERROR ---");
-            console.error("Status:", sdkError.status);
-            console.error("Message:", sdkError.message);
-            console.error("Details:", JSON.stringify(sdkError.data || sdkError, null, 2));
+            const data = await response.json();
 
-            return NextResponse.json({
-                error: "Whop SDK Error",
-                message: sdkError.message,
-                details: sdkError.data || null
-            }, { status: sdkError.status || 500 });
+            if (!response.ok) {
+                console.error("--- WHOP API ERROR (v1 Fetch) ---");
+                console.error("Status:", response.status);
+                console.error("Details:", JSON.stringify(data, null, 2));
+                return NextResponse.json({
+                    error: "Whop API v1 Error",
+                    details: data
+                }, { status: response.status });
+            }
+
+            console.log("Whop Checkout Config Created Successfully (v1):", data.id);
+            return NextResponse.json({ sessionId: data.id });
+        } catch (fetchError: any) {
+            console.error("Fetch Execution Error (v1):", fetchError);
+            throw fetchError;
         }
     } catch (error: any) {
         console.error("Checkout Route Error:", error);
