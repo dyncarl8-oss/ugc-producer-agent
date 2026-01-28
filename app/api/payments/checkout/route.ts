@@ -33,10 +33,9 @@ export async function POST(req: Request) {
         console.log("Creating checkout config for package:", pkg);
 
         try {
-            // Reverting to SDK but following the EXACT structure in the provided doc snippet
-            // Added company_id and currency back to plan as required by latest 400 error
+            // REMOVED top-level company_id as it triggers "Cannot provide company_id for this configuration"
+            // But KEEPING it in plan as GraphQL requires it there.
             const checkoutConfig = await whop.checkoutConfigurations.create({
-                company_id: process.env.WHOP_COMPANY_ID!,
                 plan: {
                     company_id: process.env.WHOP_COMPANY_ID!,
                     companyId: process.env.WHOP_COMPANY_ID!,
