@@ -13,6 +13,9 @@ export default function RootLayout({
 }) {
     return (
         <html lang="en">
+            <head>
+                <meta httpEquiv="Content-Security-Policy" content="frame-src 'self' https://whop.com https://*.whop.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://whop.com https://*.whop.com;" />
+            </head>
             <body>{children}</body>
         </html>
     );
