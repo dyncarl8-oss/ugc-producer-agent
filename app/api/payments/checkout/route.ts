@@ -39,12 +39,15 @@ export async function POST(req: Request) {
                 company_id: process.env.WHOP_COMPANY_ID!,
                 plan: {
                     company_id: process.env.WHOP_COMPANY_ID!,
+                    companyId: process.env.WHOP_COMPANY_ID!,
                     initial_price: pkg.price,
+                    initialPrice: pkg.price,
                     plan_type: "one_time",
+                    planType: "one_time",
                     currency: "usd",
                 } as any,
                 metadata: {
-                    userId: userId, // Using camelCase in metadata to be safe
+                    userId: userId,
                     packageId: packageId,
                     credits: pkg.credits,
                 },
