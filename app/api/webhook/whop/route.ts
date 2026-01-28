@@ -14,7 +14,7 @@ export async function POST(req: Request) {
 
         if (action === "payment.succeeded" || (body.event === "payment.succeeded")) {
             const metadata = data?.metadata || body.data?.metadata;
-            const userId = metadata?.user_id;
+            const userId = metadata?.userId || metadata?.user_id;
             const creditsToAdd = parseInt(metadata?.credits || "0");
 
             if (userId && creditsToAdd > 0) {
