@@ -33,45 +33,34 @@ export async function POST(req: Request) {
         console.log("Creating checkout config for package:", pkg);
 
         try {
-            const response = await fetch("https://api.whop.com/api/v2/checkout_configurations", {
-                method: "POST",
-                headers: {
-                    "Authorization": `Bearer ${process.env.WHOP_API_KEY}`,
-                    "Content-Type": "application/json",
+            // Reverting to SDK but following the EXACT structure in the provided doc snippet
+            const checkoutConfig = await whop.checkoutConfigurations.create({
+                company_id: process.env.WHOP_COMPANY_ID!,
+                mode: "payment",
+                plan: {
+                    initial_price: pkg.price,
+                    plan_type: "one_time",
+                } as any,
+                metadata: {
+                    user_id: userId,
+                    package_id: packageId,
+                    credits: pkg.credits,
                 },
-                body: JSON.stringify({
-                    company_id: process.env.WHOP_COMPANY_ID,
-                    plan: {
-                        company_id: process.env.WHOP_COMPANY_ID,
-                        initial_price: pkg.price,
-                        plan_type: "one_time",
-                        currency: "usd",
-                    },
-                    metadata: {
-                        user_id: userId,
-                        package_id: packageId,
-                        credits: pkg.credits,
-                    },
-                }),
             });
 
-            const data = await response.json();
+            console.log("Whop Checkout Config Created Successfully:", checkoutConfig.id);
+            return NextResponse.json({ sessionId: checkoutConfig.id });
+        } catch (sdkError: any) {
+            console.error("--- WHOP SDK ERROR ---");
+            console.error("Status:", sdkError.status);
+            console.error("Message:", sdkError.message);
+            console.error("Details:", JSON.stringify(sdkError.data || sdkError, null, 2));
 
-            if (!response.ok) {
-                console.error("--- WHOP API ERROR (Raw Fetch) ---");
-                console.error("Status:", response.status);
-                console.error("Details:", JSON.stringify(data, null, 2));
-                return NextResponse.json({
-                    error: "Whop API Error",
-                    details: data
-                }, { status: response.status });
-            }
-
-            console.log("Whop Checkout Config Created Successfully:", data.id);
-            return NextResponse.json({ sessionId: data.id });
-        } catch (fetchError: any) {
-            console.error("Fetch Execution Error:", fetchError);
-            throw fetchError;
+            return NextResponse.json({
+                error: "Whop SDK Error",
+                message: sdkError.message,
+                details: sdkError.data || null
+            }, { status: sdkError.status || 500 });
         }
     } catch (error: any) {
         console.error("Checkout Route Error:", error);
