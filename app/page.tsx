@@ -795,20 +795,20 @@ const App: React.FC = () => {
                 <>
                     {checkoutSessionId ? (
                         <div className="fixed inset-0 z-[200] bg-black/90 backdrop-blur-xl animate-in fade-in duration-300 flex items-center justify-center p-4">
-                            <div className="w-full max-w-md bg-white rounded-3xl overflow-hidden shadow-2xl flex flex-col h-[85vh] animate-in zoom-in-95 duration-300">
+                            <div className="w-full max-w-md bg-[#0c0c12] border border-white/10 rounded-3xl overflow-hidden shadow-2xl flex flex-col h-[85vh] animate-in zoom-in-95 duration-300">
                                 {/* Header */}
-                                <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-white shrink-0">
+                                <div className="px-6 py-4 border-b border-white/5 flex justify-between items-center bg-[#0c0c12] shrink-0">
                                     <div className="flex items-center gap-2">
                                         <div className="w-8 h-8 bg-orange-600 rounded-lg flex items-center justify-center">
                                             <Zap className="w-4 h-4 text-white fill-white" />
                                         </div>
-                                        <span className="text-sm font-black text-gray-900 uppercase tracking-wide">Secure Checkout</span>
+                                        <span className="text-sm font-black text-white uppercase tracking-wide">Fuel Your Production</span>
                                     </div>
                                     <button
                                         onClick={() => { setShowPaymentModal(false); setCheckoutSessionId(null); setCheckoutPurchaseUrl(null); }}
-                                        className="w-8 h-8 bg-gray-50 hover:bg-gray-100 rounded-full flex items-center justify-center transition-colors border border-gray-100"
+                                        className="w-8 h-8 bg-white/5 hover:bg-white/10 rounded-full flex items-center justify-center transition-colors border border-white/5"
                                     >
-                                        <RefreshCcw className="w-4 h-4 text-gray-500 rotate-45" />
+                                        <X className="w-4 h-4 text-white" />
                                     </button>
                                 </div>
 
