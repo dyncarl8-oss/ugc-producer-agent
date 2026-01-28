@@ -35,11 +35,10 @@ export async function POST(req: Request) {
             const checkoutConfig = await whop.checkoutConfigurations.create({
                 company_id: process.env.WHOP_COMPANY_ID!,
                 plan: {
-                    company_id: process.env.WHOP_COMPANY_ID!,
                     initial_price: pkg.price,
-                    plan_type: "one_time",
+                    plan_type: "one_time" as any,
                     currency: "usd",
-                },
+                } as any,
                 metadata: {
                     user_id: userId,
                     package_id: packageId,
