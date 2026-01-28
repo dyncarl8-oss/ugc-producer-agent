@@ -35,20 +35,18 @@ export async function POST(req: Request) {
 
         try {
             // Use Whop SDK to create checkout configuration (Option 2)
-            // Note: The installed SDK types require company_id and currency INSIDE the plan object.
+            // Following exact guide: https://docs.whop.com/developer/guides/accept-payments#step-1:-create-a-checkout-configuration
             const checkoutConfig = await whop.checkoutConfigurations.create({
                 plan: {
-                    company_id: process.env.WHOP_COMPANY_ID || process.env.NEXT_PUBLIC_WHOP_COMPANY_ID || "",
+                    company_id: process.env.WHOP_COMPANY_ID || "",
                     initial_price: pkg.price,
                     plan_type: "one_time",
                     currency: "usd",
-                    title: `Credits: ${pkg.credits}`,
                 },
                 metadata: {
                     userId: userId,
                     packageId: packageId,
                     credits: String(pkg.credits),
-                    // Note: ensure metadata values are strings if required by SDK, though usually flexible
                 },
             });
 

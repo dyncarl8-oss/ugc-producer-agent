@@ -807,12 +807,12 @@ const App: React.FC = () => {
                             <p className="text-slate-500 text-sm font-medium mb-10 max-w-md">Select a credit package to start generating high-converting viral UGC ads.</p>
 
                             {checkoutSessionId ? (
-                                <div className="w-full h-[500px] overflow-hidden rounded-2xl border border-white/5 bg-black/20">
+                                <div className="w-full h-[600px] overflow-hidden rounded-2xl border border-white/5 bg-black/20">
                                     <WhopCheckoutEmbed
                                         sessionId={checkoutSessionId}
                                         returnUrl={typeof window !== 'undefined' ? window.location.origin + window.location.pathname : ""}
-                                        onComplete={() => {
-                                            console.log("Checkout complete!");
+                                        onComplete={(paymentId) => {
+                                            console.log("Checkout complete! Payment ID:", paymentId);
                                             setShowPaymentModal(false);
                                             setCheckoutSessionId(null);
                                             // Refresh user data to show new credits
