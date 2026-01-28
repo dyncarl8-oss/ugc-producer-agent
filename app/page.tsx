@@ -813,7 +813,7 @@ const App: React.FC = () => {
                                 </div>
 
                                 {/* Embed Container */}
-                                <div className="flex-1 bg-gray-50 relative">
+                                <div className="flex-1 bg-gray-50 relative overflow-y-auto light-scrollbar">
                                     <WhopCheckoutEmbed
                                         key={checkoutSessionId}
                                         sessionId={checkoutSessionId}
@@ -905,6 +905,11 @@ const App: React.FC = () => {
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.05); border-radius: 10px; }
+        
+        .light-scrollbar::-webkit-scrollbar { width: 4px; }
+        .light-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .light-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 10px; }
+        .light-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.3); }
       `}} />
         </div >
     );
