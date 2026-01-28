@@ -312,9 +312,14 @@ const App: React.FC = () => {
                 method: 'POST',
                 body: JSON.stringify({ packageId })
             });
+            console.log("Checkout API Response Status:", response.status);
             if (response.ok) {
                 const data = await response.json();
+                console.log("Checkout Session ID received:", data.sessionId);
                 setCheckoutSessionId(data.sessionId);
+            } else {
+                const err = await response.json();
+                console.error("Checkout API Error:", err);
             }
         } catch (e) {
             console.error("Failed to create checkout session", e);
@@ -803,10 +808,12 @@ const App: React.FC = () => {
 
                             {checkoutSessionId ? (
                                 <div className="w-full h-[500px] overflow-hidden rounded-2xl border border-white/5 bg-black/20">
+                                    {console.log("Rendering WhopCheckoutEmbed with session:", checkoutSessionId)}
                                     <WhopCheckoutEmbed
                                         sessionId={checkoutSessionId}
-                                        returnUrl={window.location.href}
+                                        returnUrl={typeof window !== 'undefined' ? window.location.origin + window.location.pathname : ""}
                                         onComplete={() => {
+                                            console.log("Checkout complete!");
                                             setShowPaymentModal(false);
                                             setCheckoutSessionId(null);
                                             // Refresh user data to show new credits
