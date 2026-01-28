@@ -23,6 +23,15 @@ export async function POST(req: Request) {
 
         const { packageId } = await req.json();
         console.log("Package ID requested:", packageId);
+
+        // Debugging: List products to see what's available
+        try {
+            const products = await whop.products.list({ company_id: process.env.WHOP_COMPANY_ID! });
+            console.log("Available Products:", JSON.stringify(products.data.map((p: any) => ({ id: p.id, name: p.name, visibility: p.visibility })), null, 2));
+        } catch (listErr) {
+            console.error("Failed to list products:", listErr);
+        }
+
         const pkg = PACKAGES[packageId as keyof typeof PACKAGES];
 
         if (!pkg) {
