@@ -808,7 +808,6 @@ const App: React.FC = () => {
 
                             {checkoutSessionId ? (
                                 <div className="w-full h-[500px] overflow-hidden rounded-2xl border border-white/5 bg-black/20">
-                                    {console.log("Rendering WhopCheckoutEmbed with session:", checkoutSessionId)}
                                     <WhopCheckoutEmbed
                                         sessionId={checkoutSessionId}
                                         returnUrl={typeof window !== 'undefined' ? window.location.origin + window.location.pathname : ""}
