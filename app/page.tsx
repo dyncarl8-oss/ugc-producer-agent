@@ -158,6 +158,7 @@ const App: React.FC = () => {
             await ffmpeg.deleteFile('concat_list.txt');
             await ffmpeg.deleteFile('output.mp4');
 
+            return url;
         } catch (error) {
             console.error('FFmpeg Error:', error);
             throw new Error('Failed to stitch videos together.');
@@ -313,12 +314,12 @@ const App: React.FC = () => {
 
             // 3. Final Stitching
             setStatus({ stage: 'generating', message: 'Merging final cinematic cut...', progress: 95 });
-            await concatenateVideos(completedVideoUrls);
+            const finalBlobUrl = await concatenateVideos(completedVideoUrls);
 
             // Upload the final video to permanent storage
-            if (masterVideoUrl) {
+            if (finalBlobUrl) {
                 try {
-                    const permanentUrl = await uploadVideo(masterVideoUrl, `final-ad-${newCampaignId}.mp4`);
+                    const permanentUrl = await uploadVideo(finalBlobUrl, `final-ad-${newCampaignId}.mp4`);
                     // Finish campaign in DB with the REAL URL
                     await fetch('/api/campaign', {
                         method: 'POST',
@@ -833,8 +834,8 @@ const App: React.FC = () => {
                                         <AlertCircle className="w-8 h-8 text-white" />
                                     </div>
                                     <div>
-                                        <h3 className="text-white font-bold text-[10px] uppercase tracking-widest">Video Unavailable</h3>
-                                        <p className="text-slate-500 text-[9px] mt-1 italic">Historical session data is restricted to live previews only.</p>
+                                        <h3 className="text-white font-bold text-[10px] uppercase tracking-widest">Video Not Ready</h3>
+                                        <p className="text-slate-500 text-[9px] mt-1 italic">This generation may have been interrupted or the file is still uploading.</p>
                                     </div>
                                     <button
                                         onClick={() => setSelectedProject(null)}
