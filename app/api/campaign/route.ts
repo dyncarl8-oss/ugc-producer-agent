@@ -37,16 +37,6 @@ export async function POST(req: Request) {
                 args: [campaignId, userId, data.vibe, data.productB64, data.avatarB64, 'pending']
             });
 
-            // Trigger background generation (Small payload)
-            await inngest.send({
-                name: "campaign/generate",
-                data: {
-                    campaignId,
-                    userId,
-                    vibe: data.vibe
-                }
-            });
-
             return NextResponse.json({ success: true, newCredits: (user.rows[0].credits as number) - 1 });
         }
 
