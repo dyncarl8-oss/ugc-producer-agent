@@ -23,20 +23,20 @@ export async function GET() {
         }
 
         // Tier 1: First 2 generations (8 shots)
-        if ((stats.fast_usage as number) < 8) {
-            return NextResponse.json({
-                allowed: true,
-                model: 'veo-3.1-fast-generate-preview',
-                remainingInTier: 8 - (stats.fast_usage as number)
-            });
-        }
-
-        // Tier 2: Next 2 generations (8 shots)
         if ((stats.preview_usage as number) < 8) {
             return NextResponse.json({
                 allowed: true,
                 model: 'veo-3.1-generate-preview',
                 remainingInTier: 8 - (stats.preview_usage as number)
+            });
+        }
+
+        // Tier 2: Next 2 generations (8 shots)
+        if ((stats.fast_usage as number) < 8) {
+            return NextResponse.json({
+                allowed: true,
+                model: 'veo-3.1-fast-generate-preview',
+                remainingInTier: 8 - (stats.fast_usage as number)
             });
         }
 
