@@ -14,7 +14,7 @@ export async function POST(req: Request) {
 
         // Retrieve payment details from Whop
         // Using the SDK to fetch payment status
-        const payment = await whop.payments.retrieve({ id: paymentId });
+        const payment = await whop.payments.retrieve(paymentId);
 
         console.log(`[Verify] Payment Status: ${payment.status}`);
 
