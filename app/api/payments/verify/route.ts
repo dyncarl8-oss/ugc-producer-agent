@@ -45,13 +45,19 @@ export async function POST(req: Request) {
                 isValid = (payment.status === "paid" || payment.paid === true);
             } else {
                 // If it's a plan_ or membership_, check active memberships
-                const memberships = await whop.memberships.list({ user_ids: [userId] });
+                const memberships = await whop.memberships.list({
+                    user_ids: [userId],
+                    company_id: process.env.WHOP_COMPANY_ID
+                });
                 isValid = memberships.data.some((m: any) => m.id === paymentId || m.plan_id === paymentId);
             }
         } catch (e) {
             console.error("[Verify] Whop API Check failed, using fallback:", e);
             // Fallback for tricky IDs: Check if user has ANY active membership
-            const memberships = await whop.memberships.list({ user_ids: [userId] });
+            const memberships = await whop.memberships.list({
+                user_ids: [userId],
+                company_id: process.env.WHOP_COMPANY_ID
+            });
             isValid = memberships.data.length > 0;
         }
 
