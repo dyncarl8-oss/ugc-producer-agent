@@ -117,7 +117,7 @@ export const generateAdCampaign = inngest.createFunction(
                 while (!operation.done) {
                     await new Promise(resolve => setTimeout(resolve, 65000));
                     operation = await ai.operations.getVideosOperation({ operation });
-                    if (operation.error) throw new Error(operation.error.message);
+                    if (operation.error) throw new Error(String(operation.error.message || "Unknown error during video generation"));
                 }
 
                 const videoUri = operation.response?.generatedVideos?.[0]?.video?.uri;
