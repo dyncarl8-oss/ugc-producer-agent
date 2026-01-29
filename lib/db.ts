@@ -72,9 +72,15 @@ export const initDb = async () => {
   `);
 
   try {
-    await db.execute(`ALTER TABLE shots ADD COLUMN video_url TEXT`);
-  } catch (e) { /* Column likely already exists */ }
-  try {
     await db.execute(`ALTER TABLE shots ADD COLUMN ref_image TEXT`);
   } catch (e) { /* Column likely already exists */ }
+
+  // System Stats table for Daily Quota
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS system_stats (
+      date TEXT PRIMARY KEY,
+      fast_usage INTEGER DEFAULT 0,
+      preview_usage INTEGER DEFAULT 0
+    )
+  `);
 };

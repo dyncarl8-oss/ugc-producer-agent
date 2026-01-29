@@ -51,6 +51,8 @@ const App: React.FC = () => {
     const [checkoutPurchaseUrl, setCheckoutPurchaseUrl] = useState<string | null>(null);
     const [selectedPackageId, setSelectedPackageId] = useState<string | null>(null);
     const [loadingCheckout, setLoadingCheckout] = useState(false);
+    const [showQuotaModal, setShowQuotaModal] = useState(false);
+    const [quotaMessage, setQuotaMessage] = useState('');
 
     const params = useParams();
     const companyId = params?.companyId as string || '';
@@ -202,6 +204,19 @@ const App: React.FC = () => {
             const newCampaignId = `camp_${Date.now()}`;
             setCampaignId(newCampaignId);
 
+            // Check Quota Before Starting
+            const quotaRes = await fetch('/api/quota');
+            const quota = await quotaRes.json();
+
+            if (!quota.allowed) {
+                setQuotaMessage(quota.message || 'Daily limit reached.');
+                setShowQuotaModal(true);
+                setStatus({ stage: 'idle', message: '' });
+                return;
+            }
+
+            const modelToUse = quota.model || 'veo-3.1-fast-generate-preview';
+
             // Initial DB entry
             const createRes = await fetch('/api/campaign', {
                 method: 'POST',
@@ -217,7 +232,7 @@ const App: React.FC = () => {
             if (user) setUser({ ...user, credits: createData.newCredits });
 
             // 1. Vision-Enhanced Scripting
-            setStatus({ stage: 'generating', message: 'Drafting viral ad script...', progress: 15 });
+            setStatus({ stage: 'generating', message: `Drafting viral ad script...`, progress: 15 });
             const generatedShots = await VeoService.createScript(productB64, vibe, config.simulateMode);
             setShots(generatedShots);
 
@@ -256,7 +271,13 @@ const App: React.FC = () => {
                     if (!msg.toLowerCase().includes('cooloff') && !msg.toLowerCase().includes('rendering')) {
                         setStatus(prev => ({ ...prev, message: `Finalizing cinematic details...` }));
                     }
-                }, config.simulateMode);
+                }, modelToUse, config.simulateMode);
+
+                // Increment Usage
+                await fetch('/api/quota', {
+                    method: 'POST',
+                    body: JSON.stringify({ model: modelToUse })
+                });
 
                 completedVideoUrls.push(videoUrl);
                 setShots(prev => prev.map(s => s.id === shot.id ? { ...s, status: 'completed', videoUrl } : s));
@@ -759,6 +780,34 @@ const App: React.FC = () => {
                     </div>
                 </div>
             </main>
+
+            {/* High Demand / Quota Modal */}
+            {showQuotaModal && (
+                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl animate-in fade-in duration-300">
+                    <div className="w-full max-w-md bg-[#0c0c12] border border-white/10 rounded-3xl p-8 text-center shadow-2xl relative overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-b from-blue-500/5 to-transparent pointer-events-none" />
+
+                        <div className="w-16 h-16 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-blue-500/20">
+                            <Layers className="w-8 h-8 text-blue-400" />
+                        </div>
+
+                        <h2 className="text-2xl font-bold text-white mb-2 tracking-tight">System Overload</h2>
+                        <p className="text-slate-400 text-sm leading-relaxed mb-8">
+                            {quotaMessage || "We are currently experiencing extremely high demand. To ensure quality for everyone, we have temporarily paused new generations."}
+                        </p>
+
+                        <div className="flex flex-col gap-3">
+                            <button
+                                onClick={() => setShowQuotaModal(false)}
+                                className="w-full py-4 bg-white text-black font-bold rounded-xl hover:bg-slate-200 transition-all text-sm uppercase tracking-widest"
+                            >
+                                Understood
+                            </button>
+                            <p className="text-[10px] text-slate-600 uppercase tracking-widest mt-2">Please try again tomorrow</p>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Video Modal */}
             {selectedProject && (

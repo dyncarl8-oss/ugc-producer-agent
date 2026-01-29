@@ -197,9 +197,10 @@ export class VeoService {
     shot: Shot,
     refImageB64: string,
     onProgress: (msg: string) => void,
+    modelName: string, // Dynamic model name
     simulateMode = false
   ): Promise<string> {
-    await this.serverLog('info', `Starting animation for shot: ${shot.type}`);
+    await this.serverLog('info', `Starting animation for shot: ${shot.type} using ${modelName}`);
 
     if (simulateMode) {
       onProgress("Simulating render...");
@@ -215,7 +216,7 @@ export class VeoService {
     let operation = await this.callWithRetry(async () => {
       await this.ensureQuota(onProgress);
       return ai.models.generateVideos({
-        model: 'veo-3.1-fast-generate-preview',
+        model: modelName,
         prompt: finalPrompt,
         image: {
           imageBytes: this.cleanBase64(refImageB64),
