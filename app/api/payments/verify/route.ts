@@ -13,12 +13,14 @@ export async function POST(req: Request) {
         console.log(`[Verify] Verifying payment: ${paymentId}`);
 
         // Retrieve payment details from Whop
+        // Retrieve payment details from Whop
         // Using the SDK to fetch payment status
-        const payment = await whop.payments.retrieve(paymentId);
+        const paymentData = await whop.payments.retrieve(paymentId);
+        const payment = paymentData as any;
 
-        console.log(`[Verify] Payment Status: ${payment.status}`);
+        console.log(`[Verify] Payment Status: ${payment.status}, Paid: ${payment.paid}`);
 
-        if (payment.status === "paid" || payment.status === "completed") {
+        if (payment.status === "paid" || payment.status === "completed" || payment.status === "succeeded" || payment.paid === true) {
             const metadata = payment.metadata || {};
             const userId = metadata.userId || metadata.user_id;
             const creditsToAdd = parseInt(String(metadata.credits || "0"));
