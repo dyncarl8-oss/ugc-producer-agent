@@ -23,10 +23,12 @@ export async function POST(req: Request) {
 
         // 1. Get current logged in user
         const head = await headers();
+        console.log("[Verify] All Header Keys:", Array.from(head.keys()));
+
         const { userId } = await whop.verifyUserToken(head);
 
         if (!userId) {
-            console.error("[Verify] Auth failed: No userId in token");
+            console.error("[Verify] Auth failed: No userId in token. Authorization Header:", head.get('authorization') ? "Present" : "Missing");
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
