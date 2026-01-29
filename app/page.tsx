@@ -86,8 +86,6 @@ const App: React.FC = () => {
         setFfmpegLoaded(true);
     };
 
-    const [isPolling, setIsPolling] = useState(false);
-
     useEffect(() => {
         const fetchUser = async () => {
             try {
@@ -111,33 +109,11 @@ const App: React.FC = () => {
                 if (response.ok) {
                     const data = await response.json();
                     setProjects(data.campaigns);
-
-                    // Resume logic: If most recent campaign is pending, auto-select it
-                    const latest = data.campaigns[0];
-                    if (latest && latest.status === 'pending' && !campaignId) {
-                        setCampaignId(latest.id);
-                        setProductImage(latest.product_image);
-                        setAvatarImage(latest.avatar_image);
-                        setVibe(latest.vibe as AdVibe);
-                        setStatus({ stage: 'generating', message: 'Resuming previous production...', progress: 30 });
-
-                        // Fetch existing shots
-                        const sRes = await fetch('/api/campaign', {
-                            method: 'POST',
-                            body: JSON.stringify({ action: 'getShots', campaignId: latest.id })
-                        });
-                        if (sRes.ok) {
-                            const { shots: existingShots } = await sRes.json();
-                            setShots(existingShots);
-                            // We don't auto-start here to avoid double-triggers, let user click Resume
-                        }
-                    }
                 }
             } catch (e) { console.error("Failed to fetch projects"); }
         };
 
         fetchUser();
-        fetchProjects();
 
         const checkKey = async () => {
             if (window.aistudio) {
@@ -147,108 +123,6 @@ const App: React.FC = () => {
         };
         checkKey();
     }, []);
-
-    // Unified Generation Loop
-    const runGeneration = async (targetCampaignId: string, startFromShots: Shot[] = []) => {
-        setIsPolling(true); // Reuse as "isWorking" flag
-        try {
-            let workingShots = [...startFromShots];
-
-            // 1. Script Generation (if needed)
-            if (workingShots.length === 0) {
-                setStatus({ stage: 'generating', message: 'Drafting viral ad script...', progress: 15 });
-                const script = await VeoService.createScript(productImage || '', vibe);
-                workingShots = script;
-                setShots(script);
-
-                await fetch('/api/campaign', {
-                    method: 'POST',
-                    body: JSON.stringify({ action: 'saveShots', campaignId: targetCampaignId, data: { shots: script } })
-                });
-            }
-
-            // 2. Shot Execution Loop
-            for (let i = 0; i < workingShots.length; i++) {
-                const shot = workingShots[i];
-                if (shot.status === 'completed') continue;
-
-                setStatus({
-                    stage: 'generating',
-                    message: `Generating footage (${i + 1}/${workingShots.length})...`,
-                    progress: 15 + Math.round((i / workingShots.length) * 75)
-                });
-
-                // 2a. Reference Image
-                let refImage = shot.refImage;
-                if (!refImage) {
-                    refImage = await VeoService.generateShotReference(shot.imagePrompt, avatarImage || '', productImage || '');
-                    workingShots[i] = { ...shot, refImage, status: 'generating' };
-                    setShots([...workingShots]);
-                    await fetch('/api/campaign', {
-                        method: 'POST',
-                        body: JSON.stringify({
-                            action: 'updateShot',
-                            campaignId: targetCampaignId,
-                            data: { type: shot.type, status: 'generating', refImage }
-                        })
-                    });
-                }
-
-                // 2b. Video Generation
-                const videoUrl = await VeoService.animateShot(shot, refImage, (msg) => {
-                    setStatus(prev => ({ ...prev, message: msg }));
-                });
-
-                workingShots[i] = { ...workingShots[i], videoUrl, status: 'completed' };
-                setShots([...workingShots]);
-                await fetch('/api/campaign', {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        action: 'updateShot',
-                        campaignId: targetCampaignId,
-                        data: { type: shot.type, status: 'completed', videoUrl }
-                    })
-                });
-
-                // Safe 65s cooloff between shots
-                if (i < workingShots.length - 1) {
-                    setStatus({ stage: 'generating', message: 'API Cooloff (65s)...', progress: status.progress });
-                    await new Promise(res => setTimeout(res, 65000));
-                }
-            }
-
-            // 3. Finalization
-            setStatus({ stage: 'generating', message: 'Stitching cinematic cut...', progress: 95 });
-            const finalUrls = workingShots.map(s => s.videoUrl || '');
-            const finalVideoData = await concatenateVideos(finalUrls);
-
-            // Convert to Base64 for persistence
-            let base64Video = '';
-            if (finalVideoData) {
-                const binary = Array.from(finalVideoData).map((byte: any) => String.fromCharCode(byte)).join('');
-                base64Video = `data:video/mp4;base64,${btoa(binary)}`;
-            }
-
-            await fetch('/api/campaign', {
-                method: 'POST',
-                body: JSON.stringify({
-                    action: 'finishCampaign',
-                    campaignId: targetCampaignId,
-                    data: { masterVideoUrl: base64Video || 'Saved' }
-                })
-            });
-
-            setStatus({ stage: 'completed', message: 'Ad campaign ready!', progress: 100 });
-            setCampaignId(null);
-
-        } catch (error: any) {
-            console.error("Studio Error:", error);
-            setStatus({ stage: 'error', message: error.message || 'The studio encountered an issue. Please try again.' });
-            setShots(prev => prev.map(s => s.status === 'generating' ? { ...s, status: 'error' } : s));
-        } finally {
-            setIsPolling(false);
-        }
-    };
 
     const concatenateVideos = async (videoUrls: string[]) => {
         const ffmpeg = ffmpegRef.current;
@@ -273,9 +147,8 @@ const App: React.FC = () => {
                 'output.mp4'
             ]);
 
-            const data = await ffmpeg.readFile('output.mp4') as Uint8Array;
-            const blob = new Blob([data], { type: 'video/mp4' });
-            const url = URL.createObjectURL(blob);
+            const data = await ffmpeg.readFile('output.mp4');
+            const url = URL.createObjectURL(new Blob([(data as any).buffer], { type: 'video/mp4' }));
             setMasterVideoUrl(url);
 
             // Clean up
@@ -285,8 +158,6 @@ const App: React.FC = () => {
             await ffmpeg.deleteFile('concat_list.txt');
             await ffmpeg.deleteFile('output.mp4');
 
-            return data;
-
         } catch (error) {
             console.error('FFmpeg Error:', error);
             throw new Error('Failed to stitch videos together.');
@@ -294,15 +165,8 @@ const App: React.FC = () => {
     };
 
     const handleGenerateFullAd = async () => {
-        // 1. Basic Validation
         if (!productImage || !avatarImage) {
             setStatus({ stage: 'error', message: 'Please upload a product image first.' });
-            return;
-        }
-
-        // 2. Credit Check
-        if (!user || user.credits <= 0) {
-            setShowPaymentModal(true);
             return;
         }
 
@@ -317,41 +181,118 @@ const App: React.FC = () => {
             setHasKey(true);
         }
 
-        setStatus({ stage: 'generating', message: 'Contacting AI studio...', progress: 5 });
+        setStatus({ stage: 'generating', message: 'Analyzing your product...', progress: 5 });
         setShots([]);
         setMasterVideoUrl(null);
 
         try {
+            const productB64 = productImage.split(',')[1];
             const newCampaignId = `camp_${Date.now()}`;
+            setCampaignId(newCampaignId);
 
-            // 3. Create Campaign Record (Persistent Sync)
+            // Initial DB entry
             const createRes = await fetch('/api/campaign', {
                 method: 'POST',
-                body: JSON.stringify({
-                    action: 'createCampaign',
-                    campaignId: newCampaignId,
-                    data: {
-                        vibe,
-                        productB64: productImage,
-                        avatarB64: avatarImage
-                    }
-                })
+                body: JSON.stringify({ action: 'createCampaign', campaignId: newCampaignId, data: { vibe } })
             });
 
             if (!createRes.ok) {
                 const errData = await createRes.json();
-                throw new Error(errData.error || 'Failed to start production');
+                throw new Error(errData.error || 'Failed to create campaign');
             }
 
             const createData = await createRes.json();
             if (user) setUser({ ...user, credits: createData.newCredits });
 
-            setCampaignId(newCampaignId);
-            await runGeneration(newCampaignId);
+            // 1. Vision-Enhanced Scripting
+            setStatus({ stage: 'generating', message: 'Drafting viral ad script...', progress: 15 });
+            const generatedShots = await VeoService.createScript(productB64, vibe, config.simulateMode);
+            setShots(generatedShots);
 
+            // Save shots to DB
+            await fetch('/api/campaign', {
+                method: 'POST',
+                body: JSON.stringify({ action: 'saveShots', campaignId: newCampaignId, data: { shots: generatedShots } })
+            });
+
+            const completedVideoUrls: string[] = [];
+
+            // 2. Sequential Shot Production
+            const totalShots = generatedShots.length;
+            for (let i = 0; i < totalShots; i++) {
+                const shot = generatedShots[i];
+                setCurrentShotId(shot.id);
+
+                const shotProgressBase = 15;
+                const shotProgressRange = 70;
+                const currentShotStartingProgress = shotProgressBase + (i / totalShots) * shotProgressRange;
+
+                setShots(prev => prev.map(s => s.id === shot.id ? { ...s, status: 'generating' } : s));
+                setStatus({
+                    stage: 'generating',
+                    message: `Generating footage (${i + 1}/${totalShots})...`,
+                    progress: Math.round(currentShotStartingProgress)
+                });
+
+                // Generate the context-specific reference frame
+                const refImg = await VeoService.generateShotReference(shot.imagePrompt, avatarImage, productImage, config.simulateMode);
+                setShots(prev => prev.map(s => s.id === shot.id ? { ...s, refImage: refImg } : s));
+
+                // Start Handheld Animation
+                const videoUrl = await VeoService.animateShot(shot, refImg, (msg) => {
+                    // Filter technical messages, keep it vague but professional
+                    if (!msg.toLowerCase().includes('cooloff') && !msg.toLowerCase().includes('rendering')) {
+                        setStatus(prev => ({ ...prev, message: `Finalizing cinematic details...` }));
+                    }
+                }, config.simulateMode);
+
+                completedVideoUrls.push(videoUrl);
+                setShots(prev => prev.map(s => s.id === shot.id ? { ...s, status: 'completed', videoUrl } : s));
+
+                // Update shot in DB
+                await fetch('/api/campaign', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'updateShot',
+                        campaignId: newCampaignId,
+                        data: { type: shot.type, status: 'completed', videoUrl, refImage: refImg }
+                    })
+                });
+
+                // Add 65-second breathing room for the API before next shot
+                if (i < generatedShots.length - 1) {
+                    setStatus({
+                        stage: 'generating',
+                        message: `Applying post-processing...`,
+                        progress: Math.round(shotProgressBase + ((i + 0.5) / totalShots) * shotProgressRange)
+                    });
+                    await new Promise(res => setTimeout(res, 65000));
+                }
+            }
+
+            // 3. Final Stitching
+            setStatus({ stage: 'generating', message: 'Merging final cinematic cut...', progress: 95 });
+            await concatenateVideos(completedVideoUrls);
+
+            // Finish campaign in DB
+            await fetch('/api/campaign', {
+                method: 'POST',
+                body: JSON.stringify({ action: 'finishCampaign', campaignId: newCampaignId, data: { masterVideoUrl: 'Saved' } })
+            });
+
+            setStatus({ stage: 'completed', message: 'Ad campaign ready!', progress: 100 });
+            setCurrentShotId(null);
         } catch (error: any) {
             console.error("Studio Error:", error);
-            setStatus({ stage: 'error', message: error.message || 'The studio encountered an issue. Please try again.' });
+
+            if (error.message?.includes("Requested entity was not found")) {
+                setHasKey(false);
+                if (window.aistudio) await window.aistudio.openSelectKey();
+                setStatus({ stage: 'error', message: 'API Project not found. Please re-select a paid project.' });
+            } else {
+                setStatus({ stage: 'error', message: error.message || 'The studio encountered an issue. Please try again.' });
+            }
+
             setShots(prev => prev.map(s => s.status === 'generating' ? { ...s, status: 'error' } : s));
         }
     };
@@ -480,36 +421,15 @@ const App: React.FC = () => {
                             projects.slice(0, 8).map(p => (
                                 <div
                                     key={p.id}
-                                    onClick={async () => {
+                                    onClick={() => {
                                         setSelectedProject(p);
-
-                                        // 1. If it's the current session's live blob, use it
+                                        // If the master video exists in the DB, it's 'Saved', but we need the actual blob for the player
+                                        // Since blobs are session based, we check if this p.id matches our current campaign
                                         if (p.id === campaignId && masterVideoUrl) {
                                             setModalVideoUrl(masterVideoUrl);
-                                        }
-                                        // 2. If it's stored as Base64 in the DB, convert to temporary blob for player
-                                        else if (p.master_video_url && p.master_video_url.startsWith('data:video/mp4;base64,')) {
-                                            try {
-                                                const base64Data = p.master_video_url.split(',')[1];
-                                                const byteCharacters = atob(base64Data);
-                                                const byteNumbers = new Array(byteCharacters.length);
-                                                for (let i = 0; i < byteCharacters.length; i++) {
-                                                    byteNumbers[i] = byteCharacters.charCodeAt(i);
-                                                }
-                                                const byteArray = new Uint8Array(byteNumbers);
-                                                const blob = new Blob([byteArray], { type: 'video/mp4' });
-                                                const url = URL.createObjectURL(blob);
-                                                setModalVideoUrl(url);
-                                            } catch (e) {
-                                                console.error("Failed to decode stored video:", e);
-                                                setModalVideoUrl(null);
-                                            }
-                                        }
-                                        // 3. Fallback for old session-only blobs
-                                        else if (p.master_video_url && p.master_video_url.startsWith('blob:')) {
+                                        } else if (p.master_video_url && p.master_video_url.startsWith('blob:')) {
                                             setModalVideoUrl(p.master_video_url);
-                                        }
-                                        else {
+                                        } else {
                                             setModalVideoUrl(null);
                                         }
                                     }}
@@ -633,67 +553,28 @@ const App: React.FC = () => {
                                 </div>
                             </section>
 
-                            <div className="pt-4 space-y-3">
-                                {status.stage === 'generating' ? (
-                                    <div className="space-y-3">
-                                        <button
-                                            disabled
-                                            className="w-full py-6 rounded-3xl font-black text-xl uppercase italic tracking-tighter bg-white/5 text-slate-700 cursor-not-allowed flex items-center justify-center gap-4"
-                                        >
-                                            <Loader2 className="w-6 h-6 animate-spin" />
-                                            <span>{status.message}</span>
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                setCampaignId(null);
-                                                setIsPolling(false);
-                                                setStatus({ stage: 'idle', message: '' });
-                                            }}
-                                            className="w-full py-3 rounded-2xl font-bold text-[10px] uppercase tracking-widest text-slate-500 hover:text-white transition-colors flex items-center justify-center gap-2"
-                                        >
-                                            <X className="w-3 h-3" />
-                                            {campaignId ? "Stop & Clear Session" : "Cancel"}
-                                        </button>
-                                    </div>
-                                ) : campaignId && (shots.length > 0) ? (
-                                    <div className="space-y-3">
-                                        <button
-                                            onClick={() => runGeneration(campaignId, shots)}
-                                            className="w-full py-6 rounded-3xl font-black text-xl uppercase italic tracking-tighter bg-orange-600 text-white hover:bg-orange-500 hover:scale-[1.01] shadow-[0_20px_40px_rgba(255,77,0,0.25)] flex items-center justify-center gap-4"
-                                        >
-                                            <RefreshCcw className="w-6 h-6" />
-                                            <span>Resume Production</span>
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                setCampaignId(null);
-                                                setShots([]);
-                                                setStatus({ stage: 'idle', message: '' });
-                                            }}
-                                            className="w-full py-3 rounded-2xl font-bold text-[10px] uppercase tracking-widest text-slate-500 hover:text-white transition-colors flex items-center justify-center gap-2"
-                                        >
-                                            <Plus className="w-3 h-3" />
-                                            Start New Instead
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <button
-                                        onClick={handleGenerateFullAd}
-                                        disabled={!productImage}
-                                        className={`w-full py-6 rounded-3xl font-black text-xl uppercase italic tracking-tighter transition-all flex items-center justify-center gap-4 ${!productImage
-                                            ? 'bg-white/5 text-slate-700 cursor-not-allowed'
-                                            : 'bg-orange-600 text-white hover:bg-orange-500 hover:scale-[1.01] shadow-[0_20px_40px_rgba(255,77,0,0.25)]'
-                                            }`}
-                                    >
-                                        <Play className="w-6 h-6 fill-current" />
-                                        <span>START GENERATION</span>
-                                        <div className="flex items-center gap-1.5 px-3 py-1 bg-white/10 rounded-full border border-white/10 shrink-0">
-                                            <Zap className="w-3.5 h-3.5 text-orange-400 fill-orange-400" />
-                                            <span className="text-xs font-black tracking-normal italic">1</span>
+                            <div className="pt-4">
+                                <button
+                                    onClick={handleGenerateFullAd}
+                                    disabled={!productImage || status.stage === 'generating'}
+                                    className={`w-full py-6 rounded-3xl font-black text-xl uppercase italic tracking-tighter transition-all flex items-center justify-center gap-4 ${!productImage || status.stage === 'generating'
+                                        ? 'bg-white/5 text-slate-700 cursor-not-allowed'
+                                        : 'bg-orange-600 text-white hover:bg-orange-500 hover:scale-[1.01] shadow-[0_20px_40px_rgba(255,77,0,0.25)]'
+                                        }`}
+                                >
+                                    {status.stage === 'generating' ? (
+                                        <Loader2 className="w-6 h-6 animate-spin" />
+                                    ) : (
+                                        <div className="flex items-center gap-4">
+                                            <Play className="w-6 h-6 fill-current" />
+                                            <div className="flex items-center gap-1.5 px-3 py-1 bg-white/10 rounded-full border border-white/10 shrink-0">
+                                                <Zap className="w-3.5 h-3.5 text-orange-400 fill-orange-400" />
+                                                <span className="text-xs font-black tracking-normal italic">1</span>
+                                            </div>
                                         </div>
-                                    </button>
-                                )
-                                }
+                                    )}
+                                    {status.stage === 'generating' ? status.message : 'START GENERATION'}
+                                </button>
                             </div>
                         </div>
 
