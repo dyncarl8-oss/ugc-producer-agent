@@ -583,7 +583,7 @@ const App: React.FC = () => {
                                 </div>
                             </section>
 
-                            <div className="pt-4">
+                            <div className="pt-4 space-y-3">
                                 <button
                                     onClick={handleGenerateFullAd}
                                     disabled={!productImage || status.stage === 'generating'}
@@ -608,6 +608,20 @@ const App: React.FC = () => {
                                         </div>
                                     )}
                                 </button>
+
+                                {status.stage === 'generating' && (
+                                    <button
+                                        onClick={() => {
+                                            setCampaignId(null);
+                                            setIsPolling(false);
+                                            setStatus({ stage: 'idle', message: '' });
+                                        }}
+                                        className="w-full py-3 rounded-2xl font-bold text-[10px] uppercase tracking-widest text-slate-500 hover:text-white transition-colors flex items-center justify-center gap-2"
+                                    >
+                                        <X className="w-3 h-3" />
+                                        Cancel Production
+                                    </button>
+                                )}
                             </div>
                         </div>
 
