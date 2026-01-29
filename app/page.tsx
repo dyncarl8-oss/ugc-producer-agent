@@ -251,7 +251,7 @@ const App: React.FC = () => {
                 setShots(prev => prev.map(s => s.id === shot.id ? { ...s, status: 'generating' } : s));
                 setStatus({
                     stage: 'generating',
-                    message: `Generating footage (${i + 1}/${totalShots})...`,
+                    message: `Generating footage...`,
                     progress: Math.round(currentShotStartingProgress)
                 });
 
@@ -301,14 +301,13 @@ const App: React.FC = () => {
                     })
                 });
 
-                // Add 65-second breathing room for the API before next shot
+                // Shots now handle their own quota wait internally in VeoService
                 if (i < generatedShots.length - 1) {
                     setStatus({
                         stage: 'generating',
-                        message: `Applying post-processing...`,
+                        message: `Staging next shot...`,
                         progress: Math.round(shotProgressBase + ((i + 0.5) / totalShots) * shotProgressRange)
                     });
-                    await new Promise(res => setTimeout(res, 65000));
                 }
             }
 
@@ -730,7 +729,7 @@ const App: React.FC = () => {
                                                 <div className="space-y-3">
                                                     <span className="text-orange-400 font-black tracking-tighter text-lg italic uppercase animate-pulse leading-none block">{status.message}</span>
                                                     <div className="space-y-1">
-                                                        <span className="text-[8px] text-slate-500 font-bold uppercase tracking-[0.2em] block">Please wait ~5-7 minutes</span>
+                                                        <span className="text-[8px] text-slate-500 font-bold uppercase tracking-[0.2em] block">Don't close this tab while we produce your ad (5-10 mins)</span>
                                                         <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
                                                             <div
                                                                 className="h-full bg-orange-600 transition-all duration-1000"

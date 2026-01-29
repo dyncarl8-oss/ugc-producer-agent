@@ -13,6 +13,33 @@ export interface Shot {
 }
 
 export class VeoService {
+  private static lastCalls: number[] = [];
+
+  private static async ensureQuota(onProgress?: (msg: string) => void) {
+    const now = Date.now();
+    // Keep only calls from the last 65 seconds
+    this.lastCalls = this.lastCalls.filter(t => now - t < 65000);
+
+    if (this.lastCalls.length >= 2) {
+      const waitTime = 65000 - (now - this.lastCalls[0]);
+      if (waitTime > 0) {
+        await this.serverLog('info', `Quota protection: Waiting ${Math.ceil(waitTime / 1000)}s for next slot...`);
+
+        // Polling wait to allow progress updates in UI
+        const startWait = Date.now();
+        while (Date.now() - startWait < waitTime) {
+          const remaining = Math.ceil((waitTime - (Date.now() - startWait)) / 1000);
+          if (onProgress) onProgress(`Optimizing cinematic quality...`);
+          await new Promise(res => setTimeout(res, 1000));
+        }
+      }
+      // Re-filter after waiting
+      this.lastCalls = this.lastCalls.filter(t => Date.now() - t < 65000);
+    }
+
+    this.lastCalls.push(Date.now());
+  }
+
   /**
    * Helper to ensure we only send raw base64 to the API
    */
@@ -76,7 +103,9 @@ export class VeoService {
     }
 
     return this.callWithRetry(async () => {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      await this.ensureQuota();
+      const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
+      const ai = new GoogleGenAI({ apiKey });
       const response = await ai.models.generateContent({
         model: 'gemini-flash-latest',
         contents: {
@@ -134,7 +163,9 @@ export class VeoService {
     }
 
     return this.callWithRetry(async () => {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      await this.ensureQuota();
+      const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
+      const ai = new GoogleGenAI({ apiKey });
       const response = await ai.models.generateContent({
         model: 'gemini-3-pro-image-preview',
         contents: {
@@ -178,30 +209,34 @@ export class VeoService {
 
     const finalPrompt = `Tiktok style UGC video. The person is speaking directly to her handheld smartphone camera. ${shot.videoPrompt}. Authentic handheld jitters, realistic skin movement, natural daylight, no artificial filters, shot like a vlog. The person looks genuinely at the lens.`;
 
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
+    const ai = new GoogleGenAI({ apiKey });
 
-    let operation = await this.callWithRetry(() => ai.models.generateVideos({
-      model: 'veo-3.1-fast-generate-preview',
-      prompt: finalPrompt,
-      image: {
-        imageBytes: this.cleanBase64(refImageB64),
-        mimeType: 'image/png'
-      },
-      config: {
-        numberOfVideos: 1,
-        resolution: '720p',
-        aspectRatio: '9:16'
-      }
-    }));
+    let operation = await this.callWithRetry(async () => {
+      await this.ensureQuota(onProgress);
+      return ai.models.generateVideos({
+        model: 'veo-3.1-fast-generate-preview',
+        prompt: finalPrompt,
+        image: {
+          imageBytes: this.cleanBase64(refImageB64),
+          mimeType: 'image/png'
+        },
+        config: {
+          numberOfVideos: 1,
+          resolution: '720p',
+          aspectRatio: '9:16'
+        }
+      });
+    });
 
     // Polling loop
     while (!operation.done) {
-      await new Promise(resolve => setTimeout(resolve, 65000)); // Increased to 65s for ultra-safe 1 RPM
-      const statusMsg = `Rendering ${shot.type} (might take 1-2 mins)...`;
+      await new Promise(resolve => setTimeout(resolve, 15000)); // Snappier 15s polling
+      const statusMsg = `Enhancing footage (checking progress)...`;
       onProgress(statusMsg);
       await this.serverLog('info', `Polling status for ${shot.type}...`);
 
-      const aiStatus = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const aiStatus = new GoogleGenAI({ apiKey });
       operation = await this.callWithRetry(() => aiStatus.operations.getVideosOperation({ operation: operation }));
 
       if (operation.error) {
@@ -213,7 +248,7 @@ export class VeoService {
     if (!downloadLink) throw new Error("No download link returned.");
 
     await this.serverLog('info', `Shot ${shot.type} complete. Downloading...`);
-    const response = await this.callWithRetry(() => fetch(`${downloadLink}&key=${process.env.API_KEY}`));
+    const response = await this.callWithRetry(() => fetch(`${downloadLink}&key=${apiKey}`));
 
     if (!response.ok) throw new Error(`Download failed: ${response.statusText}`);
 
