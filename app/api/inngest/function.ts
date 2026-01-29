@@ -6,12 +6,25 @@ export const generateAdCampaign = inngest.createFunction(
     { id: "generate-ad-campaign" },
     { event: "campaign/generate" },
     async ({ event, step }) => {
-        const { campaignId, userId, productB64, avatarB64, vibe } = event.data;
+        const { campaignId, userId, vibe } = event.data;
         const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
 
         if (!apiKey) {
             throw new Error("Missing Gemini API Key on server");
         }
+
+        // Step 0: Fetch images from DB (to avoid Inngest payload limits)
+        const { productB64, avatarB64 } = await step.run("fetch-campaign-data", async () => {
+            const result = await db.execute({
+                sql: "SELECT product_image, avatar_image FROM campaigns WHERE id = ?",
+                args: [campaignId]
+            });
+            if (result.rows.length === 0) throw new Error("Campaign not found");
+            return {
+                productB64: result.rows[0].product_image as string,
+                avatarB64: result.rows[0].avatar_image as string
+            };
+        });
 
         const ai = new GoogleGenAI({ apiKey });
 

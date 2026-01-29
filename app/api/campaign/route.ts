@@ -33,18 +33,16 @@ export async function POST(req: Request) {
             });
 
             await db.execute({
-                sql: 'INSERT INTO campaigns (id, user_id, vibe, status) VALUES (?, ?, ?, ?)',
-                args: [campaignId, userId, data.vibe, 'pending']
+                sql: 'INSERT INTO campaigns (id, user_id, vibe, product_image, avatar_image, status) VALUES (?, ?, ?, ?, ?, ?)',
+                args: [campaignId, userId, data.vibe, data.productB64, data.avatarB64, 'pending']
             });
 
-            // Trigger background generation
+            // Trigger background generation (Small payload)
             await inngest.send({
                 name: "campaign/generate",
                 data: {
                     campaignId,
                     userId,
-                    productB64: data.productB64,
-                    avatarB64: data.avatarB64,
                     vibe: data.vibe
                 }
             });

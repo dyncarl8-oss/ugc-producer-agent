@@ -38,6 +38,8 @@ export const initDb = async () => {
       id TEXT PRIMARY KEY,
       user_id TEXT,
       vibe TEXT,
+      product_image TEXT,
+      avatar_image TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       master_video_url TEXT,
       status TEXT,
@@ -48,6 +50,12 @@ export const initDb = async () => {
   // Ensure user_id column exists for existing tables
   try {
     await db.execute(`ALTER TABLE campaigns ADD COLUMN user_id TEXT`);
+  } catch (e) { /* Column likely already exists */ }
+  try {
+    await db.execute(`ALTER TABLE campaigns ADD COLUMN product_image TEXT`);
+  } catch (e) { /* Column likely already exists */ }
+  try {
+    await db.execute(`ALTER TABLE campaigns ADD COLUMN avatar_image TEXT`);
   } catch (e) { /* Column likely already exists */ }
 
   await db.execute(`
