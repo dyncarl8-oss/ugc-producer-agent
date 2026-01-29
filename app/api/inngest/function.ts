@@ -78,7 +78,10 @@ export const generateAdCampaign = inngest.createFunction(
                     }
                 });
 
-                const part = result.candidates?.[0]?.content?.parts.find((p: any) => p.inlineData);
+                const candidates = result.candidates || [];
+                const parts = candidates[0]?.content?.parts || [];
+                const part = parts.find((p: any) => p.inlineData);
+
                 if (!part?.inlineData) throw new Error("No image generated");
                 return `data:image/png;base64,${part.inlineData.data}`;
             });
