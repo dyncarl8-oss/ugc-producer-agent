@@ -147,8 +147,9 @@ const App: React.FC = () => {
                 'output.mp4'
             ]);
 
-            const data = await ffmpeg.readFile('output.mp4');
-            const url = URL.createObjectURL(new Blob([(data as any).buffer], { type: 'video/mp4' }));
+            const data = await ffmpeg.readFile('output.mp4') as Uint8Array;
+            const blob = new Blob([data.buffer], { type: 'video/mp4' });
+            const url = URL.createObjectURL(blob);
             setMasterVideoUrl(url);
 
             // Clean up
@@ -157,6 +158,8 @@ const App: React.FC = () => {
             }
             await ffmpeg.deleteFile('concat_list.txt');
             await ffmpeg.deleteFile('output.mp4');
+
+            return data;
 
         } catch (error) {
             console.error('FFmpeg Error:', error);
@@ -279,12 +282,23 @@ const App: React.FC = () => {
 
             // 3. Final Stitching
             setStatus({ stage: 'generating', message: 'Merging final cinematic cut...', progress: 95 });
-            await concatenateVideos(completedVideoUrls);
+            const finalVideoData = await concatenateVideos(completedVideoUrls);
+
+            // Convert to Base64 for persistence
+            let base64Video = '';
+            if (finalVideoData) {
+                const binary = Array.from(finalVideoData).map(byte => String.fromCharCode(byte)).join('');
+                base64Video = `data:video/mp4;base64,${btoa(binary)}`;
+            }
 
             // Finish campaign in DB
             await fetch('/api/campaign', {
                 method: 'POST',
-                body: JSON.stringify({ action: 'finishCampaign', campaignId: newCampaignId, data: { masterVideoUrl: 'Saved' } })
+                body: JSON.stringify({
+                    action: 'finishCampaign',
+                    campaignId: newCampaignId,
+                    data: { masterVideoUrl: base64Video || 'Saved' }
+                })
             });
 
             setStatus({ stage: 'completed', message: 'Ad campaign ready!', progress: 100 });
@@ -428,15 +442,36 @@ const App: React.FC = () => {
                             projects.slice(0, 8).map(p => (
                                 <div
                                     key={p.id}
-                                    onClick={() => {
+                                    onClick={async () => {
                                         setSelectedProject(p);
-                                        // If the master video exists in the DB, it's 'Saved', but we need the actual blob for the player
-                                        // Since blobs are session based, we check if this p.id matches our current campaign
+
+                                        // 1. If it's the current session's live blob, use it
                                         if (p.id === campaignId && masterVideoUrl) {
                                             setModalVideoUrl(masterVideoUrl);
-                                        } else if (p.master_video_url && p.master_video_url.startsWith('blob:')) {
+                                        }
+                                        // 2. If it's stored as Base64 in the DB, convert to temporary blob for player
+                                        else if (p.master_video_url && p.master_video_url.startsWith('data:video/mp4;base64,')) {
+                                            try {
+                                                const base64Data = p.master_video_url.split(',')[1];
+                                                const byteCharacters = atob(base64Data);
+                                                const byteNumbers = new Array(byteCharacters.length);
+                                                for (let i = 0; i < byteCharacters.length; i++) {
+                                                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                                                }
+                                                const byteArray = new Uint8Array(byteNumbers);
+                                                const blob = new Blob([byteArray], { type: 'video/mp4' });
+                                                const url = URL.createObjectURL(blob);
+                                                setModalVideoUrl(url);
+                                            } catch (e) {
+                                                console.error("Failed to decode stored video:", e);
+                                                setModalVideoUrl(null);
+                                            }
+                                        }
+                                        // 3. Fallback for old session-only blobs
+                                        else if (p.master_video_url && p.master_video_url.startsWith('blob:')) {
                                             setModalVideoUrl(p.master_video_url);
-                                        } else {
+                                        }
+                                        else {
                                             setModalVideoUrl(null);
                                         }
                                     }}
