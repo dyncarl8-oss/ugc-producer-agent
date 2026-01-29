@@ -17,8 +17,8 @@ export const generateAdCampaign = inngest.createFunction(
 
         // Step 1: Generate Script
         const shots = await step.run("generate-script", async () => {
-            const model = ai.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
-            const result = await model.generateContent({
+            const result = await ai.models.generateContent({
+                model: "gemini-1.5-flash-latest",
                 contents: [{
                     role: "user",
                     parts: [
@@ -26,7 +26,7 @@ export const generateAdCampaign = inngest.createFunction(
                         { inlineData: { data: productB64.split(',')[1] || productB64, mimeType: "image/png" } }
                     ]
                 }],
-                generationConfig: {
+                config: {
                     responseMimeType: "application/json",
                     responseSchema: {
                         type: Type.ARRAY,
@@ -44,7 +44,7 @@ export const generateAdCampaign = inngest.createFunction(
                 }
             });
 
-            const script = JSON.parse(result.response.text());
+            const script = JSON.parse(result.text || "[]");
 
             // Save to DB
             for (const shot of script) {
@@ -62,8 +62,8 @@ export const generateAdCampaign = inngest.createFunction(
 
             // 2a. Generate Reference Image
             const refImageB64 = await step.run(`generate-ref-${i}`, async () => {
-                const model = ai.getGenerativeModel({ model: "gemini-3-pro-image-preview" });
-                const result = await model.generateContent({
+                const result = await ai.models.generateContent({
+                    model: "gemini-3-pro-image-preview",
                     contents: [{
                         role: "user",
                         parts: [
@@ -72,13 +72,13 @@ export const generateAdCampaign = inngest.createFunction(
                             { inlineData: { data: productB64.split(',')[1] || productB64, mimeType: "image/png" } }
                         ]
                     }],
-                    generationConfig: {
+                    config: {
                         // @ts-ignore
                         imageConfig: { aspectRatio: "9:16" }
                     }
                 });
 
-                const part = result.response.candidates?.[0]?.content?.parts.find(p => p.inlineData);
+                const part = result.candidates?.[0]?.content?.parts.find((p: any) => p.inlineData);
                 if (!part?.inlineData) throw new Error("No image generated");
                 return `data:image/png;base64,${part.inlineData.data}`;
             });
