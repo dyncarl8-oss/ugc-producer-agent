@@ -164,6 +164,27 @@ const App: React.FC = () => {
         }
     };
 
+    const uploadVideo = async (blobUrl: string, filename: string): Promise<string> => {
+        try {
+            const response = await fetch(blobUrl);
+            const blob = await response.blob();
+            const formData = new FormData();
+            formData.append('file', blob, filename);
+
+            const uploadRes = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!uploadRes.ok) throw new Error('Failed to upload video');
+            const data = await uploadRes.json();
+            return data.url;
+        } catch (error) {
+            console.error('Upload error:', error);
+            throw error;
+        }
+    };
+
     const handleGenerateFullAd = async () => {
         if (!productImage || !avatarImage) {
             setStatus({ stage: 'error', message: 'Please upload a product image first.' });
@@ -249,13 +270,34 @@ const App: React.FC = () => {
                 completedVideoUrls.push(videoUrl);
                 setShots(prev => prev.map(s => s.id === shot.id ? { ...s, status: 'completed', videoUrl } : s));
 
+                // Upload shot components to permanent storage
+                let permanentShotVideoUrl = videoUrl;
+                let permanentRefImageUrl = refImg;
+
+                try {
+                    if (videoUrl && videoUrl.startsWith('blob:')) {
+                        permanentShotVideoUrl = await uploadVideo(videoUrl, `shot-${shot.id}-${newCampaignId}.mp4`);
+                    }
+                    if (refImg && refImg.startsWith('data:')) {
+                        // For base64 images, we might need a different upload path or just store them as is if they are small
+                        // But for consistency, let's just use the current videoUrl logic if it were a file
+                    }
+                } catch (e) {
+                    console.error("Failed to upload shot permanently", e);
+                }
+
                 // Update shot in DB
                 await fetch('/api/campaign', {
                     method: 'POST',
                     body: JSON.stringify({
                         action: 'updateShot',
                         campaignId: newCampaignId,
-                        data: { type: shot.type, status: 'completed', videoUrl, refImage: refImg }
+                        data: {
+                            type: shot.type,
+                            status: 'completed',
+                            videoUrl: permanentShotVideoUrl,
+                            refImage: permanentRefImageUrl
+                        }
                     })
                 });
 
@@ -274,11 +316,30 @@ const App: React.FC = () => {
             setStatus({ stage: 'generating', message: 'Merging final cinematic cut...', progress: 95 });
             await concatenateVideos(completedVideoUrls);
 
-            // Finish campaign in DB
-            await fetch('/api/campaign', {
-                method: 'POST',
-                body: JSON.stringify({ action: 'finishCampaign', campaignId: newCampaignId, data: { masterVideoUrl: 'Saved' } })
-            });
+            // Upload the final video to permanent storage
+            if (masterVideoUrl) {
+                try {
+                    const permanentUrl = await uploadVideo(masterVideoUrl, `final-ad-${newCampaignId}.mp4`);
+                    // Finish campaign in DB with the REAL URL
+                    await fetch('/api/campaign', {
+                        method: 'POST',
+                        body: JSON.stringify({ action: 'finishCampaign', campaignId: newCampaignId, data: { masterVideoUrl: permanentUrl } })
+                    });
+                } catch (e) {
+                    console.error("Failed to save final video permanently", e);
+                    // Fallback to finishing without URL if upload fails (rare)
+                    await fetch('/api/campaign', {
+                        method: 'POST',
+                        body: JSON.stringify({ action: 'finishCampaign', campaignId: newCampaignId, data: { masterVideoUrl: 'Saved' } })
+                    });
+                }
+            } else {
+                // Fallback for unexpected state
+                await fetch('/api/campaign', {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'finishCampaign', campaignId: newCampaignId, data: { masterVideoUrl: 'Saved' } })
+                });
+            }
 
             setStatus({ stage: 'completed', message: 'Ad campaign ready!', progress: 100 });
             setCurrentShotId(null);
@@ -423,12 +484,12 @@ const App: React.FC = () => {
                                     key={p.id}
                                     onClick={() => {
                                         setSelectedProject(p);
-                                        // If the master video exists in the DB, it's 'Saved', but we need the actual blob for the player
-                                        // Since blobs are session based, we check if this p.id matches our current campaign
-                                        if (p.id === campaignId && masterVideoUrl) {
-                                            setModalVideoUrl(masterVideoUrl);
-                                        } else if (p.master_video_url && p.master_video_url.startsWith('blob:')) {
+                                        // Use the stored URL if it exists and is not just a placeholder
+                                        if (p.master_video_url && p.master_video_url !== 'Saved') {
                                             setModalVideoUrl(p.master_video_url);
+                                        } else if (p.id === campaignId && masterVideoUrl) {
+                                            // Fallback for current session if not yet uploaded or if it's the current one
+                                            setModalVideoUrl(masterVideoUrl);
                                         } else {
                                             setModalVideoUrl(null);
                                         }

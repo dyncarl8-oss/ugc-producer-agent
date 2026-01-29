@@ -45,9 +45,15 @@ export const initDb = async () => {
     )
   `);
 
-  // Ensure user_id column exists for existing tables
+  // Ensure columns exist for existing campaigns table
   try {
     await db.execute(`ALTER TABLE campaigns ADD COLUMN user_id TEXT`);
+  } catch (e) { /* Column likely already exists */ }
+  try {
+    await db.execute(`ALTER TABLE campaigns ADD COLUMN master_video_url TEXT`);
+  } catch (e) { /* Column likely already exists */ }
+  try {
+    await db.execute(`ALTER TABLE campaigns ADD COLUMN status TEXT`);
   } catch (e) { /* Column likely already exists */ }
 
   await db.execute(`
@@ -64,4 +70,11 @@ export const initDb = async () => {
       FOREIGN KEY (campaign_id) REFERENCES campaigns (id)
     )
   `);
+
+  try {
+    await db.execute(`ALTER TABLE shots ADD COLUMN video_url TEXT`);
+  } catch (e) { /* Column likely already exists */ }
+  try {
+    await db.execute(`ALTER TABLE shots ADD COLUMN ref_image TEXT`);
+  } catch (e) { /* Column likely already exists */ }
 };
