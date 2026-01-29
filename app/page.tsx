@@ -266,442 +266,441 @@ const App: React.FC = () => {
                 let permanentRefImageUrl = refImg;
 
                 try {
-                    try {
-                        // For shots, we'll keep them as blob URLs for the session, 
-                        // but we won't persist them to DB as base64 to save space.
-                        // Only the final video will be persisted.
-                        /* 
-                        if (videoUrl && videoUrl.startsWith('blob:')) {
-                             const response = await fetch(videoUrl);
-                             const blob = await response.blob();
-                             permanentShotVideoUrl = await blobToBase64(blob);
-                        }
-                        */
-                    } catch (e) {
-                        console.error("Failed to process shot", e);
+                    // For shots, we'll keep them as blob URLs for the session, 
+                    // but we won't persist them to DB as base64 to save space.
+                    // Only the final video will be persisted.
+                    /* 
+                    if (videoUrl && videoUrl.startsWith('blob:')) {
+                         const response = await fetch(videoUrl);
+                         const blob = await response.blob();
+                         permanentShotVideoUrl = await blobToBase64(blob);
                     }
-
-                    // Update shot in DB
-                    await fetch('/api/campaign', {
-                        method: 'POST',
-                        body: JSON.stringify({
-                            action: 'updateShot',
-                            campaignId: newCampaignId,
-                            data: {
-                                type: shot.type,
-                                status: 'completed',
-                                videoUrl: permanentShotVideoUrl,
-                                refImage: permanentRefImageUrl
-                            }
-                        })
-                    });
-
-                    // Shots now handle their own quota wait internally in VeoService
-                    if (i < generatedShots.length - 1) {
-                        setStatus({
-                            stage: 'generating',
-                            message: `Staging next shot...`,
-                            progress: Math.round(shotProgressBase + ((i + 0.5) / totalShots) * shotProgressRange)
-                        });
-                    }
+                    */
+                } catch (e) {
+                    console.error("Failed to process shot", e);
                 }
+
+                // Update shot in DB
+                await fetch('/api/campaign', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'updateShot',
+                        campaignId: newCampaignId,
+                        data: {
+                            type: shot.type,
+                            status: 'completed',
+                            videoUrl: permanentShotVideoUrl,
+                            refImage: permanentRefImageUrl
+                        }
+                    })
+                });
+
+                // Shots now handle their own quota wait internally in VeoService
+                if (i < generatedShots.length - 1) {
+                    setStatus({
+                        stage: 'generating',
+                        message: `Staging next shot...`,
+                        progress: Math.round(shotProgressBase + ((i + 0.5) / totalShots) * shotProgressRange)
+                    });
+                }
+            }
 
             // 3. Final Stitching
             setStatus({ stage: 'generating', message: 'Merging final cinematic cut...', progress: 95 });
-                const finalBlobUrl = await concatenateVideos(completedVideoUrls);
+            const finalBlobUrl = await concatenateVideos(completedVideoUrls);
 
-                // Upload the final video to permanent storage (Base64 in DB)
-                if (finalBlobUrl) {
-                    try {
-                        const response = await fetch(finalBlobUrl);
-                        const blob = await response.blob();
-                        const base64Video = await blobToBase64(blob);
+            // Upload the final video to permanent storage (Base64 in DB)
+            if (finalBlobUrl) {
+                try {
+                    const response = await fetch(finalBlobUrl);
+                    const blob = await response.blob();
+                    const base64Video = await blobToBase64(blob);
 
-                        // Finish campaign in DB with the Base64 String
-                        await fetch('/api/campaign', {
-                            method: 'POST',
-                            body: JSON.stringify({ action: 'finishCampaign', campaignId: newCampaignId, data: { masterVideoUrl: base64Video } })
-                        });
-                    } catch (e) {
-                        console.error("Failed to save final video permanently", e);
-                        // Fallback to finishing without URL if upload fails (rare)
-                        await fetch('/api/campaign', {
-                            method: 'POST',
-                            body: JSON.stringify({ action: 'finishCampaign', campaignId: newCampaignId, data: { masterVideoUrl: 'Saved' } })
-                        });
-                    }
-                } else {
-                    // Fallback for unexpected state
+                    // Finish campaign in DB with the Base64 String
+                    await fetch('/api/campaign', {
+                        method: 'POST',
+                        body: JSON.stringify({ action: 'finishCampaign', campaignId: newCampaignId, data: { masterVideoUrl: base64Video } })
+                    });
+                } catch (e) {
+                    console.error("Failed to save final video permanently", e);
+                    // Fallback to finishing without URL if upload fails (rare)
                     await fetch('/api/campaign', {
                         method: 'POST',
                         body: JSON.stringify({ action: 'finishCampaign', campaignId: newCampaignId, data: { masterVideoUrl: 'Saved' } })
                     });
                 }
-
-                setStatus({ stage: 'completed', message: 'Ad campaign ready!', progress: 100 });
-                setCurrentShotId(null);
-            } catch (error: any) {
-                console.error("Studio Error:", error);
-
-                if (error.message?.includes("Requested entity was not found")) {
-                    setHasKey(false);
-                    if (window.aistudio) await window.aistudio.openSelectKey();
-                    setStatus({ stage: 'error', message: 'API Project not found. Please re-select a paid project.' });
-                } else {
-                    setStatus({ stage: 'error', message: error.message || 'The studio encountered an issue. Please try again.' });
-                }
-
-                setShots(prev => prev.map(s => s.status === 'generating' ? { ...s, status: 'error' } : s));
-            }
-        };
-
-        const downloadMasterAd = () => {
-            if (!masterVideoUrl) return;
-            const a = document.createElement('a');
-            a.href = masterVideoUrl;
-            a.download = 'viral-ad-master.mp4';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-        };
-
-        const handleBuyCredits = async (packageId: string) => {
-            setLoadingCheckout(true);
-            setSelectedPackageId(packageId);
-            try {
-                const response = await fetch('/api/payments/checkout', {
+            } else {
+                // Fallback for unexpected state
+                await fetch('/api/campaign', {
                     method: 'POST',
-                    body: JSON.stringify({ packageId })
+                    body: JSON.stringify({ action: 'finishCampaign', campaignId: newCampaignId, data: { masterVideoUrl: 'Saved' } })
                 });
-                console.log("Checkout API Response Status:", response.status);
-                if (response.ok) {
-                    const data = await response.json();
-                    console.log("Checkout Session ID received:", data.sessionId);
-                    setCheckoutSessionId(data.sessionId);
-                    setCheckoutPurchaseUrl(data.purchaseUrl);
-                } else {
-                    const err = await response.json();
-                    console.error("Checkout API Error:", err);
-                }
-            } catch (e) {
-                console.error("Failed to create checkout session", e);
-            } finally {
-                setLoadingCheckout(false);
             }
-        };
 
+            setStatus({ stage: 'completed', message: 'Ad campaign ready!', progress: 100 });
+            setCurrentShotId(null);
+        } catch (error: any) {
+            console.error("Studio Error:", error);
 
+            if (error.message?.includes("Requested entity was not found")) {
+                setHasKey(false);
+                if (window.aistudio) await window.aistudio.openSelectKey();
+                setStatus({ stage: 'error', message: 'API Project not found. Please re-select a paid project.' });
+            } else {
+                setStatus({ stage: 'error', message: error.message || 'The studio encountered an issue. Please try again.' });
+            }
 
-        if (loadingAuth) {
-            return (
-                <div className="flex items-center justify-center h-screen bg-[#030305] text-orange-500">
-                    <Loader2 className="w-12 h-12 animate-spin" />
-                </div>
-            );
+            setShots(prev => prev.map(s => s.status === 'generating' ? { ...s, status: 'error' } : s));
         }
+    };
 
-        if (!user && status.stage !== 'generating') {
-            return (
-                <div className="flex flex-col items-center justify-center h-screen bg-[#030305] text-slate-100 p-8 text-center">
-                    <div className="w-20 h-20 bg-orange-600 rounded-3xl flex items-center justify-center mb-8 shadow-2xl shadow-orange-500/20">
-                        <ShieldAlert className="w-10 h-10 text-white" />
-                    </div>
-                    <h2 className="text-3xl font-black uppercase tracking-tighter mb-4 italic">Security Checkpoint</h2>
-                    <p className="text-slate-500 max-w-md mx-auto mb-8 font-medium">Please open UGC Producer Agent through the Whop Dashboard to authenticate your session.</p>
-                    <div className="flex gap-4">
-                        <a href="https://whop.com" className="bg-white text-black px-8 py-3 rounded-2xl font-black uppercase text-sm hover:bg-slate-200 transition-all">Go to Whop</a>
-                    </div>
-                </div>
-            );
+    const downloadMasterAd = () => {
+        if (!masterVideoUrl) return;
+        const a = document.createElement('a');
+        a.href = masterVideoUrl;
+        a.download = 'viral-ad-master.mp4';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    };
+
+    const handleBuyCredits = async (packageId: string) => {
+        setLoadingCheckout(true);
+        setSelectedPackageId(packageId);
+        try {
+            const response = await fetch('/api/payments/checkout', {
+                method: 'POST',
+                body: JSON.stringify({ packageId })
+            });
+            console.log("Checkout API Response Status:", response.status);
+            if (response.ok) {
+                const data = await response.json();
+                console.log("Checkout Session ID received:", data.sessionId);
+                setCheckoutSessionId(data.sessionId);
+                setCheckoutPurchaseUrl(data.purchaseUrl);
+            } else {
+                const err = await response.json();
+                console.error("Checkout API Error:", err);
+            }
+        } catch (e) {
+            console.error("Failed to create checkout session", e);
+        } finally {
+            setLoadingCheckout(false);
         }
+    };
 
+
+
+    if (loadingAuth) {
         return (
-            <div className="flex h-screen bg-[#030305] text-slate-100 font-sans overflow-hidden">
-                {/* Sidebar */}
-                <aside className="w-80 bg-[#07070a] border-r border-white/5 flex flex-col p-6 overflow-y-auto">
-                    <div className="flex items-center gap-3 mb-10">
-                        <div className="w-10 h-10 bg-orange-600 rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/30">
-                            <Clapperboard className="w-6 h-6 text-white" />
-                        </div>
-                        <div>
-                            <h1 className="text-lg font-bold tracking-tight">UGC Producer</h1>
-                            <span className="text-[10px] text-orange-400 font-bold uppercase tracking-widest leading-none">AI Agent Studio</span>
-                        </div>
-                    </div>
+            <div className="flex items-center justify-center h-screen bg-[#030305] text-orange-500">
+                <Loader2 className="w-12 h-12 animate-spin" />
+            </div>
+        );
+    }
 
-                    {user && (
-                        <div className="mb-8 p-4 bg-white/5 border border-white/10 rounded-2xl flex flex-col gap-4">
-                            <div className="flex items-center gap-3">
-                                {user.profile_pic_url ? (
-                                    <img
-                                        src={user.profile_pic_url}
-                                        alt={user.username}
-                                        className="w-12 h-12 rounded-full border border-orange-500/30 object-cover shadow-lg"
-                                        onError={(e) => {
-                                            (e.target as HTMLImageElement).style.display = 'none';
-                                            (e.target as HTMLImageElement).parentElement?.querySelector('.avatar-placeholder')?.classList.remove('hidden');
-                                        }}
-                                    />
-                                ) : null}
-                                <div className={`avatar-placeholder ${user.profile_pic_url ? 'hidden' : ''} w-12 h-12 rounded-full bg-orange-600/20 border border-orange-500/30 flex items-center justify-center shadow-lg`}>
-                                    <User className="w-6 h-6 text-orange-400" />
-                                </div>
-                                <div className="flex flex-col min-w-0 flex-1">
-                                    <div className="flex items-center justify-between gap-2">
-                                        <span className="text-sm font-black text-white tracking-tight truncate">{user.username}</span>
-                                        <div className="flex items-center gap-1 px-2 py-0.5 bg-orange-600/20 border border-orange-500/30 rounded-full shrink-0">
-                                            <Zap className="w-2.5 h-2.5 text-orange-500 fill-orange-500" />
-                                            <span className="text-[10px] text-orange-200 font-black tracking-tighter">{user.credits}</span>
-                                        </div>
-                                    </div>
-                                    <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">Verified Account</span>
-                                </div>
+    if (!user && status.stage !== 'generating') {
+        return (
+            <div className="flex flex-col items-center justify-center h-screen bg-[#030305] text-slate-100 p-8 text-center">
+                <div className="w-20 h-20 bg-orange-600 rounded-3xl flex items-center justify-center mb-8 shadow-2xl shadow-orange-500/20">
+                    <ShieldAlert className="w-10 h-10 text-white" />
+                </div>
+                <h2 className="text-3xl font-black uppercase tracking-tighter mb-4 italic">Security Checkpoint</h2>
+                <p className="text-slate-500 max-w-md mx-auto mb-8 font-medium">Please open UGC Producer Agent through the Whop Dashboard to authenticate your session.</p>
+                <div className="flex gap-4">
+                    <a href="https://whop.com" className="bg-white text-black px-8 py-3 rounded-2xl font-black uppercase text-sm hover:bg-slate-200 transition-all">Go to Whop</a>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="flex h-screen bg-[#030305] text-slate-100 font-sans overflow-hidden">
+            {/* Sidebar */}
+            <aside className="w-80 bg-[#07070a] border-r border-white/5 flex flex-col p-6 overflow-y-auto">
+                <div className="flex items-center gap-3 mb-10">
+                    <div className="w-10 h-10 bg-orange-600 rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/30">
+                        <Clapperboard className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                        <h1 className="text-lg font-bold tracking-tight">UGC Producer</h1>
+                        <span className="text-[10px] text-orange-400 font-bold uppercase tracking-widest leading-none">AI Agent Studio</span>
+                    </div>
+                </div>
+
+                {user && (
+                    <div className="mb-8 p-4 bg-white/5 border border-white/10 rounded-2xl flex flex-col gap-4">
+                        <div className="flex items-center gap-3">
+                            {user.profile_pic_url ? (
+                                <img
+                                    src={user.profile_pic_url}
+                                    alt={user.username}
+                                    className="w-12 h-12 rounded-full border border-orange-500/30 object-cover shadow-lg"
+                                    onError={(e) => {
+                                        (e.target as HTMLImageElement).style.display = 'none';
+                                        (e.target as HTMLImageElement).parentElement?.querySelector('.avatar-placeholder')?.classList.remove('hidden');
+                                    }}
+                                />
+                            ) : null}
+                            <div className={`avatar-placeholder ${user.profile_pic_url ? 'hidden' : ''} w-12 h-12 rounded-full bg-orange-600/20 border border-orange-500/30 flex items-center justify-center shadow-lg`}>
+                                <User className="w-6 h-6 text-orange-400" />
                             </div>
-
-                            <button
-                                onClick={() => setShowPaymentModal(true)}
-                                className="w-full py-2.5 bg-orange-600/10 border border-orange-500/20 rounded-xl flex items-center justify-center gap-2 hover:bg-orange-600/20 transition-all group"
-                            >
-                                <Plus className="w-3.5 h-3.5 text-orange-500 group-hover:scale-110 transition-transform" />
-                                <span className="text-[10px] font-black text-orange-200 uppercase tracking-widest">Top Up Credits</span>
-                            </button>
-                        </div>
-                    )}
-
-                    <div className="flex-1">
-                        <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-3 ml-2">Recent Projects</div>
-                        <div className="space-y-3">
-                            {projects.length === 0 ? (
-                                <div className="p-4 border border-dashed border-white/10 rounded-2xl text-center">
-                                    <p className="text-[10px] text-slate-600 font-medium">No projects yet</p>
-                                </div>
-                            ) : (
-                                projects.slice(0, 8).map(p => (
-                                    <div
-                                        key={p.id}
-                                        onClick={() => {
-                                            setSelectedProject(p);
-                                            // Use the stored URL if it exists and is not just a placeholder
-                                            if (p.master_video_url && p.master_video_url !== 'Saved') {
-                                                setModalVideoUrl(p.master_video_url);
-                                            } else if (p.id === campaignId && masterVideoUrl) {
-                                                // Fallback for current session if not yet uploaded or if it's the current one
-                                                setModalVideoUrl(masterVideoUrl);
-                                            } else {
-                                                setModalVideoUrl(null);
-                                            }
-                                        }}
-                                        className="p-3 bg-white/5 border border-white/5 rounded-xl hover:bg-white/10 transition-all cursor-pointer group"
-                                    >
-                                        <div className="flex items-center justify-between mb-1">
-                                            <span className="text-[10px] font-bold text-slate-400 truncate max-w-[120px]">{p.vibe}</span>
-                                            <div className={`w-1.5 h-1.5 rounded-full ${p.status === 'completed' ? 'bg-green-500' : 'bg-orange-500'}`} />
-                                        </div>
-                                        <div className="text-[9px] text-slate-600 font-bold uppercase tracking-widest">
-                                            {new Date(p.created_at).toLocaleDateString()}
-                                        </div>
+                            <div className="flex flex-col min-w-0 flex-1">
+                                <div className="flex items-center justify-between gap-2">
+                                    <span className="text-sm font-black text-white tracking-tight truncate">{user.username}</span>
+                                    <div className="flex items-center gap-1 px-2 py-0.5 bg-orange-600/20 border border-orange-500/30 rounded-full shrink-0">
+                                        <Zap className="w-2.5 h-2.5 text-orange-500 fill-orange-500" />
+                                        <span className="text-[10px] text-orange-200 font-black tracking-tighter">{user.credits}</span>
                                     </div>
-                                ))
-                            )}
+                                </div>
+                                <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">Verified Account</span>
+                            </div>
                         </div>
-                    </div>
 
-                    <div className="pt-6 border-t border-white/5 space-y-3">
                         <button
-                            onClick={() => window.location.reload()}
-                            className="w-full py-3 rounded-xl border border-white/5 text-[10px] font-bold text-slate-500 hover:text-white hover:bg-white/5 transition-all flex items-center justify-center gap-2"
+                            onClick={() => setShowPaymentModal(true)}
+                            className="w-full py-2.5 bg-orange-600/10 border border-orange-500/20 rounded-xl flex items-center justify-center gap-2 hover:bg-orange-600/20 transition-all group"
                         >
-                            <RefreshCcw className="w-3 h-3" /> RESET STUDIO
+                            <Plus className="w-3.5 h-3.5 text-orange-500 group-hover:scale-110 transition-transform" />
+                            <span className="text-[10px] font-black text-orange-200 uppercase tracking-widest">Top Up Credits</span>
                         </button>
                     </div>
-                </aside>
+                )}
 
-                {/* Main Content */}
-                <main className="flex-1 flex flex-col p-8 overflow-y-auto items-center">
-                    <div className="max-w-5xl w-full flex flex-col gap-10">
+                <div className="flex-1">
+                    <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-3 ml-2">Recent Projects</div>
+                    <div className="space-y-3">
+                        {projects.length === 0 ? (
+                            <div className="p-4 border border-dashed border-white/10 rounded-2xl text-center">
+                                <p className="text-[10px] text-slate-600 font-medium">No projects yet</p>
+                            </div>
+                        ) : (
+                            projects.slice(0, 8).map(p => (
+                                <div
+                                    key={p.id}
+                                    onClick={() => {
+                                        setSelectedProject(p);
+                                        // Use the stored URL if it exists and is not just a placeholder
+                                        if (p.master_video_url && p.master_video_url !== 'Saved') {
+                                            setModalVideoUrl(p.master_video_url);
+                                        } else if (p.id === campaignId && masterVideoUrl) {
+                                            // Fallback for current session if not yet uploaded or if it's the current one
+                                            setModalVideoUrl(masterVideoUrl);
+                                        } else {
+                                            setModalVideoUrl(null);
+                                        }
+                                    }}
+                                    className="p-3 bg-white/5 border border-white/5 rounded-xl hover:bg-white/10 transition-all cursor-pointer group"
+                                >
+                                    <div className="flex items-center justify-between mb-1">
+                                        <span className="text-[10px] font-bold text-slate-400 truncate max-w-[120px]">{p.vibe}</span>
+                                        <div className={`w-1.5 h-1.5 rounded-full ${p.status === 'completed' ? 'bg-green-500' : 'bg-orange-500'}`} />
+                                    </div>
+                                    <div className="text-[9px] text-slate-600 font-bold uppercase tracking-widest">
+                                        {new Date(p.created_at).toLocaleDateString()}
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </div>
 
-                        <div className="text-center space-y-3">
-                            <h2 className="text-6xl font-black text-white tracking-tighter italic uppercase leading-none">UGC Producer</h2>
-                            <p className="text-slate-500 text-base font-medium uppercase tracking-widest">3-Step Viral Production Flow</p>
+                <div className="pt-6 border-t border-white/5 space-y-3">
+                    <button
+                        onClick={() => window.location.reload()}
+                        className="w-full py-3 rounded-xl border border-white/5 text-[10px] font-bold text-slate-500 hover:text-white hover:bg-white/5 transition-all flex items-center justify-center gap-2"
+                    >
+                        <RefreshCcw className="w-3 h-3" /> RESET STUDIO
+                    </button>
+                </div>
+            </aside>
+
+            {/* Main Content */}
+            <main className="flex-1 flex flex-col p-8 overflow-y-auto items-center">
+                <div className="max-w-5xl w-full flex flex-col gap-10">
+
+                    <div className="text-center space-y-3">
+                        <h2 className="text-6xl font-black text-white tracking-tighter italic uppercase leading-none">UGC Producer</h2>
+                        <p className="text-slate-500 text-base font-medium uppercase tracking-widest">3-Step Viral Production Flow</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-12 items-start">
+                        {/* 3 Step Flow */}
+                        <div className="space-y-8">
+                            {/* Step 1: Upload */}
+                            <section className="space-y-4">
+                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                                    <span className="w-5 h-5 bg-orange-600 rounded-md text-white flex items-center justify-center text-[9px] font-black italic">01</span>
+                                    Upload Product
+                                </label>
+                                <label className={`flex flex-col items-center justify-center w-full aspect-square max-h-[160px] rounded-[32px] border-2 border-dashed transition-all cursor-pointer ${productImage ? 'border-orange-500/40 bg-orange-500/5' : 'border-white/10 hover:border-orange-500/30 bg-white/5 shadow-inner'
+                                    }`}>
+                                    {productImage ? (
+                                        <img src={productImage} alt="Product" className="w-full h-full object-contain p-6" />
+                                    ) : (
+                                        <div className="flex flex-col items-center gap-3 opacity-20 group">
+                                            <ShoppingBag className="w-8 h-8 group-hover:scale-110 transition-transform" />
+                                            <span className="text-[9px] font-black uppercase tracking-[0.2em]">Drop Item</span>
+                                        </div>
+                                    )}
+                                    <input type="file" className="hidden" accept="image/*" onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) {
+                                            const r = new FileReader();
+                                            r.onload = () => setProductImage(r.result as string);
+                                            r.readAsDataURL(file);
+                                        }
+                                    }} />
+                                </label>
+                            </section>
+
+                            {/* Step 2: Vibe */}
+                            <section className="space-y-4">
+                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                                    <span className="w-5 h-5 bg-orange-600 rounded-md text-white flex items-center justify-center text-[9px] font-black italic">02</span>
+                                    Set Vibe
+                                </label>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {Object.values(AdVibe).map((v) => (
+                                        <button
+                                            key={v}
+                                            onClick={() => setVibe(v)}
+                                            className={`flex items-center justify-between px-4 py-3 rounded-xl border text-left transition-all ${vibe === v
+                                                ? 'bg-orange-600 border-orange-400 text-white shadow-lg'
+                                                : 'bg-white/5 border-white/5 text-slate-400 hover:bg-white/10'
+                                                }`}
+                                        >
+                                            <span className="font-bold text-[9px] uppercase tracking-tight">{v}</span>
+                                            {vibe === v && <CheckCircle2 className="w-3 h-3 text-white" />}
+                                        </button>
+                                    ))}
+                                </div>
+                            </section>
+
+                            {/* Step 3: Template */}
+                            <section className="space-y-4">
+                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                                    <span className="w-5 h-5 bg-orange-600 rounded-md text-white flex items-center justify-center text-[9px] font-black italic">03</span>
+                                    Select Template
+                                </label>
+                                <div className="grid grid-cols-6 gap-2 relative">
+                                    {[1, 2, 3, 4, 5, 6].map((num) => {
+                                        const path = `/templates/template${num}.png`;
+                                        return (
+                                            <button
+                                                key={num}
+                                                onClick={() => setSelectedTemplate(path)}
+                                                onMouseEnter={() => setHoveredTemplate(path)}
+                                                onMouseLeave={() => setHoveredTemplate(null)}
+                                                className={`aspect-square rounded-xl overflow-hidden border-2 transition-all ${selectedTemplate === path ? 'border-orange-500 scale-95 shadow-lg shadow-orange-500/20' : 'border-white/5 opacity-40 hover:opacity-100 hover:border-white/20'}`}
+                                            >
+                                                <img src={path} className="w-full h-full object-cover" alt={`Template ${num}`} />
+                                            </button>
+                                        );
+                                    })}
+
+                                    {/* Hover Preview Overlay */}
+                                    {hoveredTemplate && (
+                                        <div className="absolute bottom-full mb-4 left-0 z-50 pointer-events-none animate-in fade-in zoom-in duration-200">
+                                            <div className="w-48 aspect-[9/16] rounded-3xl overflow-hidden border-4 border-orange-600 shadow-[0_0_50px_rgba(255,77,0,0.3)] bg-black">
+                                                <img src={hoveredTemplate} className="w-full h-full object-cover" alt="Preview" />
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </section>
+
+                            <div className="pt-4">
+                                <button
+                                    onClick={handleGenerateFullAd}
+                                    disabled={!productImage || status.stage === 'generating'}
+                                    className={`w-full py-6 rounded-3xl font-black text-xl uppercase italic tracking-tighter transition-all flex items-center justify-center gap-4 ${!productImage || status.stage === 'generating'
+                                        ? 'bg-white/5 text-slate-700 cursor-not-allowed'
+                                        : 'bg-orange-600 text-white hover:bg-orange-500 hover:scale-[1.01] shadow-[0_20px_40px_rgba(255,77,0,0.25)]'
+                                        }`}
+                                >
+                                    {status.stage === 'generating' ? (
+                                        <Loader2 className="w-6 h-6 animate-spin" />
+                                    ) : (
+                                        <div className="flex items-center gap-4">
+                                            <Play className="w-6 h-6 fill-current" />
+                                            <div className="flex items-center gap-1.5 px-3 py-1 bg-white/10 rounded-full border border-white/10 shrink-0">
+                                                <Zap className="w-3.5 h-3.5 text-orange-400 fill-orange-400" />
+                                                <span className="text-xs font-black tracking-normal italic">1</span>
+                                            </div>
+                                        </div>
+                                    )}
+                                    {status.stage === 'generating' ? status.message : 'START GENERATION'}
+                                </button>
+                            </div>
                         </div>
 
-                        <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-12 items-start">
-                            {/* 3 Step Flow */}
-                            <div className="space-y-8">
-                                {/* Step 1: Upload */}
-                                <section className="space-y-4">
-                                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                                        <span className="w-5 h-5 bg-orange-600 rounded-md text-white flex items-center justify-center text-[9px] font-black italic">01</span>
-                                        Upload Product
-                                    </label>
-                                    <label className={`flex flex-col items-center justify-center w-full aspect-square max-h-[160px] rounded-[32px] border-2 border-dashed transition-all cursor-pointer ${productImage ? 'border-orange-500/40 bg-orange-500/5' : 'border-white/10 hover:border-orange-500/30 bg-white/5 shadow-inner'
-                                        }`}>
-                                        {productImage ? (
-                                            <img src={productImage} alt="Product" className="w-full h-full object-contain p-6" />
-                                        ) : (
-                                            <div className="flex flex-col items-center gap-3 opacity-20 group">
-                                                <ShoppingBag className="w-8 h-8 group-hover:scale-110 transition-transform" />
-                                                <span className="text-[9px] font-black uppercase tracking-[0.2em]">Drop Item</span>
-                                            </div>
-                                        )}
-                                        <input type="file" className="hidden" accept="image/*" onChange={(e) => {
-                                            const file = e.target.files?.[0];
-                                            if (file) {
-                                                const r = new FileReader();
-                                                r.onload = () => setProductImage(r.result as string);
-                                                r.readAsDataURL(file);
-                                            }
-                                        }} />
-                                    </label>
-                                </section>
+                        {/* Viewfinder Column */}
+                        <div className="flex flex-col items-center">
+                            <div className="w-full aspect-[9/16] bg-[#0c0c12] rounded-[48px] border-[12px] border-[#16161c] shadow-[0_0_100px_rgba(0,0,0,0.8)] overflow-hidden relative">
 
-                                {/* Step 2: Vibe */}
-                                <section className="space-y-4">
-                                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                                        <span className="w-5 h-5 bg-orange-600 rounded-md text-white flex items-center justify-center text-[9px] font-black italic">02</span>
-                                        Set Vibe
-                                    </label>
-                                    <div className="grid grid-cols-2 gap-2">
-                                        {Object.values(AdVibe).map((v) => (
+                                {masterVideoUrl ? (
+                                    <div className="w-full h-full relative group/player">
+                                        <video
+                                            id="main-video-player"
+                                            src={masterVideoUrl}
+                                            className="w-full h-full object-cover"
+                                            autoPlay
+                                            loop
+                                            controls={false}
+                                            onClick={(e) => {
+                                                const v = e.currentTarget;
+                                                if (v.paused) v.play();
+                                                else v.pause();
+                                            }}
+                                        />
+
+                                        {/* Custom HUD: Top Right Download */}
+                                        <div className="absolute top-6 right-6 z-50">
                                             <button
-                                                key={v}
-                                                onClick={() => setVibe(v)}
-                                                className={`flex items-center justify-between px-4 py-3 rounded-xl border text-left transition-all ${vibe === v
-                                                    ? 'bg-orange-600 border-orange-400 text-white shadow-lg'
-                                                    : 'bg-white/5 border-white/5 text-slate-400 hover:bg-white/10'
-                                                    }`}
+                                                onClick={downloadMasterAd}
+                                                className="bg-orange-600 hover:bg-orange-500 text-white px-4 py-2 rounded-full font-black text-[10px] uppercase tracking-tighter shadow-xl shadow-orange-500/40 transition-all flex items-center gap-2 hover:scale-105 active:scale-95"
                                             >
-                                                <span className="font-bold text-[9px] uppercase tracking-tight">{v}</span>
-                                                {vibe === v && <CheckCircle2 className="w-3 h-3 text-white" />}
+                                                <Download className="w-3 h-3" />
+                                                Download
                                             </button>
-                                        ))}
-                                    </div>
-                                </section>
+                                        </div>
 
-                                {/* Step 3: Template */}
-                                <section className="space-y-4">
-                                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                                        <span className="w-5 h-5 bg-orange-600 rounded-md text-white flex items-center justify-center text-[9px] font-black italic">03</span>
-                                        Select Template
-                                    </label>
-                                    <div className="grid grid-cols-6 gap-2 relative">
-                                        {[1, 2, 3, 4, 5, 6].map((num) => {
-                                            const path = `/templates/template${num}.png`;
-                                            return (
-                                                <button
-                                                    key={num}
-                                                    onClick={() => setSelectedTemplate(path)}
-                                                    onMouseEnter={() => setHoveredTemplate(path)}
-                                                    onMouseLeave={() => setHoveredTemplate(null)}
-                                                    className={`aspect-square rounded-xl overflow-hidden border-2 transition-all ${selectedTemplate === path ? 'border-orange-500 scale-95 shadow-lg shadow-orange-500/20' : 'border-white/5 opacity-40 hover:opacity-100 hover:border-white/20'}`}
-                                                >
-                                                    <img src={path} className="w-full h-full object-cover" alt={`Template ${num}`} />
-                                                </button>
-                                            );
-                                        })}
-
-                                        {/* Hover Preview Overlay */}
-                                        {hoveredTemplate && (
-                                            <div className="absolute bottom-full mb-4 left-0 z-50 pointer-events-none animate-in fade-in zoom-in duration-200">
-                                                <div className="w-48 aspect-[9/16] rounded-3xl overflow-hidden border-4 border-orange-600 shadow-[0_0_50px_rgba(255,77,0,0.3)] bg-black">
-                                                    <img src={hoveredTemplate} className="w-full h-full object-cover" alt="Preview" />
+                                        {/* Custom Player Controls */}
+                                        <div className="absolute inset-x-0 bottom-0 p-6 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover/player:opacity-100 transition-opacity duration-300 pointer-events-none">
+                                            <div className="flex flex-col gap-3 pointer-events-auto">
+                                                <div className="w-full h-1 bg-white/20 rounded-full overflow-hidden cursor-pointer relative group/progress" onClick={(e) => {
+                                                    const rect = e.currentTarget.getBoundingClientRect();
+                                                    const pos = (e.clientX - rect.left) / rect.width;
+                                                    const v = document.getElementById('main-video-player') as HTMLVideoElement;
+                                                    if (v) v.currentTime = pos * v.duration;
+                                                }}>
+                                                    <div
+                                                        id="video-progress-bar"
+                                                        className="absolute inset-y-0 left-0 bg-orange-600 rounded-full"
+                                                        style={{ width: '0%' }}
+                                                    />
+                                                </div>
+                                                <div className="flex items-center justify-between">
+                                                    <button
+                                                        className="text-white hover:text-orange-400 transition-colors"
+                                                        onClick={() => {
+                                                            const v = document.getElementById('main-video-player') as HTMLVideoElement;
+                                                            if (v) {
+                                                                if (v.paused) v.play();
+                                                                else v.pause();
+                                                            }
+                                                        }}
+                                                    >
+                                                        <Play className="w-4 h-4 fill-current" />
+                                                    </button>
+                                                    <span className="text-[10px] font-bold text-white/50 tracking-widest">VEOS VIDEO PLAYER</span>
                                                 </div>
                                             </div>
-                                        )}
-                                    </div>
-                                </section>
+                                        </div>
 
-                                <div className="pt-4">
-                                    <button
-                                        onClick={handleGenerateFullAd}
-                                        disabled={!productImage || status.stage === 'generating'}
-                                        className={`w-full py-6 rounded-3xl font-black text-xl uppercase italic tracking-tighter transition-all flex items-center justify-center gap-4 ${!productImage || status.stage === 'generating'
-                                            ? 'bg-white/5 text-slate-700 cursor-not-allowed'
-                                            : 'bg-orange-600 text-white hover:bg-orange-500 hover:scale-[1.01] shadow-[0_20px_40px_rgba(255,77,0,0.25)]'
-                                            }`}
-                                    >
-                                        {status.stage === 'generating' ? (
-                                            <Loader2 className="w-6 h-6 animate-spin" />
-                                        ) : (
-                                            <div className="flex items-center gap-4">
-                                                <Play className="w-6 h-6 fill-current" />
-                                                <div className="flex items-center gap-1.5 px-3 py-1 bg-white/10 rounded-full border border-white/10 shrink-0">
-                                                    <Zap className="w-3.5 h-3.5 text-orange-400 fill-orange-400" />
-                                                    <span className="text-xs font-black tracking-normal italic">1</span>
-                                                </div>
-                                            </div>
-                                        )}
-                                        {status.stage === 'generating' ? status.message : 'START GENERATION'}
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Viewfinder Column */}
-                            <div className="flex flex-col items-center">
-                                <div className="w-full aspect-[9/16] bg-[#0c0c12] rounded-[48px] border-[12px] border-[#16161c] shadow-[0_0_100px_rgba(0,0,0,0.8)] overflow-hidden relative">
-
-                                    {masterVideoUrl ? (
-                                        <div className="w-full h-full relative group/player">
-                                            <video
-                                                id="main-video-player"
-                                                src={masterVideoUrl}
-                                                className="w-full h-full object-cover"
-                                                autoPlay
-                                                loop
-                                                controls={false}
-                                                onClick={(e) => {
-                                                    const v = e.currentTarget;
-                                                    if (v.paused) v.play();
-                                                    else v.pause();
-                                                }}
-                                            />
-
-                                            {/* Custom HUD: Top Right Download */}
-                                            <div className="absolute top-6 right-6 z-50">
-                                                <button
-                                                    onClick={downloadMasterAd}
-                                                    className="bg-orange-600 hover:bg-orange-500 text-white px-4 py-2 rounded-full font-black text-[10px] uppercase tracking-tighter shadow-xl shadow-orange-500/40 transition-all flex items-center gap-2 hover:scale-105 active:scale-95"
-                                                >
-                                                    <Download className="w-3 h-3" />
-                                                    Download
-                                                </button>
-                                            </div>
-
-                                            {/* Custom Player Controls */}
-                                            <div className="absolute inset-x-0 bottom-0 p-6 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover/player:opacity-100 transition-opacity duration-300 pointer-events-none">
-                                                <div className="flex flex-col gap-3 pointer-events-auto">
-                                                    <div className="w-full h-1 bg-white/20 rounded-full overflow-hidden cursor-pointer relative group/progress" onClick={(e) => {
-                                                        const rect = e.currentTarget.getBoundingClientRect();
-                                                        const pos = (e.clientX - rect.left) / rect.width;
-                                                        const v = document.getElementById('main-video-player') as HTMLVideoElement;
-                                                        if (v) v.currentTime = pos * v.duration;
-                                                    }}>
-                                                        <div
-                                                            id="video-progress-bar"
-                                                            className="absolute inset-y-0 left-0 bg-orange-600 rounded-full"
-                                                            style={{ width: '0%' }}
-                                                        />
-                                                    </div>
-                                                    <div className="flex items-center justify-between">
-                                                        <button
-                                                            className="text-white hover:text-orange-400 transition-colors"
-                                                            onClick={() => {
-                                                                const v = document.getElementById('main-video-player') as HTMLVideoElement;
-                                                                if (v) {
-                                                                    if (v.paused) v.play();
-                                                                    else v.pause();
-                                                                }
-                                                            }}
-                                                        >
-                                                            <Play className="w-4 h-4 fill-current" />
-                                                        </button>
-                                                        <span className="text-[10px] font-bold text-white/50 tracking-widest">VEOS VIDEO PLAYER</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <script dangerouslySetInnerHTML={{
-                                                __html: `
+                                        <script dangerouslySetInnerHTML={{
+                                            __html: `
                                             setInterval(() => {
                                                 const v = document.getElementById('main-video-player');
                                                 const bar = document.getElementById('video-progress-bar');
@@ -711,278 +710,278 @@ const App: React.FC = () => {
                                                 }
                                             }, 100);
                                         `}} />
-                                        </div>
-                                    ) : (
-                                        <div className="w-full h-full flex flex-col items-center justify-center p-12 text-center bg-gradient-to-b from-[#0c0c12] to-[#050508]">
-                                            {status.stage === 'generating' ? (
-                                                <div className="space-y-8 w-full max-w-[240px]">
-                                                    <div className="relative">
-                                                        <div className="flex items-center justify-center">
-                                                            <Loader2 className="w-20 h-20 animate-spin text-orange-500/10 absolute" />
-                                                            <div className="w-16 h-16 rounded-full border-2 border-orange-500/20 flex items-center justify-center">
-                                                                <span className="text-xl font-black text-orange-500 italic">{status.progress || 0}%</span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div className="space-y-3">
-                                                        <span className="text-orange-400 font-black tracking-tighter text-lg italic uppercase animate-pulse leading-none block">{status.message}</span>
-                                                        <div className="space-y-1">
-                                                            <span className="text-[8px] text-slate-500 font-bold uppercase tracking-[0.2em] block">Don't close this tab while we produce your ad (5-10 mins)</span>
-                                                            <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
-                                                                <div
-                                                                    className="h-full bg-orange-600 transition-all duration-1000"
-                                                                    style={{ width: `${status.progress || 0}%` }}
-                                                                />
-                                                            </div>
+                                    </div>
+                                ) : (
+                                    <div className="w-full h-full flex flex-col items-center justify-center p-12 text-center bg-gradient-to-b from-[#0c0c12] to-[#050508]">
+                                        {status.stage === 'generating' ? (
+                                            <div className="space-y-8 w-full max-w-[240px]">
+                                                <div className="relative">
+                                                    <div className="flex items-center justify-center">
+                                                        <Loader2 className="w-20 h-20 animate-spin text-orange-500/10 absolute" />
+                                                        <div className="w-16 h-16 rounded-full border-2 border-orange-500/20 flex items-center justify-center">
+                                                            <span className="text-xl font-black text-orange-500 italic">{status.progress || 0}%</span>
                                                         </div>
                                                     </div>
                                                 </div>
-                                            ) : (
-                                                <div className="opacity-10 group">
-                                                    <Smartphone className="w-16 h-16 mb-4 mx-auto group-hover:scale-110 transition-transform duration-500" />
-                                                    <span className="text-[10px] font-black uppercase tracking-[0.4em]">Empty Studio</span>
+                                                <div className="space-y-3">
+                                                    <span className="text-orange-400 font-black tracking-tighter text-lg italic uppercase animate-pulse leading-none block">{status.message}</span>
+                                                    <div className="space-y-1">
+                                                        <span className="text-[8px] text-slate-500 font-bold uppercase tracking-[0.2em] block">Don't close this tab while we produce your ad (5-10 mins)</span>
+                                                        <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
+                                                            <div
+                                                                className="h-full bg-orange-600 transition-all duration-1000"
+                                                                style={{ width: `${status.progress || 0}%` }}
+                                                            />
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-
-                                {status.stage === 'error' && (
-                                    <div className="mt-6 w-full p-4 bg-red-950/20 border border-red-500/20 rounded-2xl flex items-start gap-3 text-red-400">
-                                        <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
-                                        <div>
-                                            <h4 className="font-bold text-[10px] uppercase tracking-widest mb-1">Production Error</h4>
-                                            <p className="text-[9px] leading-relaxed opacity-70">{status.message}</p>
-                                        </div>
+                                            </div>
+                                        ) : (
+                                            <div className="opacity-10 group">
+                                                <Smartphone className="w-16 h-16 mb-4 mx-auto group-hover:scale-110 transition-transform duration-500" />
+                                                <span className="text-[10px] font-black uppercase tracking-[0.4em]">Empty Studio</span>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </div>
-                        </div>
-                    </div>
-                </main>
 
-                {/* Video Modal */}
-                {selectedProject && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl animate-in fade-in duration-300">
-                        <div className="relative w-full max-w-sm aspect-[9/16] bg-[#0c0c12] rounded-[48px] border-[12px] border-[#16161c] shadow-[0_0_100px_rgba(0,0,0,0.8)] overflow-hidden">
-
-                            {/* Modal Header */}
-                            <div className="absolute top-8 left-8 right-8 z-[110] flex items-center justify-between pointer-events-none">
-                                <div className="bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
-                                    <span className="text-[10px] font-bold text-white uppercase tracking-widest">{selectedProject.vibe}</span>
-                                </div>
-                                <button
-                                    onClick={() => setSelectedProject(null)}
-                                    className="w-8 h-8 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center border border-white/10 transition-all pointer-events-auto"
-                                >
-                                    <RefreshCcw className="w-4 h-4 text-white rotate-45" />
-                                </button>
-                            </div>
-
-                            {modalVideoUrl ? (
-                                <div className="w-full h-full relative group/modal-player">
-                                    <video
-                                        id="modal-video-player"
-                                        src={modalVideoUrl}
-                                        className="w-full h-full object-cover"
-                                        autoPlay
-                                        loop
-                                        onClick={(e) => {
-                                            const v = e.currentTarget;
-                                            if (v.paused) v.play();
-                                            else v.pause();
-                                        }}
-                                    />
-
-                                    {/* Replay Button */}
-                                    <button
-                                        onClick={() => {
-                                            const v = document.getElementById('modal-video-player') as HTMLVideoElement;
-                                            if (v) {
-                                                v.currentTime = 0;
-                                                v.play();
-                                            }
-                                        }}
-                                        className="absolute bottom-24 right-8 z-[110] w-12 h-12 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/10 transition-all"
-                                    >
-                                        <RefreshCcw className="w-5 h-5 text-white" />
-                                    </button>
-
-                                    {/* Download Button */}
-                                    <button
-                                        onClick={() => {
-                                            const a = document.createElement('a');
-                                            a.href = modalVideoUrl;
-                                            a.download = `ugc-video-${selectedProject.id}.mp4`;
-                                            document.body.appendChild(a);
-                                            a.click();
-                                            document.body.removeChild(a);
-                                        }}
-                                        className="absolute bottom-8 left-8 right-8 z-[110] bg-orange-600 hover:bg-orange-500 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-orange-500/40 transition-all flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-[0.98]"
-                                    >
-                                        <Download className="w-4 h-4" />
-                                        Download Video
-                                    </button>
-                                </div>
-                            ) : (
-                                <div className="w-full h-full flex flex-col items-center justify-center p-12 text-center bg-gradient-to-b from-[#0c0c12] to-[#050508]">
-                                    <div className="space-y-4 opacity-30">
-                                        <div className="w-16 h-16 bg-white/5 rounded-3xl flex items-center justify-center mx-auto">
-                                            <AlertCircle className="w-8 h-8 text-white" />
-                                        </div>
-                                        <div>
-                                            <h3 className="text-white font-bold text-[10px] uppercase tracking-widest">Video Not Ready</h3>
-                                            <p className="text-slate-500 text-[9px] mt-1 italic">This generation may have been interrupted or the file is still uploading.</p>
-                                        </div>
-                                        <button
-                                            onClick={() => setSelectedProject(null)}
-                                            className="text-[10px] font-bold text-orange-500 uppercase tracking-widest hover:text-orange-400"
-                                        >
-                                            Back to Studio
-                                        </button>
+                            {status.stage === 'error' && (
+                                <div className="mt-6 w-full p-4 bg-red-950/20 border border-red-500/20 rounded-2xl flex items-start gap-3 text-red-400">
+                                    <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+                                    <div>
+                                        <h4 className="font-bold text-[10px] uppercase tracking-widest mb-1">Production Error</h4>
+                                        <p className="text-[9px] leading-relaxed opacity-70">{status.message}</p>
                                     </div>
                                 </div>
                             )}
                         </div>
                     </div>
-                )}
+                </div>
+            </main>
 
+            {/* Video Modal */}
+            {selectedProject && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl animate-in fade-in duration-300">
+                    <div className="relative w-full max-w-sm aspect-[9/16] bg-[#0c0c12] rounded-[48px] border-[12px] border-[#16161c] shadow-[0_0_100px_rgba(0,0,0,0.8)] overflow-hidden">
 
+                        {/* Modal Header */}
+                        <div className="absolute top-8 left-8 right-8 z-[110] flex items-center justify-between pointer-events-none">
+                            <div className="bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
+                                <span className="text-[10px] font-bold text-white uppercase tracking-widest">{selectedProject.vibe}</span>
+                            </div>
+                            <button
+                                onClick={() => setSelectedProject(null)}
+                                className="w-8 h-8 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center border border-white/10 transition-all pointer-events-auto"
+                            >
+                                <RefreshCcw className="w-4 h-4 text-white rotate-45" />
+                            </button>
+                        </div>
 
+                        {modalVideoUrl ? (
+                            <div className="w-full h-full relative group/modal-player">
+                                <video
+                                    id="modal-video-player"
+                                    src={modalVideoUrl}
+                                    className="w-full h-full object-cover"
+                                    autoPlay
+                                    loop
+                                    onClick={(e) => {
+                                        const v = e.currentTarget;
+                                        if (v.paused) v.play();
+                                        else v.pause();
+                                    }}
+                                />
 
-                {/* Payment Modal */}
-                {showPaymentModal && (
-                    <>
-                        {checkoutSessionId ? (
-                            <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm animate-in fade-in duration-300 flex items-center justify-center p-4">
-                                <div className="w-full max-w-md bg-[#0c0c12] border border-white/10 rounded-3xl overflow-hidden shadow-2xl flex flex-col h-[85vh] animate-in zoom-in-95 duration-300">
-                                    {/* Header */}
-                                    <div className="px-6 py-4 border-b border-white/5 flex justify-between items-center bg-[#0c0c12] shrink-0">
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-8 h-8 bg-orange-600 rounded-lg flex items-center justify-center">
-                                                <Zap className="w-4 h-4 text-white fill-white" />
-                                            </div>
-                                            <span className="text-sm font-black text-white uppercase tracking-wide">Secure Checkout</span>
-                                        </div>
-                                        <button
-                                            onClick={() => { setShowPaymentModal(false); setCheckoutSessionId(null); setCheckoutPurchaseUrl(null); }}
-                                            className="transition-colors text-white/20 hover:text-white"
-                                        >
-                                            <X className="w-5 h-5" />
-                                        </button>
-                                    </div>
+                                {/* Replay Button */}
+                                <button
+                                    onClick={() => {
+                                        const v = document.getElementById('modal-video-player') as HTMLVideoElement;
+                                        if (v) {
+                                            v.currentTime = 0;
+                                            v.play();
+                                        }
+                                    }}
+                                    className="absolute bottom-24 right-8 z-[110] w-12 h-12 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/10 transition-all"
+                                >
+                                    <RefreshCcw className="w-5 h-5 text-white" />
+                                </button>
 
-                                    {/* Embed Container */}
-                                    <div className="flex-1 bg-gray-50 relative overflow-y-auto light-scrollbar">
-                                        <WhopCheckoutEmbed
-                                            key={checkoutSessionId}
-                                            sessionId={checkoutSessionId}
-                                            returnUrl={typeof window !== 'undefined' ? window.location.origin + window.location.pathname : ""}
-                                            onComplete={async (paymentId) => {
-                                                console.log("Checkout complete! Verifying Payment ID:", paymentId);
-                                                try {
-                                                    const res = await fetch('/api/payments/verify', {
-                                                        method: 'POST',
-                                                        headers: { 'Content-Type': 'application/json' },
-                                                        body: JSON.stringify({
-                                                            paymentId,
-                                                            packageId: selectedPackageId
-                                                        })
-                                                    });
-                                                    const data = await res.json();
-
-                                                    if (data.success) {
-                                                        console.log("Credits added successfully!");
-                                                        setShowPaymentModal(false);
-                                                        setCheckoutSessionId(null);
-                                                        setCheckoutPurchaseUrl(null);
-                                                        window.location.reload();
-                                                    } else {
-                                                        console.error("Payment verification failed:", data.error);
-                                                        // Optional: Show error to user
-                                                        alert("Payment verification failed. Please contact support if you were charged.");
-                                                    }
-                                                } catch (err) {
-                                                    console.error("Error calling verify API:", err);
-                                                }
-                                            }}
-                                        />
-                                    </div>
-                                </div>
+                                {/* Download Button */}
+                                <button
+                                    onClick={() => {
+                                        const a = document.createElement('a');
+                                        a.href = modalVideoUrl;
+                                        a.download = `ugc-video-${selectedProject.id}.mp4`;
+                                        document.body.appendChild(a);
+                                        a.click();
+                                        document.body.removeChild(a);
+                                    }}
+                                    className="absolute bottom-8 left-8 right-8 z-[110] bg-orange-600 hover:bg-orange-500 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-orange-500/40 transition-all flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-[0.98]"
+                                >
+                                    <Download className="w-4 h-4" />
+                                    Download Video
+                                </button>
                             </div>
                         ) : (
-                            <div className="fixed inset-0 z-[200] overflow-y-auto bg-black/90 backdrop-blur-xl animate-in fade-in duration-300">
-                                <div className="flex min-h-full items-center justify-center p-4 sm:p-6 py-12">
-                                    <div className="bg-[#0c0c12] border border-white/10 rounded-[40px] w-full max-w-xl shadow-2xl relative overflow-hidden">
-                                        <div className="p-8 pb-4 flex flex-col items-center text-center relative">
-                                            <button
-                                                onClick={() => { setShowPaymentModal(false); setCheckoutSessionId(null); }}
-                                                className="absolute top-6 right-6 transition-colors text-white/20 hover:text-white"
-                                            >
-                                                <X className="w-5 h-5" />
-                                            </button>
-
-                                            <div className="w-16 h-16 bg-orange-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-orange-500/20">
-                                                <Zap className="w-8 h-8 text-white fill-white" />
-                                            </div>
-                                            <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter mb-2">Fuel Your Production</h2>
-                                            <p className="text-slate-500 text-sm font-medium mb-10 max-w-md">Select a credit package to start generating high-converting viral UGC ads.</p>
-
-                                            <div className="grid grid-cols-2 gap-4 w-full">
-                                                {[
-                                                    { id: 'pack_3', credits: 3, price: 6, label: 'Starter' },
-                                                    { id: 'pack_5', credits: 5, price: 10, label: 'Standard' },
-                                                    { id: 'pack_12', credits: 12, price: 20, label: 'Pro', popular: true },
-                                                    { id: 'pack_18', credits: 18, price: 30, label: 'Agency' },
-                                                ].map((pkg) => (
-                                                    <button
-                                                        key={pkg.id}
-                                                        onClick={() => handleBuyCredits(pkg.id)}
-                                                        disabled={loadingCheckout}
-                                                        className={`relative p-6 bg-white/5 border border-white/10 rounded-3xl text-left hover:border-orange-500/50 hover:bg-white/10 transition-all group ${pkg.popular ? 'border-orange-500/40 bg-orange-600/5' : ''}`}
-                                                    >
-                                                        {pkg.popular && (
-                                                            <div className="absolute top-4 right-4 bg-orange-600 px-2 py-0.5 rounded-full">
-                                                                <span className="text-[8px] font-black text-white uppercase tracking-widest">Popular</span>
-                                                            </div>
-                                                        )}
-                                                        <div className="flex items-center gap-3 mb-4">
-                                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${pkg.popular ? 'bg-orange-600 text-white' : 'bg-white/10 text-slate-400'}`}>
-                                                                <Zap className={`w-5 h-5 ${pkg.popular ? 'fill-white' : ''}`} />
-                                                            </div>
-                                                            <div>
-                                                                <h3 className="text-xs font-black text-white uppercase tracking-widest leading-none mb-1">{pkg.label}</h3>
-                                                                <span className="text-2xl font-black text-white italic tracking-tighter">${pkg.price}</span>
-                                                            </div>
-                                                        </div>
-                                                        <div className="flex items-center justify-between">
-                                                            <span className="text-xl font-black text-orange-500 italic">{pkg.credits} CREDITS</span>
-                                                            <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                <ChevronRight className="w-4 h-4 text-orange-500" />
-                                                            </div>
-                                                        </div>
-                                                    </button>
-                                                ))}
-                                            </div>
-
-                                            {loadingCheckout && (
-                                                <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-10 rounded-[40px]">
-                                                    <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div className="p-4 bg-white/5 border-t border-white/5 text-center">
-                                            <p className="text-[9px] text-slate-600 font-bold uppercase tracking-[0.2em]">Secure payments powered by Whop</p>
-                                        </div>
+                            <div className="w-full h-full flex flex-col items-center justify-center p-12 text-center bg-gradient-to-b from-[#0c0c12] to-[#050508]">
+                                <div className="space-y-4 opacity-30">
+                                    <div className="w-16 h-16 bg-white/5 rounded-3xl flex items-center justify-center mx-auto">
+                                        <AlertCircle className="w-8 h-8 text-white" />
                                     </div>
+                                    <div>
+                                        <h3 className="text-white font-bold text-[10px] uppercase tracking-widest">Video Not Ready</h3>
+                                        <p className="text-slate-500 text-[9px] mt-1 italic">This generation may have been interrupted or the file is still uploading.</p>
+                                    </div>
+                                    <button
+                                        onClick={() => setSelectedProject(null)}
+                                        className="text-[10px] font-bold text-orange-500 uppercase tracking-widest hover:text-orange-400"
+                                    >
+                                        Back to Studio
+                                    </button>
                                 </div>
                             </div>
                         )}
-                    </>
-                )}
+                    </div>
+                </div>
+            )}
 
-                <style dangerouslySetInnerHTML={{
-                    __html: `
+
+
+
+            {/* Payment Modal */}
+            {showPaymentModal && (
+                <>
+                    {checkoutSessionId ? (
+                        <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm animate-in fade-in duration-300 flex items-center justify-center p-4">
+                            <div className="w-full max-w-md bg-[#0c0c12] border border-white/10 rounded-3xl overflow-hidden shadow-2xl flex flex-col h-[85vh] animate-in zoom-in-95 duration-300">
+                                {/* Header */}
+                                <div className="px-6 py-4 border-b border-white/5 flex justify-between items-center bg-[#0c0c12] shrink-0">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-8 h-8 bg-orange-600 rounded-lg flex items-center justify-center">
+                                            <Zap className="w-4 h-4 text-white fill-white" />
+                                        </div>
+                                        <span className="text-sm font-black text-white uppercase tracking-wide">Secure Checkout</span>
+                                    </div>
+                                    <button
+                                        onClick={() => { setShowPaymentModal(false); setCheckoutSessionId(null); setCheckoutPurchaseUrl(null); }}
+                                        className="transition-colors text-white/20 hover:text-white"
+                                    >
+                                        <X className="w-5 h-5" />
+                                    </button>
+                                </div>
+
+                                {/* Embed Container */}
+                                <div className="flex-1 bg-gray-50 relative overflow-y-auto light-scrollbar">
+                                    <WhopCheckoutEmbed
+                                        key={checkoutSessionId}
+                                        sessionId={checkoutSessionId}
+                                        returnUrl={typeof window !== 'undefined' ? window.location.origin + window.location.pathname : ""}
+                                        onComplete={async (paymentId) => {
+                                            console.log("Checkout complete! Verifying Payment ID:", paymentId);
+                                            try {
+                                                const res = await fetch('/api/payments/verify', {
+                                                    method: 'POST',
+                                                    headers: { 'Content-Type': 'application/json' },
+                                                    body: JSON.stringify({
+                                                        paymentId,
+                                                        packageId: selectedPackageId
+                                                    })
+                                                });
+                                                const data = await res.json();
+
+                                                if (data.success) {
+                                                    console.log("Credits added successfully!");
+                                                    setShowPaymentModal(false);
+                                                    setCheckoutSessionId(null);
+                                                    setCheckoutPurchaseUrl(null);
+                                                    window.location.reload();
+                                                } else {
+                                                    console.error("Payment verification failed:", data.error);
+                                                    // Optional: Show error to user
+                                                    alert("Payment verification failed. Please contact support if you were charged.");
+                                                }
+                                            } catch (err) {
+                                                console.error("Error calling verify API:", err);
+                                            }
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="fixed inset-0 z-[200] overflow-y-auto bg-black/90 backdrop-blur-xl animate-in fade-in duration-300">
+                            <div className="flex min-h-full items-center justify-center p-4 sm:p-6 py-12">
+                                <div className="bg-[#0c0c12] border border-white/10 rounded-[40px] w-full max-w-xl shadow-2xl relative overflow-hidden">
+                                    <div className="p-8 pb-4 flex flex-col items-center text-center relative">
+                                        <button
+                                            onClick={() => { setShowPaymentModal(false); setCheckoutSessionId(null); }}
+                                            className="absolute top-6 right-6 transition-colors text-white/20 hover:text-white"
+                                        >
+                                            <X className="w-5 h-5" />
+                                        </button>
+
+                                        <div className="w-16 h-16 bg-orange-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-orange-500/20">
+                                            <Zap className="w-8 h-8 text-white fill-white" />
+                                        </div>
+                                        <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter mb-2">Fuel Your Production</h2>
+                                        <p className="text-slate-500 text-sm font-medium mb-10 max-w-md">Select a credit package to start generating high-converting viral UGC ads.</p>
+
+                                        <div className="grid grid-cols-2 gap-4 w-full">
+                                            {[
+                                                { id: 'pack_3', credits: 3, price: 6, label: 'Starter' },
+                                                { id: 'pack_5', credits: 5, price: 10, label: 'Standard' },
+                                                { id: 'pack_12', credits: 12, price: 20, label: 'Pro', popular: true },
+                                                { id: 'pack_18', credits: 18, price: 30, label: 'Agency' },
+                                            ].map((pkg) => (
+                                                <button
+                                                    key={pkg.id}
+                                                    onClick={() => handleBuyCredits(pkg.id)}
+                                                    disabled={loadingCheckout}
+                                                    className={`relative p-6 bg-white/5 border border-white/10 rounded-3xl text-left hover:border-orange-500/50 hover:bg-white/10 transition-all group ${pkg.popular ? 'border-orange-500/40 bg-orange-600/5' : ''}`}
+                                                >
+                                                    {pkg.popular && (
+                                                        <div className="absolute top-4 right-4 bg-orange-600 px-2 py-0.5 rounded-full">
+                                                            <span className="text-[8px] font-black text-white uppercase tracking-widest">Popular</span>
+                                                        </div>
+                                                    )}
+                                                    <div className="flex items-center gap-3 mb-4">
+                                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${pkg.popular ? 'bg-orange-600 text-white' : 'bg-white/10 text-slate-400'}`}>
+                                                            <Zap className={`w-5 h-5 ${pkg.popular ? 'fill-white' : ''}`} />
+                                                        </div>
+                                                        <div>
+                                                            <h3 className="text-xs font-black text-white uppercase tracking-widest leading-none mb-1">{pkg.label}</h3>
+                                                            <span className="text-2xl font-black text-white italic tracking-tighter">${pkg.price}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-xl font-black text-orange-500 italic">{pkg.credits} CREDITS</span>
+                                                        <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <ChevronRight className="w-4 h-4 text-orange-500" />
+                                                        </div>
+                                                    </div>
+                                                </button>
+                                            ))}
+                                        </div>
+
+                                        {loadingCheckout && (
+                                            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-10 rounded-[40px]">
+                                                <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="p-4 bg-white/5 border-t border-white/5 text-center">
+                                        <p className="text-[9px] text-slate-600 font-bold uppercase tracking-[0.2em]">Secure payments powered by Whop</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </>
+            )}
+
+            <style dangerouslySetInnerHTML={{
+                __html: `
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.05); border-radius: 10px; }
@@ -992,8 +991,8 @@ const App: React.FC = () => {
         .light-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 10px; }
         .light-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.3); }
       `}} />
-            </div >
-        );
-    };
+        </div >
+    );
+};
 
-    export default App;
+export default App;
