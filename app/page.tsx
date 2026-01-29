@@ -49,6 +49,7 @@ const App: React.FC = () => {
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [checkoutSessionId, setCheckoutSessionId] = useState<string | null>(null);
     const [checkoutPurchaseUrl, setCheckoutPurchaseUrl] = useState<string | null>(null);
+    const [selectedPackageId, setSelectedPackageId] = useState<string | null>(null);
     const [loadingCheckout, setLoadingCheckout] = useState(false);
 
     const params = useParams();
@@ -308,6 +309,7 @@ const App: React.FC = () => {
 
     const handleBuyCredits = async (packageId: string) => {
         setLoadingCheckout(true);
+        setSelectedPackageId(packageId);
         try {
             const response = await fetch('/api/payments/checkout', {
                 method: 'POST',
@@ -824,7 +826,10 @@ const App: React.FC = () => {
                                                 const res = await fetch('/api/payments/verify', {
                                                     method: 'POST',
                                                     headers: { 'Content-Type': 'application/json' },
-                                                    body: JSON.stringify({ paymentId })
+                                                    body: JSON.stringify({
+                                                        paymentId,
+                                                        packageId: selectedPackageId
+                                                    })
                                                 });
                                                 const data = await res.json();
 
