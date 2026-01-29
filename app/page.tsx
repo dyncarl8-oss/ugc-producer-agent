@@ -818,12 +818,30 @@ const App: React.FC = () => {
                                         key={checkoutSessionId}
                                         sessionId={checkoutSessionId}
                                         returnUrl={typeof window !== 'undefined' ? window.location.origin + window.location.pathname : ""}
-                                        onComplete={(paymentId) => {
-                                            console.log("Checkout complete! Payment ID:", paymentId);
-                                            setShowPaymentModal(false);
-                                            setCheckoutSessionId(null);
-                                            setCheckoutPurchaseUrl(null);
-                                            window.location.reload();
+                                        onComplete={async (paymentId) => {
+                                            console.log("Checkout complete! Verifying Payment ID:", paymentId);
+                                            try {
+                                                const res = await fetch('/api/payments/verify', {
+                                                    method: 'POST',
+                                                    headers: { 'Content-Type': 'application/json' },
+                                                    body: JSON.stringify({ paymentId })
+                                                });
+                                                const data = await res.json();
+
+                                                if (data.success) {
+                                                    console.log("Credits added successfully!");
+                                                    setShowPaymentModal(false);
+                                                    setCheckoutSessionId(null);
+                                                    setCheckoutPurchaseUrl(null);
+                                                    window.location.reload();
+                                                } else {
+                                                    console.error("Payment verification failed:", data.error);
+                                                    // Optional: Show error to user
+                                                    alert("Payment verification failed. Please contact support if you were charged.");
+                                                }
+                                            } catch (err) {
+                                                console.error("Error calling verify API:", err);
+                                            }
                                         }}
                                     />
                                 </div>
