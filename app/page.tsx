@@ -86,6 +86,8 @@ const App: React.FC = () => {
         setFfmpegLoaded(true);
     };
 
+    const [isPolling, setIsPolling] = useState(false);
+
     useEffect(() => {
         const fetchUser = async () => {
             try {
@@ -109,6 +111,14 @@ const App: React.FC = () => {
                 if (response.ok) {
                     const data = await response.json();
                     setProjects(data.campaigns);
+
+                    // Resume logic: If most recent campaign is pending, start polling
+                    const latest = data.campaigns[0];
+                    if (latest && latest.status === 'pending') {
+                        setCampaignId(latest.id);
+                        setIsPolling(true);
+                        setStatus({ stage: 'generating', message: 'Resuming background generation...', progress: 30 });
+                    }
                 }
             } catch (e) { console.error("Failed to fetch projects"); }
         };
@@ -123,6 +133,70 @@ const App: React.FC = () => {
         };
         checkKey();
     }, []);
+
+    // Polling Effect
+    useEffect(() => {
+        if (!isPolling || !campaignId) return;
+
+        const interval = setInterval(async () => {
+            try {
+                const res = await fetch('/api/campaign', {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'getShots', campaignId })
+                });
+
+                if (res.ok) {
+                    const { shots: updatedShots } = await res.json();
+                    setShots(updatedShots);
+
+                    const completedCount = updatedShots.filter((s: any) => s.status === 'completed').length;
+                    const totalCount = updatedShots.length;
+
+                    if (totalCount > 0) {
+                        const progress = Math.round(15 + (completedCount / totalCount) * 75);
+                        setStatus({
+                            stage: 'generating',
+                            message: completedCount === totalCount ? 'Finalizing...' : `Generating footage (${completedCount}/${totalCount})...`,
+                            progress
+                        });
+
+                        // If all complete, run final stitch
+                        if (completedCount === totalCount && totalCount >= 4) {
+                            setIsPolling(false);
+                            clearInterval(interval);
+
+                            const videoUrls = updatedShots.map((s: any) => s.video_url);
+                            const finalVideoData = await concatenateVideos(videoUrls);
+
+                            // Convert to Base64 for persistence
+                            let base64Video = '';
+                            if (finalVideoData) {
+                                const binary = Array.from(finalVideoData).map((byte: any) => String.fromCharCode(byte)).join('');
+                                base64Video = `data:video/mp4;base64,${btoa(binary)}`;
+                            }
+
+                            // Finish campaign
+                            await fetch('/api/campaign', {
+                                method: 'POST',
+                                body: JSON.stringify({
+                                    action: 'finishCampaign',
+                                    campaignId,
+                                    data: { masterVideoUrl: base64Video || 'Saved' }
+                                })
+                            });
+
+                            setStatus({ stage: 'completed', message: 'Ad campaign ready!', progress: 100 });
+                            setCampaignId(null);
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error("Polling error:", err);
+            }
+        }, 5000);
+
+        return () => clearInterval(interval);
+    }, [isPolling, campaignId]);
 
     const concatenateVideos = async (videoUrls: string[]) => {
         const ffmpeg = ffmpegRef.current;
@@ -191,129 +265,43 @@ const App: React.FC = () => {
             setHasKey(true);
         }
 
-        setStatus({ stage: 'generating', message: 'Analyzing your product...', progress: 5 });
+        setStatus({ stage: 'generating', message: 'Initializing background generation...', progress: 5 });
         setShots([]);
         setMasterVideoUrl(null);
 
         try {
-            const productB64 = productImage.split(',')[1];
             const newCampaignId = `camp_${Date.now()}`;
-            setCampaignId(newCampaignId);
 
-            // Initial DB entry
+            // Trigger Background Campaign via API
             const createRes = await fetch('/api/campaign', {
                 method: 'POST',
-                body: JSON.stringify({ action: 'createCampaign', campaignId: newCampaignId, data: { vibe } })
+                body: JSON.stringify({
+                    action: 'createCampaign',
+                    campaignId: newCampaignId,
+                    data: {
+                        vibe,
+                        productB64: productImage,
+                        avatarB64: avatarImage
+                    }
+                })
             });
 
             if (!createRes.ok) {
                 const errData = await createRes.json();
-                throw new Error(errData.error || 'Failed to create campaign');
+                throw new Error(errData.error || 'Failed to start production');
             }
 
             const createData = await createRes.json();
             if (user) setUser({ ...user, credits: createData.newCredits });
 
-            // 1. Vision-Enhanced Scripting
+            // Start Polling
+            setCampaignId(newCampaignId);
+            setIsPolling(true);
             setStatus({ stage: 'generating', message: 'Drafting viral ad script...', progress: 15 });
-            const generatedShots = await VeoService.createScript(productB64, vibe, config.simulateMode);
-            setShots(generatedShots);
 
-            // Save shots to DB
-            await fetch('/api/campaign', {
-                method: 'POST',
-                body: JSON.stringify({ action: 'saveShots', campaignId: newCampaignId, data: { shots: generatedShots } })
-            });
-
-            const completedVideoUrls: string[] = [];
-
-            // 2. Sequential Shot Production
-            const totalShots = generatedShots.length;
-            for (let i = 0; i < totalShots; i++) {
-                const shot = generatedShots[i];
-                setCurrentShotId(shot.id);
-
-                const shotProgressBase = 15;
-                const shotProgressRange = 70;
-                const currentShotStartingProgress = shotProgressBase + (i / totalShots) * shotProgressRange;
-
-                setShots(prev => prev.map(s => s.id === shot.id ? { ...s, status: 'generating' } : s));
-                setStatus({
-                    stage: 'generating',
-                    message: `Generating footage (${i + 1}/${totalShots})...`,
-                    progress: Math.round(currentShotStartingProgress)
-                });
-
-                // Generate the context-specific reference frame
-                const refImg = await VeoService.generateShotReference(shot.imagePrompt, avatarImage, productImage, config.simulateMode);
-                setShots(prev => prev.map(s => s.id === shot.id ? { ...s, refImage: refImg } : s));
-
-                // Start Handheld Animation
-                const videoUrl = await VeoService.animateShot(shot, refImg, (msg) => {
-                    // Filter technical messages, keep it vague but professional
-                    if (!msg.toLowerCase().includes('cooloff') && !msg.toLowerCase().includes('rendering')) {
-                        setStatus(prev => ({ ...prev, message: `Finalizing cinematic details...` }));
-                    }
-                }, config.simulateMode);
-
-                completedVideoUrls.push(videoUrl);
-                setShots(prev => prev.map(s => s.id === shot.id ? { ...s, status: 'completed', videoUrl } : s));
-
-                // Update shot in DB
-                await fetch('/api/campaign', {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        action: 'updateShot',
-                        campaignId: newCampaignId,
-                        data: { type: shot.type, status: 'completed', videoUrl, refImage: refImg }
-                    })
-                });
-
-                // Add 65-second breathing room for the API before next shot
-                if (i < generatedShots.length - 1) {
-                    setStatus({
-                        stage: 'generating',
-                        message: `Applying post-processing...`,
-                        progress: Math.round(shotProgressBase + ((i + 0.5) / totalShots) * shotProgressRange)
-                    });
-                    await new Promise(res => setTimeout(res, 65000));
-                }
-            }
-
-            // 3. Final Stitching
-            setStatus({ stage: 'generating', message: 'Merging final cinematic cut...', progress: 95 });
-            const finalVideoData = await concatenateVideos(completedVideoUrls);
-
-            // Convert to Base64 for persistence
-            let base64Video = '';
-            if (finalVideoData) {
-                const binary = Array.from(finalVideoData).map(byte => String.fromCharCode(byte)).join('');
-                base64Video = `data:video/mp4;base64,${btoa(binary)}`;
-            }
-
-            // Finish campaign in DB
-            await fetch('/api/campaign', {
-                method: 'POST',
-                body: JSON.stringify({
-                    action: 'finishCampaign',
-                    campaignId: newCampaignId,
-                    data: { masterVideoUrl: base64Video || 'Saved' }
-                })
-            });
-
-            setStatus({ stage: 'completed', message: 'Ad campaign ready!', progress: 100 });
-            setCurrentShotId(null);
         } catch (error: any) {
             console.error("Studio Error:", error);
-
-            if (error.message?.includes("Requested entity was not found")) {
-                setHasKey(false);
-                if (window.aistudio) await window.aistudio.openSelectKey();
-                setStatus({ stage: 'error', message: 'API Project not found. Please re-select a paid project.' });
-            } else {
-                setStatus({ stage: 'error', message: error.message || 'The studio encountered an issue. Please try again.' });
-            }
-
+            setStatus({ stage: 'error', message: error.message || 'The studio encountered an issue. Please try again.' });
             setShots(prev => prev.map(s => s.status === 'generating' ? { ...s, status: 'error' } : s));
         }
     };

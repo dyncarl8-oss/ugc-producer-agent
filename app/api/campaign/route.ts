@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { headers } from "next/headers";
 import { whop } from "@/lib/whop";
+import { inngest } from "@/lib/inngest";
 
 export async function POST(req: Request) {
     try {
@@ -35,6 +36,19 @@ export async function POST(req: Request) {
                 sql: 'INSERT INTO campaigns (id, user_id, vibe, status) VALUES (?, ?, ?, ?)',
                 args: [campaignId, userId, data.vibe, 'pending']
             });
+
+            // Trigger background generation
+            await inngest.send({
+                name: "campaign/generate",
+                data: {
+                    campaignId,
+                    userId,
+                    productB64: data.productB64,
+                    avatarB64: data.avatarB64,
+                    vibe: data.vibe
+                }
+            });
+
             return NextResponse.json({ success: true, newCredits: (user.rows[0].credits as number) - 1 });
         }
 
@@ -44,6 +58,14 @@ export async function POST(req: Request) {
                 args: [userId]
             });
             return NextResponse.json({ campaigns: result.rows });
+        }
+
+        if (action === 'getShots') {
+            const result = await db.execute({
+                sql: 'SELECT * FROM shots WHERE campaign_id = ? ORDER BY id ASC',
+                args: [campaignId]
+            });
+            return NextResponse.json({ shots: result.rows });
         }
 
         if (action === 'saveShots') {
