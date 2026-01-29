@@ -165,8 +165,15 @@ const App: React.FC = () => {
     };
 
     const handleGenerateFullAd = async () => {
+        // 1. Basic Validation
         if (!productImage || !avatarImage) {
             setStatus({ stage: 'error', message: 'Please upload a product image first.' });
+            return;
+        }
+
+        // 2. Credit Check
+        if (!user || user.credits <= 0) {
+            setShowPaymentModal(true);
             return;
         }
 
