@@ -107,7 +107,7 @@ export class VeoService {
       const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
       const ai = new GoogleGenAI({ apiKey });
       const response = await ai.models.generateContent({
-        model: 'gemini-flash-latest',
+        model: 'gemini-3-flash-preview',
         contents: {
           parts: [
             {
