@@ -44,7 +44,7 @@ export async function POST(req: Request) {
             console.log(`[Verify] ID indicates Plan/Product (${paymentId}). Checking memberships for user ${userId}...`);
 
             // List memberships for the user
-            const memberships = await whop.memberships.list({ user_id: userId, valid: true });
+            const memberships = await whop.memberships.list({ user_ids: [userId], valid: true });
 
             // Find a membership that matches the plan ID or was created very recently
             // Since we don't easily know the plan_id -> credits mapping without querying the Plan API,
