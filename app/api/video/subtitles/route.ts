@@ -11,14 +11,61 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const { videoUrl } = await req.json();
+        const { videoUrl, segments } = await req.json();
         const apiKey = process.env.CREATOMATE_API_KEY;
 
         if (!apiKey || apiKey === 'your_creatomate_api_key_here' || apiKey.length < 10) {
             return NextResponse.json({ error: 'Creatomate API Key is missing or invalid. Please check your .env file.' }, { status: 500 });
         }
 
-        // 1. Initial Render Request
+        // 1. Prepare elements
+        const elements: any[] = [
+            {
+                type: 'video',
+                id: 'video-element',
+                source: videoUrl
+            }
+        ];
+
+        // 2. Add text elements for each script segment
+        let cumulativeTime = 0;
+        if (segments && Array.isArray(segments)) {
+            segments.forEach((seg: { text: string; duration: number }, index: number) => {
+                elements.push({
+                    type: 'text',
+                    text: seg.text,
+                    time: cumulativeTime,
+                    duration: seg.duration,
+                    y: '82%',
+                    width: '81%',
+                    height: '35%',
+                    x_alignment: '50%',
+                    y_alignment: '50%',
+                    fill_color: '#ffffff',
+                    stroke_color: '#000000',
+                    stroke_width: '1.6 vmin',
+                    font_family: 'Montserrat',
+                    font_weight: '700',
+                    font_size: '9.29 vmin',
+                    background_color: 'rgba(216,216,216,0)',
+                    background_x_padding: '31%',
+                    background_y_padding: '17%',
+                    background_border_radius: '31%',
+                    // Add dynamic animations or effects here if needed
+                    animations: [
+                        {
+                            type: 'text-appearance',
+                            time: 0,
+                            duration: 0.3,
+                            transition: 'fade'
+                        }
+                    ]
+                });
+                cumulativeTime += seg.duration;
+            });
+        }
+
+        // 3. Initial Render Request
         const response = await fetch('https://api.creatomate.com/v1/renders', {
             method: 'POST',
             headers: {
@@ -28,34 +75,7 @@ export async function POST(req: Request) {
             body: JSON.stringify({
                 output_format: 'mp4',
                 source: {
-                    elements: [
-                        {
-                            type: 'video',
-                            id: 'video-element',
-                            source: videoUrl
-                        },
-                        {
-                            type: 'text',
-                            transcript_source: 'video-element',
-                            transcript_effect: 'highlight',
-                            transcript_maximum_length: 14,
-                            y: '82%',
-                            width: '81%',
-                            height: '35%',
-                            x_alignment: '50%',
-                            y_alignment: '50%',
-                            fill_color: '#ffffff',
-                            stroke_color: '#000000',
-                            stroke_width: '1.6 vmin',
-                            font_family: 'Montserrat',
-                            font_weight: '700',
-                            font_size: '9.29 vmin',
-                            background_color: 'rgba(216,216,216,0)',
-                            background_x_padding: '31%',
-                            background_y_padding: '17%',
-                            background_border_radius: '31%'
-                        }
-                    ]
+                    elements
                 }
             })
         });

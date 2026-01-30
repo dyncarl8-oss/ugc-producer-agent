@@ -330,13 +330,31 @@ const App: React.FC = () => {
             setStatus({ stage: 'generating', message: 'Merging final cinematic cut...', progress: 95 });
             const finalBlobUrl = await concatenateVideos(completedVideoUrls);
 
-            // 4. Upload and Subtitles
+            // 4. Measure Durations and Generate Subtitles
             let masterVideoUrlToSave = finalBlobUrl;
             if (finalBlobUrl) {
                 try {
-                    setStatus({ stage: 'generating', message: 'Preparing for subtitles...', progress: 97 });
+                    setStatus({ stage: 'generating', message: 'Measuring shot timings...', progress: 97 });
 
-                    // Convert blob to File for upload
+                    // Measure each shot's duration
+                    const segments = [];
+                    for (const shot of shots) {
+                        if (shot.videoUrl) {
+                            try {
+                                const duration = await new Promise<number>((resolve) => {
+                                    const v = document.createElement('video');
+                                    v.src = shot.videoUrl!;
+                                    v.onloadedmetadata = () => resolve(v.duration);
+                                    v.onerror = () => resolve(5); // Fallback to 5s if measurement fails
+                                });
+                                segments.push({ text: shot.script, duration });
+                            } catch (e) {
+                                segments.push({ text: shot.script, duration: 5 });
+                            }
+                        }
+                    }
+
+                    // Convert final blob to File for upload
                     const videoResponse = await fetch(finalBlobUrl);
                     const videoBlob = await videoResponse.blob();
                     const videoFile = new File([videoBlob], 'stitched-video.mp4', { type: 'video/mp4' });
@@ -352,21 +370,17 @@ const App: React.FC = () => {
 
                     if (!uploadRes.ok) throw new Error('Failed to upload video for subtitling');
                     const uploadData = await uploadRes.json();
-
-                    // Check for localhost and warn
-                    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-                    if (isLocalhost) {
-                        console.warn("Detection of localhost: Creatomate may not be able to access your /uploads folder. Subtitle generation might fail unless you are using a public tunnel like ngrok.");
-                    }
-
                     const publicUrl = window.location.origin + uploadData.url;
 
-                    // Call Subtitles API
-                    setStatus({ stage: 'generating', message: 'Generating viral subtitles...', progress: 98 });
+                    // Call Subtitles API with segments
+                    setStatus({ stage: 'generating', message: 'Generating script-based subtitles...', progress: 98 });
                     const subRes = await fetch('/api/video/subtitles', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ videoUrl: publicUrl })
+                        body: JSON.stringify({
+                            videoUrl: publicUrl,
+                            segments
+                        })
                     });
 
                     if (!subRes.ok) {
@@ -374,36 +388,16 @@ const App: React.FC = () => {
                         throw new Error(err.error || "Subtitles failed to initialize");
                     }
 
-                    let render = await subRes.json();
-
-                    // Robust Polling: Keep waiting if the backend timed out but the job is still active
-                    let attempts = 0;
-                    const maxAttempts = 30; // 30 more attempts (approx 90 more seconds)
-
-                    while ((render.status === 'planned' || render.status === 'waiting' || render.status === 'rendering') && attempts < maxAttempts) {
-                        attempts++;
-                        setStatus({ stage: 'generating', message: `Finalizing subtitles (attempt ${attempts})...`, progress: 98 });
-                        await new Promise(res => setTimeout(res, 3000));
-
-                        const pollRes = await fetch(`https://api.creatomate.com/v1/renders/${render.id}`, {
-                            headers: { 'Authorization': `Bearer ${process.env.NEXT_PUBLIC_CREATOMATE_PUBLIC_KEY || ''}` } // This might fail if key isn't public, better to use a dedicated poll route
-                        });
-
-                        // If we can't poll directly from client without key, we should have a backend poll route.
-                        // For now, let's improve the backend route to wait longer or create a poll endpoint.
-                        // Actually, let's just make the backend route wait as long as possible (Next.js limit is usually 60s on Vercel, but local is higher).
-
-                        // RE-ARCHITECTURE: Let's assume the user might be on a platform with short timeouts.
-                        // I'll update the backend to be more robust and the frontend to retry the backend route if it returns a pending status.
-                    }
-
+                    const render = await subRes.json();
                     if (render.status === 'succeeded' && render.url) {
                         masterVideoUrlToSave = render.url;
                     } else {
-                        console.warn("Subtitles render not completed in time or failed:", render.status);
+                        throw new Error(`Subtitle render failed: ${render.error_message || render.status}`);
                     }
-                } catch (e) {
+                } catch (e: any) {
                     console.error("Subtitles failed:", e);
+                    setStatus({ stage: 'error', message: `Subtitle Generation Failed: ${e.message}. Showing original video.` });
+                    await new Promise(res => setTimeout(res, 3000));
                 }
             }
 
