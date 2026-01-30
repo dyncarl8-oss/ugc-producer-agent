@@ -815,35 +815,29 @@ const App: React.FC = () => {
                     <div className="relative h-full max-h-[85vh] aspect-[9/16] bg-[#0c0c12] rounded-[48px] border-[12px] border-[#16161c] shadow-[0_0_100px_rgba(0,0,0,0.8)] overflow-hidden">
 
                         {/* Modal Header */}
-                        <div className="absolute top-8 left-8 right-8 z-[130] flex items-center justify-between">
-                            <div className="bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 pointer-events-none">
-                                <span className="text-[10px] font-bold text-white uppercase tracking-widest">
-                                    {selectedProject.vibe.toLowerCase().includes('minimal') ? 'minimal' : selectedProject.vibe.split(' ')[0].toLowerCase()}
-                                </span>
-                            </div>
-                            <div className="flex items-center gap-2 pointer-events-auto">
-                                <button
-                                    onClick={() => {
-                                        const a = document.createElement('a');
-                                        a.href = modalVideoUrl || '';
-                                        a.download = `ugc-video-${selectedProject.id}.mp4`;
-                                        document.body.appendChild(a);
-                                        a.click();
-                                        document.body.removeChild(a);
-                                    }}
-                                    disabled={!modalVideoUrl}
-                                    className="bg-orange-600 hover:bg-orange-500 text-white px-6 py-3 rounded-full font-black text-[10px] uppercase tracking-widest shadow-lg shadow-orange-500/20 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    <Download className="w-3 h-3" />
-                                    Download
-                                </button>
-                                <button
-                                    onClick={() => setSelectedProject(null)}
-                                    className="w-8 h-8 bg-black/80 hover:bg-black/90 rounded-full flex items-center justify-center border border-white/10 transition-all shadow-lg"
-                                >
-                                    <X className="w-4 h-4 text-white" />
-                                </button>
-                            </div>
+                        {/* Modal Header HUD */}
+                        <div className="absolute top-6 right-6 z-[130] flex items-center gap-3">
+                            <button
+                                onClick={() => {
+                                    const a = document.createElement('a');
+                                    a.href = modalVideoUrl || '';
+                                    a.download = `ugc-video-${selectedProject.id}.mp4`;
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    document.body.removeChild(a);
+                                }}
+                                disabled={!modalVideoUrl}
+                                className="bg-orange-600 hover:bg-orange-500 text-white px-5 py-2.5 rounded-full font-black text-[10px] uppercase tracking-widest shadow-lg shadow-orange-500/20 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <Download className="w-2.5 h-2.5" />
+                                Download
+                            </button>
+                            <button
+                                onClick={() => setSelectedProject(null)}
+                                className="w-9 h-9 bg-black/80 hover:bg-black/90 rounded-full flex items-center justify-center border border-white/10 transition-all shadow-lg"
+                            >
+                                <X className="w-4 h-4 text-white" />
+                            </button>
                         </div>
 
                         {modalVideoUrl ? (
