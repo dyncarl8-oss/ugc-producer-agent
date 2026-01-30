@@ -11,14 +11,41 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const { videoUrl, segments } = await req.json();
-        const apiKey = process.env.CREATOMATE_API_KEY;
+        const formData = await req.formData();
+        const videoFile = formData.get('video') as File;
+        const segmentsJson = formData.get('segments') as string;
+        const segments = JSON.parse(segmentsJson);
 
-        if (!apiKey || apiKey === 'your_creatomate_api_key_here' || apiKey.length < 10) {
-            return NextResponse.json({ error: 'Creatomate API Key is missing or invalid. Please check your .env file.' }, { status: 500 });
+        if (!videoFile) {
+            return NextResponse.json({ error: 'No video file provided' }, { status: 400 });
         }
 
-        // 1. Prepare elements
+        const apiKey = process.env.CREATOMATE_API_KEY;
+        if (!apiKey || apiKey === 'your_creatomate_api_key_here' || apiKey.length < 10) {
+            return NextResponse.json({ error: 'Creatomate API Key is missing or invalid.' }, { status: 500 });
+        }
+
+        // 1. Upload video to Creatomate Storage
+        const uploadFormData = new FormData();
+        uploadFormData.append('file', videoFile);
+
+        const uploadRes = await fetch('https://api.creatomate.com/v1/uploads', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${apiKey}`
+            },
+            body: uploadFormData
+        });
+
+        if (!uploadRes.ok) {
+            const err = await uploadRes.json();
+            throw new Error(`Creatomate upload failed: ${err.message || uploadRes.statusText}`);
+        }
+
+        const uploadData = await uploadRes.json();
+        const videoUrl = uploadData.url;
+
+        // 2. Prepare render elements
         const elements: any[] = [
             {
                 type: 'video',
@@ -27,10 +54,10 @@ export async function POST(req: Request) {
             }
         ];
 
-        // 2. Add text elements for each script segment
+        // 3. Add script-based captions
         let cumulativeTime = 0;
         if (segments && Array.isArray(segments)) {
-            segments.forEach((seg: { text: string; duration: number }, index: number) => {
+            segments.forEach((seg: { text: string; duration: number }) => {
                 elements.push({
                     type: 'text',
                     text: seg.text,
@@ -51,7 +78,6 @@ export async function POST(req: Request) {
                     background_x_padding: '31%',
                     background_y_padding: '17%',
                     background_border_radius: '31%',
-                    // Add dynamic animations or effects here if needed
                     animations: [
                         {
                             type: 'text-appearance',
@@ -65,7 +91,7 @@ export async function POST(req: Request) {
             });
         }
 
-        // 3. Initial Render Request
+        // 4. Initial Render Request
         const response = await fetch('https://api.creatomate.com/v1/renders', {
             method: 'POST',
             headers: {
