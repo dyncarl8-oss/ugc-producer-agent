@@ -811,13 +811,15 @@ const App: React.FC = () => {
 
             {/* Video Modal */}
             {selectedProject && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-12 bg-black/90 backdrop-blur-xl animate-in fade-in duration-300">
-                    <div className="relative w-full max-w-sm aspect-[9/16] bg-[#0c0c12] rounded-[48px] border-[12px] border-[#16161c] shadow-[0_0_100px_rgba(0,0,0,0.8)] overflow-hidden">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 md:p-12 bg-black/90 backdrop-blur-xl animate-in fade-in duration-300">
+                    <div className="relative h-full max-h-[85vh] aspect-[9/16] bg-[#0c0c12] rounded-[48px] border-[12px] border-[#16161c] shadow-[0_0_100px_rgba(0,0,0,0.8)] overflow-hidden">
 
                         {/* Modal Header */}
                         <div className="absolute top-8 left-8 right-8 z-[130] flex items-center justify-between">
                             <div className="bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 pointer-events-none">
-                                <span className="text-[10px] font-bold text-white uppercase tracking-widest">{selectedProject.vibe}</span>
+                                <span className="text-[10px] font-bold text-white uppercase tracking-widest">
+                                    {selectedProject.vibe.toLowerCase().includes('minimal') ? 'minimal' : selectedProject.vibe.split(' ')[0].toLowerCase()}
+                                </span>
                             </div>
                             <div className="flex items-center gap-2 pointer-events-auto">
                                 <button
@@ -830,14 +832,14 @@ const App: React.FC = () => {
                                         document.body.removeChild(a);
                                     }}
                                     disabled={!modalVideoUrl}
-                                    className="bg-orange-600 hover:bg-orange-500 text-white px-4 py-1.5 rounded-full font-black text-[10px] uppercase tracking-widest shadow-lg shadow-orange-500/20 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="bg-orange-600 hover:bg-orange-500 text-white px-6 py-3 rounded-full font-black text-[10px] uppercase tracking-widest shadow-lg shadow-orange-500/20 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     <Download className="w-3 h-3" />
                                     Download
                                 </button>
                                 <button
                                     onClick={() => setSelectedProject(null)}
-                                    className="w-8 h-8 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center border border-white/10 transition-all"
+                                    className="w-8 h-8 bg-black/80 hover:bg-black/90 rounded-full flex items-center justify-center border border-white/10 transition-all shadow-lg"
                                 >
                                     <X className="w-4 h-4 text-white" />
                                 </button>
