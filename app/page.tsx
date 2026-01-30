@@ -365,20 +365,13 @@ const App: React.FC = () => {
                     if (!subRes.ok) {
                         console.warn("Subtitles failed, falling back to original video");
                     } else {
-                        let render = await subRes.json();
-
-                        // Wait/Poll for success if still pending
-                        while (render.status === 'planned' || render.status === 'waiting' || render.status === 'rendering') {
-                            await new Promise(res => setTimeout(res, 3000));
-                            const pollRes = await fetch(`https://api.creatomate.com/v1/renders/${render.id}`, {
-                                headers: { 'Authorization': `Bearer ${process.env.CREATOMATE_API_KEY}` } // Note: API key might not be available on client, ideally handled server-side
-                            });
-                            // Re-polling is better handled by just waiting for the server route to finish or return a final URL
-                            // Since our server route already polls for 55s, we only get here if it timed out.
-                        }
-
-                        if (render.url) {
+                        const render = await subRes.json();
+                        // The backend already polls for success.
+                        // If it succeeded, use the URL, otherwise fallback.
+                        if (render.status === 'succeeded' && render.url) {
                             masterVideoUrlToSave = render.url;
+                        } else {
+                            console.warn("Subtitles render not completed in time or failed:", render.status);
                         }
                     }
                 } catch (e) {
