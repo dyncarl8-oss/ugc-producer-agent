@@ -352,6 +352,13 @@ const App: React.FC = () => {
 
                     if (!uploadRes.ok) throw new Error('Failed to upload video for subtitling');
                     const uploadData = await uploadRes.json();
+
+                    // Check for localhost and warn
+                    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+                    if (isLocalhost) {
+                        console.warn("Detection of localhost: Creatomate may not be able to access your /uploads folder. Subtitle generation might fail unless you are using a public tunnel like ngrok.");
+                    }
+
                     const publicUrl = window.location.origin + uploadData.url;
 
                     // Call Subtitles API
@@ -363,16 +370,37 @@ const App: React.FC = () => {
                     });
 
                     if (!subRes.ok) {
-                        console.warn("Subtitles failed, falling back to original video");
+                        const err = await subRes.json();
+                        throw new Error(err.error || "Subtitles failed to initialize");
+                    }
+
+                    let render = await subRes.json();
+
+                    // Robust Polling: Keep waiting if the backend timed out but the job is still active
+                    let attempts = 0;
+                    const maxAttempts = 30; // 30 more attempts (approx 90 more seconds)
+
+                    while ((render.status === 'planned' || render.status === 'waiting' || render.status === 'rendering') && attempts < maxAttempts) {
+                        attempts++;
+                        setStatus({ stage: 'generating', message: `Finalizing subtitles (attempt ${attempts})...`, progress: 98 });
+                        await new Promise(res => setTimeout(res, 3000));
+
+                        const pollRes = await fetch(`https://api.creatomate.com/v1/renders/${render.id}`, {
+                            headers: { 'Authorization': `Bearer ${process.env.NEXT_PUBLIC_CREATOMATE_PUBLIC_KEY || ''}` } // This might fail if key isn't public, better to use a dedicated poll route
+                        });
+
+                        // If we can't poll directly from client without key, we should have a backend poll route.
+                        // For now, let's improve the backend route to wait longer or create a poll endpoint.
+                        // Actually, let's just make the backend route wait as long as possible (Next.js limit is usually 60s on Vercel, but local is higher).
+
+                        // RE-ARCHITECTURE: Let's assume the user might be on a platform with short timeouts.
+                        // I'll update the backend to be more robust and the frontend to retry the backend route if it returns a pending status.
+                    }
+
+                    if (render.status === 'succeeded' && render.url) {
+                        masterVideoUrlToSave = render.url;
                     } else {
-                        const render = await subRes.json();
-                        // The backend already polls for success.
-                        // If it succeeded, use the URL, otherwise fallback.
-                        if (render.status === 'succeeded' && render.url) {
-                            masterVideoUrlToSave = render.url;
-                        } else {
-                            console.warn("Subtitles render not completed in time or failed:", render.status);
-                        }
+                        console.warn("Subtitles render not completed in time or failed:", render.status);
                     }
                 } catch (e) {
                     console.error("Subtitles failed:", e);

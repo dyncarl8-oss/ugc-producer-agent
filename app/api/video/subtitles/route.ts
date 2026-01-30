@@ -14,8 +14,8 @@ export async function POST(req: Request) {
         const { videoUrl } = await req.json();
         const apiKey = process.env.CREATOMATE_API_KEY;
 
-        if (!apiKey || apiKey === 'your_creatomate_api_key_here') {
-            return NextResponse.json({ error: 'Creatomate API Key not configured' }, { status: 500 });
+        if (!apiKey || apiKey === 'your_creatomate_api_key_here' || apiKey.length < 10) {
+            return NextResponse.json({ error: 'Creatomate API Key is missing or invalid. Please check your .env file.' }, { status: 500 });
         }
 
         // 1. Initial Render Request
