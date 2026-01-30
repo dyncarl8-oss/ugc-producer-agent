@@ -811,20 +811,37 @@ const App: React.FC = () => {
 
             {/* Video Modal */}
             {selectedProject && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl animate-in fade-in duration-300">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-12 bg-black/90 backdrop-blur-xl animate-in fade-in duration-300">
                     <div className="relative w-full max-w-sm aspect-[9/16] bg-[#0c0c12] rounded-[48px] border-[12px] border-[#16161c] shadow-[0_0_100px_rgba(0,0,0,0.8)] overflow-hidden">
 
                         {/* Modal Header */}
-                        <div className="absolute top-8 left-8 right-8 z-[110] flex items-center justify-between pointer-events-none">
-                            <div className="bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
+                        <div className="absolute top-8 left-8 right-8 z-[130] flex items-center justify-between">
+                            <div className="bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 pointer-events-none">
                                 <span className="text-[10px] font-bold text-white uppercase tracking-widest">{selectedProject.vibe}</span>
                             </div>
-                            <button
-                                onClick={() => setSelectedProject(null)}
-                                className="w-8 h-8 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center border border-white/10 transition-all pointer-events-auto"
-                            >
-                                <RefreshCcw className="w-4 h-4 text-white rotate-45" />
-                            </button>
+                            <div className="flex items-center gap-2 pointer-events-auto">
+                                <button
+                                    onClick={() => {
+                                        const a = document.createElement('a');
+                                        a.href = modalVideoUrl || '';
+                                        a.download = `ugc-video-${selectedProject.id}.mp4`;
+                                        document.body.appendChild(a);
+                                        a.click();
+                                        document.body.removeChild(a);
+                                    }}
+                                    disabled={!modalVideoUrl}
+                                    className="bg-orange-600 hover:bg-orange-500 text-white px-4 py-1.5 rounded-full font-black text-[10px] uppercase tracking-widest shadow-lg shadow-orange-500/20 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <Download className="w-3 h-3" />
+                                    Download
+                                </button>
+                                <button
+                                    onClick={() => setSelectedProject(null)}
+                                    className="w-8 h-8 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center border border-white/10 transition-all"
+                                >
+                                    <X className="w-4 h-4 text-white" />
+                                </button>
+                            </div>
                         </div>
 
                         {modalVideoUrl ? (
@@ -841,36 +858,6 @@ const App: React.FC = () => {
                                         else v.pause();
                                     }}
                                 />
-
-                                {/* Replay Button */}
-                                <button
-                                    onClick={() => {
-                                        const v = document.getElementById('modal-video-player') as HTMLVideoElement;
-                                        if (v) {
-                                            v.currentTime = 0;
-                                            v.play();
-                                        }
-                                    }}
-                                    className="absolute bottom-24 right-8 z-[110] w-12 h-12 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/10 transition-all"
-                                >
-                                    <RefreshCcw className="w-5 h-5 text-white" />
-                                </button>
-
-                                {/* Download Button */}
-                                <button
-                                    onClick={() => {
-                                        const a = document.createElement('a');
-                                        a.href = modalVideoUrl;
-                                        a.download = `ugc-video-${selectedProject.id}.mp4`;
-                                        document.body.appendChild(a);
-                                        a.click();
-                                        document.body.removeChild(a);
-                                    }}
-                                    className="absolute bottom-8 left-8 right-8 z-[110] bg-orange-600 hover:bg-orange-500 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-orange-500/40 transition-all flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-[0.98]"
-                                >
-                                    <Download className="w-4 h-4" />
-                                    Download Video
-                                </button>
                             </div>
                         ) : (
                             <div className="w-full h-full flex flex-col items-center justify-center p-12 text-center bg-gradient-to-b from-[#0c0c12] to-[#050508]">
