@@ -66,6 +66,18 @@ export async function POST(req: Request) {
             return NextResponse.json({ success: true });
         }
 
+        if (action === 'deleteCampaign') {
+            await db.execute({
+                sql: 'DELETE FROM shots WHERE campaign_id = ?',
+                args: [campaignId]
+            });
+            await db.execute({
+                sql: 'DELETE FROM campaigns WHERE id = ? AND user_id = ?',
+                args: [campaignId, userId]
+            });
+            return NextResponse.json({ success: true });
+        }
+
         if (action === 'finishCampaign') {
             await db.execute({
                 sql: 'UPDATE campaigns SET status = ?, master_video_url = ? WHERE id = ?',

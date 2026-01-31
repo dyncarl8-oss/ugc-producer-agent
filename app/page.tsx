@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
-import { Play, Loader2, Key, ShieldAlert, Smartphone, Sparkles, User, Box, ShoppingBag, Clapperboard, CheckCircle2, AlertCircle, Layers, RefreshCcw, Download, Zap, Plus, CreditCard, ChevronRight, X } from 'lucide-react';
+import { Play, Loader2, Key, ShieldAlert, Smartphone, Sparkles, User, Box, ShoppingBag, Clapperboard, CheckCircle2, AlertCircle, Layers, RefreshCcw, Download, Zap, Plus, CreditCard, ChevronRight, X, Trash2 } from 'lucide-react';
 import { AdVibe, AspectRatio, Config, GenerationStatus } from '../types';
 import { VeoService, Shot } from '../services/veoService';
 import { FFmpeg } from '@ffmpeg/ffmpeg';
@@ -125,6 +125,28 @@ const App: React.FC = () => {
         };
         checkKey();
     }, []);
+
+    const handleDeleteProject = async (e: React.MouseEvent, id: string) => {
+        e.stopPropagation();
+        if (!confirm('Are you sure you want to delete this project?')) return;
+
+        try {
+            const response = await fetch('/api/campaign', {
+                method: 'POST',
+                body: JSON.stringify({ action: 'deleteCampaign', campaignId: id })
+            });
+
+            if (response.ok) {
+                setProjects(prev => prev.filter(p => p.id !== id));
+                if (selectedProject?.id === id) {
+                    setSelectedProject(null);
+                    setModalVideoUrl(null);
+                }
+            }
+        } catch (e) {
+            console.error("Failed to delete project:", e);
+        }
+    };
 
     const concatenateVideos = async (videoUrls: string[]) => {
         const ffmpeg = ffmpegRef.current;
@@ -601,11 +623,17 @@ const App: React.FC = () => {
                                             setModalVideoUrl(null);
                                         }
                                     }}
-                                    className="p-3 bg-white/5 border border-white/5 rounded-xl hover:bg-white/10 transition-all cursor-pointer group"
+                                    className="p-3 bg-white/5 border border-white/5 rounded-xl hover:bg-white/10 transition-all cursor-pointer group relative"
                                 >
                                     <div className="flex items-center justify-between mb-1">
                                         <span className="text-[10px] font-bold text-slate-400 truncate max-w-[120px]">{p.vibe}</span>
-                                        <div className={`w-1.5 h-1.5 rounded-full ${p.status === 'completed' ? 'bg-green-500' : 'bg-orange-500'}`} />
+                                        <button
+                                            onClick={(e) => handleDeleteProject(e, p.id)}
+                                            className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/20 rounded-md transition-all text-slate-500 hover:text-red-500"
+                                            title="Delete Project"
+                                        >
+                                            <Trash2 className="w-3 h-3" />
+                                        </button>
                                     </div>
                                     <div className="text-[9px] text-slate-600 font-bold uppercase tracking-widest">
                                         {new Date(p.created_at).toLocaleDateString()}
