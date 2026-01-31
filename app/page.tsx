@@ -481,7 +481,7 @@ const App: React.FC = () => {
                     method: 'POST',
                     body: JSON.stringify({ action: 'exhaust' })
                 });
-                setQuotaMessage("Daily system quota reached. Please try again after 4:00 PM PHT.");
+                setQuotaMessage("Daily system quota reached. Please try again tomorrow at 12:00 AM PT to unlock more.");
                 setShowQuotaModal(true);
                 setStatus({ stage: 'idle', message: '' });
             } else if (error.message?.includes("Requested entity was not found")) {
@@ -875,7 +875,6 @@ const App: React.FC = () => {
                             >
                                 Understood
                             </button>
-                            <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest mt-2">Please try again tomorrow</p>
                         </div>
                     </div>
                 </div>
