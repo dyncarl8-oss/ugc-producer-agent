@@ -184,6 +184,12 @@ const App: React.FC = () => {
             return;
         }
 
+        // 0. Credit Check
+        if (user && user.credits <= 0) {
+            setShowPaymentModal(true);
+            return;
+        }
+
         if (!ffmpegLoaded) {
             setStatus({ stage: 'error', message: 'FFmpeg is still loading. Please wait.' });
             return;
