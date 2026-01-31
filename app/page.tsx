@@ -949,7 +949,7 @@ const App: React.FC = () => {
                             <div className="flex-1 min-h-0 bg-white rounded-2xl overflow-hidden relative">
                                 <WhopCheckoutEmbed
                                     sessionId={checkoutSessionId}
-                                    onCheckoutComplete={() => {
+                                    onComplete={() => {
                                         setShowPaymentModal(false);
                                         window.location.reload();
                                     }}
