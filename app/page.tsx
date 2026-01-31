@@ -703,13 +703,13 @@ const App: React.FC = () => {
                                     {Object.values(AdVibe).map((v) => (
                                         <button
                                             key={v}
-                                            onClick={() => setConfig(prev => ({ ...prev, vibe: v }))}
-                                            className={`p-4 rounded-2xl border transition-all text-left group ${config.vibe === v
+                                            onClick={() => setVibe(v)}
+                                            className={`p-4 rounded-2xl border transition-all text-left group ${vibe === v
                                                 ? 'bg-orange-600 border-orange-500'
                                                 : 'bg-white dark:bg-transparent border-slate-200 dark:border-white/10 hover:border-orange-500/50'
                                                 }`}
                                         >
-                                            <div className={`text-[10px] font-black uppercase tracking-widest ${config.vibe === v ? 'text-white' : 'text-slate-400 group-hover:text-orange-500'}`}>
+                                            <div className={`text-[10px] font-black uppercase tracking-widest ${vibe === v ? 'text-white' : 'text-slate-400 group-hover:text-orange-500'}`}>
                                                 {v}
                                             </div>
                                         </button>
