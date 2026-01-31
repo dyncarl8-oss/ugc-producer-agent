@@ -268,7 +268,7 @@ const App: React.FC = () => {
 
             // 1. Vision-Enhanced Scripting
             setStatus({ stage: 'generating', message: `Drafting viral ad script...`, progress: 15 });
-            const generatedShots = await VeoService.createScript(productB64, vibe, config.simulateMode);
+            const generatedShots = await VeoService.createScript(productB64, vibe, config.simulateMode, config.aspectRatio);
             setShots(generatedShots);
 
             // Save shots to DB
@@ -700,7 +700,7 @@ const App: React.FC = () => {
                                     Select Template
                                 </label>
                                 <div className="grid grid-cols-3 gap-2">
-                                    {['/templates/template1.png', '/templates/template2.png', '/templates/template3.png'].map((template, idx) => (
+                                    {['/templates/template1.png', '/templates/template2.png', '/templates/template3.png', '/templates/template4.png', '/templates/template5.png', '/templates/template6.png'].map((template, idx) => (
                                         <button
                                             key={template}
                                             onClick={() => setSelectedTemplate(template)}
@@ -829,8 +829,8 @@ const App: React.FC = () => {
                             <div className="relative">
                                 <button
                                     onClick={handleGenerateFullAd}
-                                    disabled={status.stage === 'generating'}
-                                    className={`w-full py-6 rounded-3xl flex items-center justify-center gap-4 transition-all animate-in slide-in-from-bottom duration-700 delay-300 relative overflow-hidden group ${status.stage === 'generating'
+                                    disabled={status.stage === 'generating' || !productImage}
+                                    className={`w-full py-6 rounded-3xl flex items-center justify-center gap-4 transition-all animate-in slide-in-from-bottom duration-700 delay-300 relative overflow-hidden group ${status.stage === 'generating' || !productImage
                                         ? 'bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-400 dark:text-slate-500 cursor-not-allowed'
                                         : 'bg-orange-600 hover:bg-orange-500 text-white shadow-2xl shadow-orange-600/40 hover:scale-[1.02] active:scale-[0.98]'
                                         }`}
