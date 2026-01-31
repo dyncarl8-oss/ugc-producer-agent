@@ -1,9 +1,18 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
+const getPacificDate = () => {
+    return new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'America/Los_Angeles',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+    }).format(new Date());
+};
+
 export async function GET() {
     try {
-        const today = new Date().toISOString().split('T')[0];
+        const today = getPacificDate();
 
         // Get stats for today
         const result = await db.execute({
@@ -54,8 +63,16 @@ export async function GET() {
 
 export async function POST(req: Request) {
     try {
-        const { model } = await req.json();
-        const today = new Date().toISOString().split('T')[0];
+        const { model, action } = await req.json();
+        const today = getPacificDate();
+
+        if (action === 'exhaust') {
+            await db.execute({
+                sql: 'UPDATE system_stats SET fast_usage = 8, preview_usage = 8 WHERE date = ?',
+                args: [today]
+            });
+            return NextResponse.json({ success: true });
+        }
 
         if (model === 'veo-3.1-fast-generate-preview') {
             await db.execute({

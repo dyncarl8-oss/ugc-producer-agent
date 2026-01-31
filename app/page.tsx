@@ -435,7 +435,19 @@ const App: React.FC = () => {
         } catch (error: any) {
             console.error("Studio Error:", error);
 
-            if (error.message?.includes("Requested entity was not found")) {
+            const errorMsg = (error.message || "").toLowerCase();
+            const isQuotaError = errorMsg.includes("429") || errorMsg.includes("resource_exhausted") || errorMsg.includes("quota");
+
+            if (isQuotaError) {
+                // Manually exhaust quota for today to show the System Overload modal to all users
+                await fetch('/api/quota', {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'exhaust' })
+                });
+                setQuotaMessage("Daily system quota reached. Please try again after 4:00 PM PHT.");
+                setShowQuotaModal(true);
+                setStatus({ stage: 'idle', message: '' });
+            } else if (error.message?.includes("Requested entity was not found")) {
                 setHasKey(false);
                 if (window.aistudio) await window.aistudio.openSelectKey();
                 setStatus({ stage: 'error', message: 'API Project not found. Please re-select a paid project.' });
