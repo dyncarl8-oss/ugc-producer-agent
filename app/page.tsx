@@ -53,6 +53,7 @@ const App: React.FC = () => {
     const [loadingCheckout, setLoadingCheckout] = useState(false);
     const [showQuotaModal, setShowQuotaModal] = useState(false);
     const [quotaMessage, setQuotaMessage] = useState('');
+    const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
 
     const params = useParams();
     const companyId = params?.companyId as string || '';
@@ -126,25 +127,31 @@ const App: React.FC = () => {
         checkKey();
     }, []);
 
-    const handleDeleteProject = async (e: React.MouseEvent, id: string) => {
+    const handleDeleteProject = (e: React.MouseEvent, id: string) => {
         e.stopPropagation();
-        if (!confirm('Are you sure you want to delete this project?')) return;
+        setProjectToDelete(id);
+    };
+
+    const confirmDelete = async () => {
+        if (!projectToDelete) return;
 
         try {
             const response = await fetch('/api/campaign', {
                 method: 'POST',
-                body: JSON.stringify({ action: 'deleteCampaign', campaignId: id })
+                body: JSON.stringify({ action: 'deleteCampaign', campaignId: projectToDelete })
             });
 
             if (response.ok) {
-                setProjects(prev => prev.filter(p => p.id !== id));
-                if (selectedProject?.id === id) {
+                setProjects(prev => prev.filter(p => p.id !== projectToDelete));
+                if (selectedProject?.id === projectToDelete) {
                     setSelectedProject(null);
                     setModalVideoUrl(null);
                 }
             }
         } catch (e) {
             console.error("Failed to delete project:", e);
+        } finally {
+            setProjectToDelete(null);
         }
     };
 
@@ -1128,6 +1135,33 @@ const App: React.FC = () => {
                         </div>
                     )}
                 </>
+            )}
+
+            {/* Delete Confirmation Modal */}
+            {projectToDelete && (
+                <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl animate-in fade-in duration-300">
+                    <div className="w-full max-w-sm bg-[#0c0c12] border border-white/10 rounded-3xl p-8 text-center shadow-2xl relative overflow-hidden">
+                        <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-red-500/20">
+                            <Trash2 className="w-8 h-8 text-red-500" />
+                        </div>
+                        <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter mb-2">Delete Project?</h2>
+                        <p className="text-slate-500 text-sm font-medium mb-8">This action cannot be undone. All footage and scripts will be permanently removed.</p>
+                        <div className="flex flex-col gap-3">
+                            <button
+                                onClick={confirmDelete}
+                                className="w-full py-4 bg-red-600 hover:bg-red-500 text-white font-black rounded-xl transition-all text-sm uppercase tracking-widest shadow-lg shadow-red-600/20"
+                            >
+                                Delete Permanently
+                            </button>
+                            <button
+                                onClick={() => setProjectToDelete(null)}
+                                className="w-full py-4 bg-white/5 border border-white/10 text-slate-400 hover:text-white hover:bg-white/10 font-bold rounded-xl transition-all text-sm uppercase tracking-widest"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
 
             <style dangerouslySetInnerHTML={{
