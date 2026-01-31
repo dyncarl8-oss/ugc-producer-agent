@@ -533,7 +533,7 @@ const App: React.FC = () => {
 
     if (loadingAuth) {
         return (
-            <div className="flex items-center justify-center h-screen bg-[#030305] text-orange-500">
+            <div className="flex items-center justify-center h-screen bg-white dark:bg-[#030305] text-orange-600 dark:text-orange-500">
                 <Loader2 className="w-12 h-12 animate-spin" />
             </div>
         );
@@ -541,35 +541,35 @@ const App: React.FC = () => {
 
     if (!user && status.stage !== 'generating') {
         return (
-            <div className="flex flex-col items-center justify-center h-screen bg-[#030305] text-slate-100 p-8 text-center">
+            <div className="flex flex-col items-center justify-center h-screen bg-white dark:bg-[#030305] text-slate-900 dark:text-slate-100 p-8 text-center">
                 <div className="w-20 h-20 bg-orange-600 rounded-3xl flex items-center justify-center mb-8 shadow-2xl shadow-orange-500/20">
                     <ShieldAlert className="w-10 h-10 text-white" />
                 </div>
                 <h2 className="text-3xl font-black uppercase tracking-tighter mb-4 italic">Security Checkpoint</h2>
                 <p className="text-slate-500 max-w-md mx-auto mb-8 font-medium">Please open UGC Producer Agent through the Whop Dashboard to authenticate your session.</p>
                 <div className="flex gap-4">
-                    <a href="https://whop.com" className="bg-white text-black px-8 py-3 rounded-2xl font-black uppercase text-sm hover:bg-slate-200 transition-all">Go to Whop</a>
+                    <a href="https://whop.com" className="bg-slate-900 dark:bg-white text-white dark:text-black px-8 py-3 rounded-2xl font-black uppercase text-sm hover:bg-slate-800 dark:hover:bg-slate-200 transition-all">Go to Whop</a>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="flex h-screen bg-[#030305] text-slate-100 font-sans overflow-hidden">
+        <div className="flex h-screen bg-white dark:bg-[#030305] text-slate-900 dark:text-slate-100 font-sans overflow-hidden">
             {/* Sidebar */}
-            <aside className="w-80 bg-[#07070a] border-r border-white/5 flex flex-col p-6 overflow-y-auto">
+            <aside className="w-80 bg-slate-50 dark:bg-[#07070a] border-r border-slate-200 dark:border-white/5 flex flex-col p-6 overflow-y-auto">
                 <div className="flex items-center gap-3 mb-10">
                     <div className="w-10 h-10 bg-orange-600 rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/30">
                         <Clapperboard className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                        <h1 className="text-lg font-bold tracking-tight">UGC Producer</h1>
-                        <span className="text-[10px] text-orange-400 font-bold uppercase tracking-widest leading-none">AI Agent Studio</span>
+                        <h1 className="text-lg font-bold tracking-tight text-slate-900 dark:text-white">UGC Producer</h1>
+                        <span className="text-[10px] text-orange-500 font-bold uppercase tracking-widest leading-none">AI Agent Studio</span>
                     </div>
                 </div>
 
                 {user && (
-                    <div className="mb-8 p-4 bg-white/5 border border-white/10 rounded-2xl flex flex-col gap-4">
+                    <div className="mb-8 p-4 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl flex flex-col gap-4">
                         <div className="flex items-center gap-3">
                             {user.profile_pic_url ? (
                                 <img
@@ -583,14 +583,14 @@ const App: React.FC = () => {
                                 />
                             ) : null}
                             <div className={`avatar-placeholder ${user.profile_pic_url ? 'hidden' : ''} w-12 h-12 rounded-full bg-orange-600/20 border border-orange-500/30 flex items-center justify-center shadow-lg`}>
-                                <User className="w-6 h-6 text-orange-400" />
+                                <User className="w-6 h-6 text-orange-600 dark:text-orange-400" />
                             </div>
                             <div className="flex flex-col min-w-0 flex-1">
                                 <div className="flex items-center justify-between gap-2">
-                                    <span className="text-sm font-black text-white tracking-tight truncate">{user.username}</span>
+                                    <span className="text-sm font-black text-slate-900 dark:text-white tracking-tight truncate">{user.username}</span>
                                     <div className="flex items-center gap-1 px-2 py-0.5 bg-orange-600/20 border border-orange-500/30 rounded-full shrink-0">
-                                        <Zap className="w-2.5 h-2.5 text-orange-500 fill-orange-500" />
-                                        <span className="text-[10px] text-orange-200 font-black tracking-tighter">{user.credits}</span>
+                                        <Zap className="w-2.5 h-2.5 text-orange-600 dark:text-orange-500 fill-orange-500" />
+                                        <span className="text-[10px] text-orange-800 dark:text-orange-200 font-black tracking-tighter">{user.credits}</span>
                                     </div>
                                 </div>
                                 <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">Verified Account</span>
@@ -601,8 +601,8 @@ const App: React.FC = () => {
                             onClick={() => setShowPaymentModal(true)}
                             className="w-full py-2.5 bg-orange-600/10 border border-orange-500/20 rounded-xl flex items-center justify-center gap-2 hover:bg-orange-600/20 transition-all group"
                         >
-                            <Plus className="w-3.5 h-3.5 text-orange-500 group-hover:scale-110 transition-transform" />
-                            <span className="text-[10px] font-black text-orange-200 uppercase tracking-widest">Top Up Credits</span>
+                            <Plus className="w-3.5 h-3.5 text-orange-600 dark:text-orange-500 group-hover:scale-110 transition-transform" />
+                            <span className="text-[10px] font-black text-orange-800 dark:text-orange-200 uppercase tracking-widest">Top Up Credits</span>
                         </button>
                     </div>
                 )}
@@ -611,8 +611,8 @@ const App: React.FC = () => {
                     <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-3 ml-2">Recent Projects</div>
                     <div className="space-y-3">
                         {projects.length === 0 ? (
-                            <div className="p-4 border border-dashed border-white/10 rounded-2xl text-center">
-                                <p className="text-[10px] text-slate-600 font-medium">No projects yet</p>
+                            <div className="p-4 border border-dashed border-slate-200 dark:border-white/10 rounded-2xl text-center">
+                                <p className="text-[10px] text-slate-400 dark:text-slate-600 font-medium">No projects yet</p>
                             </div>
                         ) : (
                             projects.slice(0, 8).map(p => (
@@ -630,10 +630,10 @@ const App: React.FC = () => {
                                             setModalVideoUrl(null);
                                         }
                                     }}
-                                    className="p-3 bg-white/5 border border-white/5 rounded-xl hover:bg-white/10 transition-all cursor-pointer group relative"
+                                    className="p-3 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 rounded-xl hover:bg-slate-200 dark:hover:bg-white/10 transition-all cursor-pointer group relative"
                                 >
                                     <div className="flex items-center justify-between mb-1">
-                                        <span className="text-[10px] font-bold text-slate-400 truncate max-w-[120px]">{p.vibe}</span>
+                                        <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 truncate max-w-[120px]">{p.vibe}</span>
                                         <button
                                             onClick={(e) => handleDeleteProject(e, p.id)}
                                             className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/20 rounded-md transition-all text-slate-500 hover:text-red-500"
@@ -642,7 +642,7 @@ const App: React.FC = () => {
                                             <Trash2 className="w-3 h-3" />
                                         </button>
                                     </div>
-                                    <div className="text-[9px] text-slate-600 font-bold uppercase tracking-widest">
+                                    <div className="text-[9px] text-slate-400 dark:text-slate-600 font-bold uppercase tracking-widest">
                                         {new Date(p.created_at).toLocaleDateString()}
                                     </div>
                                 </div>
@@ -659,7 +659,7 @@ const App: React.FC = () => {
                 <div className="max-w-5xl w-full flex flex-col gap-10">
 
                     <div className="text-center space-y-3">
-                        <h2 className="text-6xl font-black text-white tracking-tighter italic uppercase leading-none">UGC Producer</h2>
+                        <h2 className="text-6xl font-black text-slate-900 dark:text-white tracking-tighter italic uppercase leading-none">UGC Producer</h2>
                         <p className="text-slate-500 text-base font-medium uppercase tracking-widest">3-Step Viral Production Flow</p>
                     </div>
 
@@ -672,14 +672,14 @@ const App: React.FC = () => {
                                     <span className="w-5 h-5 bg-orange-600 rounded-md text-white flex items-center justify-center text-[9px] font-black italic">01</span>
                                     Upload Product
                                 </label>
-                                <label className={`flex flex-col items-center justify-center w-full aspect-square max-h-[160px] rounded-[32px] border-2 border-dashed transition-all cursor-pointer ${productImage ? 'border-orange-500/40 bg-orange-500/5' : 'border-white/10 hover:border-orange-500/30 bg-white/5 shadow-inner'
+                                <label className={`flex flex-col items-center justify-center w-full aspect-square max-h-[160px] rounded-[32px] border-2 border-dashed transition-all cursor-pointer ${productImage ? 'border-orange-500/40 bg-orange-500/5' : 'border-slate-200 dark:border-white/10 hover:border-orange-500/30 bg-slate-50 dark:bg-white/5 shadow-inner'
                                     }`}>
                                     {productImage ? (
                                         <img src={productImage} alt="Product" className="w-full h-full object-contain p-6" />
                                     ) : (
                                         <div className="flex flex-col items-center gap-3 opacity-20 group">
-                                            <ShoppingBag className="w-8 h-8 group-hover:scale-110 transition-transform" />
-                                            <span className="text-[9px] font-black uppercase tracking-[0.2em]">Drop Item</span>
+                                            <ShoppingBag className="w-8 h-8 group-hover:scale-110 transition-transform text-slate-900 dark:text-white" />
+                                            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-900 dark:text-white">Drop Item</span>
                                         </div>
                                     )}
                                     <input type="file" className="hidden" accept="image/*" onChange={(e) => {
@@ -703,59 +703,110 @@ const App: React.FC = () => {
                                     {Object.values(AdVibe).map((v) => (
                                         <button
                                             key={v}
-                                            onClick={() => setVibe(v)}
-                                            className={`flex items-center justify-between px-4 py-3 rounded-xl border text-left transition-all ${vibe === v
-                                                ? 'bg-orange-600 border-orange-400 text-white shadow-lg'
-                                                : 'bg-white/5 border-white/5 text-slate-400 hover:bg-white/10'
+                                            onClick={() => setConfig(prev => ({ ...prev, vibe: v }))}
+                                            className={`p-4 rounded-2xl border transition-all text-left group ${config.vibe === v
+                                                ? 'bg-orange-600 border-orange-500'
+                                                : 'bg-white dark:bg-transparent border-slate-200 dark:border-white/10 hover:border-orange-500/50'
                                                 }`}
                                         >
-                                            <span className="font-bold text-[9px] uppercase tracking-tight">{v}</span>
-                                            {vibe === v && <CheckCircle2 className="w-3 h-3 text-white" />}
+                                            <div className={`text-[10px] font-black uppercase tracking-widest ${config.vibe === v ? 'text-white' : 'text-slate-400 group-hover:text-orange-500'}`}>
+                                                {v}
+                                            </div>
                                         </button>
                                     ))}
                                 </div>
                             </section>
 
-                            {/* Step 3: Template */}
+                            {/* Step 3: Aspect Ratio */}
                             <section className="space-y-4">
                                 <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
                                     <span className="w-5 h-5 bg-orange-600 rounded-md text-white flex items-center justify-center text-[9px] font-black italic">03</span>
-                                    Select Template
+                                    Aspect Ratio
                                 </label>
-                                <div className="grid grid-cols-6 gap-2 relative">
-                                    {[1, 2, 3, 4, 5, 6].map((num) => {
-                                        const path = `/templates/template${num}.png`;
-                                        return (
-                                            <button
-                                                key={num}
-                                                onClick={() => setSelectedTemplate(path)}
-                                                onMouseEnter={() => setHoveredTemplate(path)}
-                                                onMouseLeave={() => setHoveredTemplate(null)}
-                                                className={`aspect-square rounded-xl overflow-hidden border-2 transition-all ${selectedTemplate === path ? 'border-orange-500 scale-95 shadow-lg shadow-orange-500/20' : 'border-white/5 opacity-40 hover:opacity-100 hover:border-white/20'}`}
-                                            >
-                                                <img src={path} className="w-full h-full object-cover" alt={`Template ${num}`} />
-                                            </button>
-                                        );
-                                    })}
-
-                                    {/* Hover Preview Overlay */}
-                                    {hoveredTemplate && (
-                                        <div className="absolute bottom-full mb-4 left-0 z-50 pointer-events-none animate-in fade-in zoom-in duration-200">
-                                            <div className="w-48 aspect-[9/16] rounded-3xl overflow-hidden border-4 border-orange-600 shadow-[0_0_50px_rgba(255,77,0,0.3)] bg-black">
-                                                <img src={hoveredTemplate} className="w-full h-full object-cover" alt="Preview" />
-                                            </div>
-                                        </div>
-                                    )}
+                                <div className="grid grid-cols-3 gap-2">
+                                    {(['16:9', '9:16', '1:1'] as AspectRatio[]).map((r) => (
+                                        <button
+                                            key={r}
+                                            onClick={() => setConfig(prev => ({ ...prev, aspectRatio: r }))}
+                                            className={`p-4 rounded-2xl border transition-all text-center font-black text-xs ${config.aspectRatio === r
+                                                ? 'bg-orange-600 border-orange-500 text-white'
+                                                : 'bg-white dark:bg-transparent border-slate-200 dark:border-white/10 text-slate-500 hover:border-orange-500/50'
+                                                }`}
+                                        >
+                                            {r}
+                                        </button>
+                                    ))}
                                 </div>
                             </section>
+                        </div>
 
-                            <div className="pt-4">
+                        {/* Viewfinder Preview */}
+                        <div className="sticky top-8 space-y-6">
+                            <div className="relative group">
+                                <div className={`w-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-[32px] overflow-hidden transition-all duration-700 shadow-2xl ${config.aspectRatio === '9:16' ? 'aspect-[9/16]' : config.aspectRatio === '16:9' ? 'aspect-[16/9]' : 'aspect-square'}`}>
+                                    {/* Viewfinder Overlay */}
+                                    <div className="absolute inset-0 z-10 pointer-events-none p-6 flex flex-col justify-between">
+                                        <div className="flex justify-between items-start opacity-40">
+                                            <div className="w-12 h-12 border-t-2 border-l-2 border-orange-500" />
+                                            <div className="w-12 h-12 border-t-2 border-r-2 border-orange-500" />
+                                        </div>
+                                        <div className="flex justify-between items-end opacity-40">
+                                            <div className="w-12 h-12 border-b-2 border-l-2 border-orange-500" />
+                                            <div className="w-12 h-12 border-b-2 border-r-2 border-orange-500" />
+                                        </div>
+                                    </div>
+
+                                    {/* Media Content */}
+                                    <div className="w-full h-full relative group">
+                                        {masterVideoUrl ? (
+                                            <video
+                                                src={masterVideoUrl}
+                                                controls
+                                                autoPlay
+                                                loop
+                                                className="w-full h-full object-cover"
+                                            />
+                                        ) : status.stage === 'generating' ? (
+                                            <div className="w-full h-full flex flex-col items-center justify-center gap-6 p-12 text-center bg-slate-50/50 dark:bg-[#07070a]/50 backdrop-blur-sm">
+                                                <div className="relative">
+                                                    <div className="w-24 h-24 border-2 border-orange-500/20 rounded-full animate-ping absolute inset-0" />
+                                                    <div className="w-24 h-24 border-b-4 border-orange-500 rounded-full animate-spin relative flex items-center justify-center">
+                                                        <Sparkles className="w-10 h-10 text-orange-500" />
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase italic tracking-tighter">AI Processing</h3>
+                                                    <p className="text-orange-600 dark:text-orange-500/80 text-[10px] font-bold uppercase tracking-[0.2em]">{status.message}</p>
+                                                    <div className="w-48 h-1 bg-slate-200 dark:bg-white/5 rounded-full overflow-hidden mx-auto mt-4">
+                                                        <div className="h-full bg-orange-600 animate-[progress_2s_ease-in-out_infinite]" style={{ width: '40%' }} />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ) : productImage ? (
+                                            <img src={productImage} alt="Product" className="w-full h-full object-contain p-8 bg-slate-100/30 dark:bg-white/5" />
+                                        ) : (
+                                            <div className="w-full h-full flex flex-col items-center justify-center gap-6 p-12 text-center bg-slate-50 dark:bg-white/2">
+                                                <div className="w-20 h-20 border-2 border-dashed border-slate-300 dark:border-white/10 rounded-full flex items-center justify-center">
+                                                    <Box className="w-8 h-8 text-slate-300 dark:text-slate-700" />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <h3 className="text-sm font-bold text-slate-400 dark:text-slate-600 uppercase tracking-widest">Awaiting Stage</h3>
+                                                    <p className="text-[10px] text-slate-500 dark:text-slate-700 font-medium">Upload your product to begin the AI composition</p>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Action Button */}
+                            <div className="relative">
                                 <button
                                     onClick={handleGenerateFullAd}
-                                    disabled={!productImage || status.stage === 'generating'}
-                                    className={`w-full py-6 rounded-3xl font-black text-xl uppercase italic tracking-tighter transition-all flex items-center justify-center gap-4 ${!productImage || status.stage === 'generating'
-                                        ? 'bg-white/5 text-slate-700 cursor-not-allowed'
-                                        : 'bg-orange-600 text-white hover:bg-orange-500 hover:scale-[1.01] shadow-[0_20px_40px_rgba(255,77,0,0.25)]'
+                                    disabled={status.stage === 'generating'}
+                                    className={`w-full py-6 rounded-3xl flex items-center justify-center gap-4 transition-all animate-in slide-in-from-bottom duration-700 delay-300 relative overflow-hidden group ${status.stage === 'generating'
+                                        ? 'bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-400 dark:text-slate-500 cursor-not-allowed'
+                                        : 'bg-orange-600 hover:bg-orange-500 text-white shadow-2xl shadow-orange-600/40 hover:scale-[1.02] active:scale-[0.98]'
                                         }`}
                                 >
                                     {status.stage === 'generating' ? (
@@ -763,7 +814,9 @@ const App: React.FC = () => {
                                     ) : (
                                         <Play className="w-6 h-6 fill-current" />
                                     )}
-                                    <span>{status.stage === 'generating' ? status.message : 'START GENERATION'}</span>
+                                    <span className="text-lg font-black italic uppercase tracking-tighter shrink-0">
+                                        {status.stage === 'generating' ? status.message : 'Start Generation'}
+                                    </span>
                                     {status.stage !== 'generating' && (
                                         <div className="flex items-center gap-1.5 px-3 py-1 bg-white/10 rounded-full border border-white/10 shrink-0">
                                             <Zap className="w-3.5 h-3.5 text-orange-400 fill-orange-400" />
@@ -773,166 +826,15 @@ const App: React.FC = () => {
                                 </button>
                             </div>
                         </div>
-
-                        {/* Viewfinder Column */}
-                        <div className="flex flex-col items-center">
-                            <div className="w-full aspect-[9/16] bg-[#0c0c12] rounded-[48px] border-[12px] border-[#16161c] shadow-[0_0_100px_rgba(0,0,0,0.8)] overflow-hidden relative">
-
-                                {masterVideoUrl ? (
-                                    <div className="w-full h-full relative group/player">
-                                        <video
-                                            id="main-video-player"
-                                            src={masterVideoUrl}
-                                            className="w-full h-full object-cover"
-                                            autoPlay
-                                            loop
-                                            controls={false}
-                                            onClick={(e) => {
-                                                const v = e.currentTarget;
-                                                if (v.paused) v.play();
-                                                else v.pause();
-                                            }}
-                                        />
-
-                                        {/* Custom HUD: Top Right Download */}
-                                        <div className="absolute top-6 right-6 z-50">
-                                            <button
-                                                onClick={downloadMasterAd}
-                                                className="bg-orange-600 hover:bg-orange-500 text-white px-4 py-2 rounded-full font-black text-[10px] uppercase tracking-tighter shadow-xl shadow-orange-500/40 transition-all flex items-center gap-2 hover:scale-105 active:scale-95"
-                                            >
-                                                <Download className="w-3 h-3" />
-                                                Download
-                                            </button>
-                                        </div>
-
-                                        {/* Custom Player Controls */}
-                                        <div className="absolute inset-x-0 bottom-0 p-6 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover/player:opacity-100 transition-opacity duration-300 pointer-events-none">
-                                            <div className="flex flex-col gap-3 pointer-events-auto">
-                                                <div className="w-full h-1 bg-white/20 rounded-full overflow-hidden cursor-pointer relative group/progress" onClick={(e) => {
-                                                    const rect = e.currentTarget.getBoundingClientRect();
-                                                    const pos = (e.clientX - rect.left) / rect.width;
-                                                    const v = document.getElementById('main-video-player') as HTMLVideoElement;
-                                                    if (v) v.currentTime = pos * v.duration;
-                                                }}>
-                                                    <div
-                                                        id="video-progress-bar"
-                                                        className="absolute inset-y-0 left-0 bg-orange-600 rounded-full"
-                                                        style={{ width: '0%' }}
-                                                    />
-                                                </div>
-                                                <div className="flex items-center justify-between">
-                                                    <button
-                                                        className="text-white hover:text-orange-400 transition-colors"
-                                                        onClick={() => {
-                                                            const v = document.getElementById('main-video-player') as HTMLVideoElement;
-                                                            if (v) {
-                                                                if (v.paused) v.play();
-                                                                else v.pause();
-                                                            }
-                                                        }}
-                                                    >
-                                                        <Play className="w-4 h-4 fill-current" />
-                                                    </button>
-                                                    <span className="text-[10px] font-bold text-white/50 tracking-widest">VEOS VIDEO PLAYER</span>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <script dangerouslySetInnerHTML={{
-                                            __html: `
-                                            setInterval(() => {
-                                                const v = document.getElementById('main-video-player');
-                                                const bar = document.getElementById('video-progress-bar');
-                                                if (v && bar) {
-                                                    const pct = (v.currentTime / v.duration) * 100;
-                                                    bar.style.width = pct + '%';
-                                                }
-                                            }, 100);
-                                        `}} />
-                                    </div>
-                                ) : (
-                                    <div className="w-full h-full flex flex-col items-center justify-center p-12 text-center bg-gradient-to-b from-[#0c0c12] to-[#050508]">
-                                        {status.stage === 'generating' ? (
-                                            <div className="space-y-8 w-full max-w-[240px]">
-                                                <div className="relative">
-                                                    <div className="flex items-center justify-center">
-                                                        <Loader2 className="w-20 h-20 animate-spin text-orange-500/10 absolute" />
-                                                        <div className="w-16 h-16 rounded-full border-2 border-orange-500/20 flex items-center justify-center">
-                                                            <span className="text-xl font-black text-orange-500 italic">{status.progress || 0}%</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div className="space-y-3">
-                                                    <span className="text-orange-400 font-black tracking-tighter text-lg italic uppercase animate-pulse leading-none block">{status.message}</span>
-                                                    <div className="space-y-1">
-                                                        <span className="text-[8px] text-slate-500 font-bold uppercase tracking-[0.2em] block">Don't close this tab while we produce your ad (5-10 mins)</span>
-                                                        <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
-                                                            <div
-                                                                className="h-full bg-orange-600 transition-all duration-1000"
-                                                                style={{ width: `${status.progress || 0}%` }}
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <div className="opacity-10 group">
-                                                <Smartphone className="w-16 h-16 mb-4 mx-auto group-hover:scale-110 transition-transform duration-500" />
-                                                <span className="text-[10px] font-black uppercase tracking-[0.4em]">Empty Studio</span>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-
-                            {status.stage === 'error' && (
-                                <div className="mt-6 w-full p-4 bg-red-950/20 border border-red-500/20 rounded-2xl flex items-start gap-3 text-red-400">
-                                    <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
-                                    <div>
-                                        <h4 className="font-bold text-[10px] uppercase tracking-widest mb-1">Production Error</h4>
-                                        <p className="text-[9px] leading-relaxed opacity-70">{status.message}</p>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
                     </div>
                 </div>
             </main>
 
-            {/* High Demand / Quota Modal */}
-            {showQuotaModal && (
-                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl animate-in fade-in duration-300">
-                    <div className="w-full max-w-md bg-[#0c0c12] border border-white/10 rounded-3xl p-8 text-center shadow-2xl relative overflow-hidden">
-                        <div className="absolute inset-0 bg-gradient-to-b from-blue-500/5 to-transparent pointer-events-none" />
-
-                        <div className="w-16 h-16 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-blue-500/20">
-                            <Layers className="w-8 h-8 text-blue-400" />
-                        </div>
-
-                        <h2 className="text-2xl font-bold text-white mb-2 tracking-tight">System Overload</h2>
-                        <p className="text-slate-400 text-sm leading-relaxed mb-8">
-                            {quotaMessage || "We are currently experiencing extremely high demand. To ensure quality for everyone, we have temporarily paused new generations."}
-                        </p>
-
-                        <div className="flex flex-col gap-3">
-                            <button
-                                onClick={() => setShowQuotaModal(false)}
-                                className="w-full py-4 bg-white text-black font-bold rounded-xl hover:bg-slate-200 transition-all text-sm uppercase tracking-widest"
-                            >
-                                Understood
-                            </button>
-                            <p className="text-[10px] text-slate-600 uppercase tracking-widest mt-2">Please try again tomorrow</p>
-                        </div>
-                    </div>
-                </div>
-            )}
-
             {/* Video Modal */}
             {selectedProject && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 md:p-12 bg-black/90 backdrop-blur-xl animate-in fade-in duration-300">
-                    <div className="relative h-full max-h-[85vh] aspect-[9/16] bg-[#0c0c12] rounded-[48px] border-[12px] border-[#16161c] shadow-[0_0_100px_rgba(0,0,0,0.8)] overflow-hidden">
+                    <div className="relative h-full max-h-[85vh] aspect-[9/16] bg-white dark:bg-[#0c0c12] rounded-[48px] border-[12px] border-slate-200 dark:border-[#16161c] shadow-[0_0_100px_rgba(0,0,0,0.8)] overflow-hidden">
 
-                        {/* Modal Header */}
                         {/* Modal Header HUD */}
                         <div className="absolute top-6 right-6 z-[130] flex items-center gap-3">
                             <button
@@ -961,34 +863,21 @@ const App: React.FC = () => {
                         {modalVideoUrl ? (
                             <div className="w-full h-full relative group/modal-player">
                                 <video
-                                    id="modal-video-player"
                                     src={modalVideoUrl}
                                     className="w-full h-full object-cover"
                                     autoPlay
                                     loop
-                                    onClick={(e) => {
-                                        const v = e.currentTarget;
-                                        if (v.paused) v.play();
-                                        else v.pause();
-                                    }}
+                                    controls
                                 />
                             </div>
                         ) : (
-                            <div className="w-full h-full flex flex-col items-center justify-center p-12 text-center bg-gradient-to-b from-[#0c0c12] to-[#050508]">
-                                <div className="space-y-4 opacity-30">
-                                    <div className="w-16 h-16 bg-white/5 rounded-3xl flex items-center justify-center mx-auto">
-                                        <AlertCircle className="w-8 h-8 text-white" />
+                            <div className="w-full h-full flex flex-col items-center justify-center p-12 text-center bg-slate-50 dark:bg-white/5">
+                                <div className="space-y-4 opacity-30 text-slate-900 dark:text-white">
+                                    <div className="w-16 h-16 bg-slate-200 dark:bg-white/5 rounded-3xl flex items-center justify-center mx-auto">
+                                        <AlertCircle className="w-8 h-8" />
                                     </div>
-                                    <div>
-                                        <h3 className="text-white font-bold text-[10px] uppercase tracking-widest">Video Not Ready</h3>
-                                        <p className="text-slate-500 text-[9px] mt-1 italic">This generation may have been interrupted or the file is still uploading.</p>
-                                    </div>
-                                    <button
-                                        onClick={() => setSelectedProject(null)}
-                                        className="text-[10px] font-bold text-orange-500 uppercase tracking-widest hover:text-orange-400"
-                                    >
-                                        Back to Studio
-                                    </button>
+                                    <h3 className="font-bold text-[10px] uppercase tracking-widest">Video Not Ready</h3>
+                                    <button onClick={() => setSelectedProject(null)} className="text-[10px] font-bold text-orange-600 uppercase tracking-widest">Back to Studio</button>
                                 </div>
                             </div>
                         )}
@@ -996,148 +885,93 @@ const App: React.FC = () => {
                 </div>
             )}
 
-
-
+            {/* Quota Exhausted Modal */}
+            {showQuotaModal && (
+                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl animate-in fade-in duration-300">
+                    <div className="w-full max-w-md bg-white dark:bg-[#0c0c12] border border-slate-200 dark:border-white/10 rounded-3xl p-8 text-center shadow-2xl relative overflow-hidden">
+                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-500 via-yellow-500 to-orange-500 animate-[shimmer_2s_infinite]" />
+                        <div className="w-20 h-20 bg-orange-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <ShieldAlert className="w-10 h-10 text-orange-500" />
+                        </div>
+                        <h2 className="text-3xl font-black text-slate-900 dark:text-white italic uppercase tracking-tighter mb-4">System Overload</h2>
+                        <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed mb-8">
+                            {quotaMessage || "We are currently experiencing extremely high demand. To ensure quality for everyone, we have temporarily paused new generations."}
+                        </p>
+                        <button
+                            onClick={() => setShowQuotaModal(false)}
+                            className="w-full py-4 bg-orange-600 hover:bg-orange-500 text-white font-black rounded-xl transition-all text-sm uppercase tracking-widest shadow-lg shadow-orange-600/20"
+                        >
+                            Understood
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {/* Payment Modal */}
             {showPaymentModal && (
-                <>
-                    {checkoutSessionId ? (
-                        <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm animate-in fade-in duration-300 flex items-center justify-center p-4">
-                            <div className="w-full max-w-md bg-[#0c0c12] border border-white/10 rounded-3xl overflow-hidden shadow-2xl flex flex-col h-[85vh] animate-in zoom-in-95 duration-300">
-                                {/* Header */}
-                                <div className="px-6 py-4 border-b border-white/5 flex justify-between items-center bg-[#0c0c12] shrink-0">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-8 h-8 bg-orange-600 rounded-lg flex items-center justify-center">
-                                            <Zap className="w-4 h-4 text-white fill-white" />
-                                        </div>
-                                        <span className="text-sm font-black text-white uppercase tracking-wide">Secure Checkout</span>
-                                    </div>
+                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl animate-in fade-in duration-300">
+                    <div className="w-full max-w-lg bg-white dark:bg-[#0c0c12] border border-slate-200 dark:border-white/10 rounded-3xl p-8 relative overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+                        <button
+                            onClick={() => setShowPaymentModal(false)}
+                            className="absolute top-6 right-6 p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-full text-slate-400 transition-colors z-[210]"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
+
+                        <div className="text-center mb-8 shrink-0">
+                            <div className="w-16 h-16 bg-orange-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <Zap className="w-8 h-8 text-orange-500 fill-orange-500" />
+                            </div>
+                            <h2 className="text-3xl font-black text-slate-900 dark:text-white italic uppercase tracking-tighter">Fuel Your Production</h2>
+                            <p className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-widest mt-2">Get back to creating high-converting ads</p>
+                        </div>
+
+                        {!checkoutSessionId ? (
+                            <div className="grid grid-cols-2 gap-4 w-full mb-8">
+                                {[
+                                    { id: 'pack_3', credits: 3, price: 6, label: 'Starter' },
+                                    { id: 'pack_5', credits: 5, price: 10, label: 'Standard' },
+                                    { id: 'pack_12', credits: 12, price: 20, label: 'Pro', popular: true },
+                                    { id: 'pack_18', credits: 18, price: 30, label: 'Agency' },
+                                ].map((pkg) => (
                                     <button
-                                        onClick={() => { setShowPaymentModal(false); setCheckoutSessionId(null); setCheckoutPurchaseUrl(null); }}
-                                        className="transition-colors text-white/20 hover:text-white"
+                                        key={pkg.id}
+                                        onClick={() => handleBuyCredits(pkg.id)}
+                                        className={`relative p-6 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-3xl text-left hover:border-orange-500/50 hover:bg-slate-100 dark:hover:bg-white/10 transition-all group ${pkg.popular ? 'border-orange-500/40 bg-orange-600/5 dark:bg-orange-500/10' : ''}`}
                                     >
-                                        <X className="w-5 h-5" />
+                                        <div className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none mb-1">{pkg.label}</div>
+                                        <div className="text-2xl font-black text-slate-900 dark:text-white italic tracking-tighter mb-4">${pkg.price}</div>
+                                        <div className="text-xl font-black text-orange-600 dark:text-orange-500 italic">{pkg.credits} CREDITS</div>
                                     </button>
-                                </div>
-
-                                {/* Embed Container */}
-                                <div className="flex-1 bg-gray-50 relative overflow-y-auto light-scrollbar">
-                                    <WhopCheckoutEmbed
-                                        key={checkoutSessionId}
-                                        sessionId={checkoutSessionId}
-                                        returnUrl={typeof window !== 'undefined' ? window.location.origin + window.location.pathname : ""}
-                                        onComplete={async (paymentId) => {
-                                            console.log("Checkout complete! Verifying Payment ID:", paymentId);
-                                            try {
-                                                const res = await fetch('/api/payments/verify', {
-                                                    method: 'POST',
-                                                    headers: { 'Content-Type': 'application/json' },
-                                                    body: JSON.stringify({
-                                                        paymentId,
-                                                        packageId: selectedPackageId
-                                                    })
-                                                });
-                                                const data = await res.json();
-
-                                                if (data.success) {
-                                                    console.log("Credits added successfully!");
-                                                    setShowPaymentModal(false);
-                                                    setCheckoutSessionId(null);
-                                                    setCheckoutPurchaseUrl(null);
-                                                    window.location.reload();
-                                                } else {
-                                                    console.error("Payment verification failed:", data.error);
-                                                    // Optional: Show error to user
-                                                    alert("Payment verification failed. Please contact support if you were charged.");
-                                                }
-                                            } catch (err) {
-                                                console.error("Error calling verify API:", err);
-                                            }
-                                        }}
-                                    />
-                                </div>
+                                ))}
                             </div>
-                        </div>
-                    ) : (
-                        <div className="fixed inset-0 z-[200] overflow-y-auto bg-black/90 backdrop-blur-xl animate-in fade-in duration-300">
-                            <div className="flex min-h-full items-center justify-center p-4 sm:p-6 py-12">
-                                <div className="bg-[#0c0c12] border border-white/10 rounded-[40px] w-full max-w-xl shadow-2xl relative overflow-hidden">
-                                    <div className="p-8 pb-4 flex flex-col items-center text-center relative">
-                                        <button
-                                            onClick={() => { setShowPaymentModal(false); setCheckoutSessionId(null); }}
-                                            className="absolute top-6 right-6 transition-colors text-white/20 hover:text-white"
-                                        >
-                                            <X className="w-5 h-5" />
-                                        </button>
-
-                                        <div className="w-16 h-16 bg-orange-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-orange-500/20">
-                                            <Zap className="w-8 h-8 text-white fill-white" />
-                                        </div>
-                                        <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter mb-2">Fuel Your Production</h2>
-                                        <p className="text-slate-500 text-sm font-medium mb-10 max-w-md">Select a credit package to start generating high-converting viral UGC ads.</p>
-
-                                        <div className="grid grid-cols-2 gap-4 w-full">
-                                            {[
-                                                { id: 'pack_3', credits: 3, price: 6, label: 'Starter' },
-                                                { id: 'pack_5', credits: 5, price: 10, label: 'Standard' },
-                                                { id: 'pack_12', credits: 12, price: 20, label: 'Pro', popular: true },
-                                                { id: 'pack_18', credits: 18, price: 30, label: 'Agency' },
-                                            ].map((pkg) => (
-                                                <button
-                                                    key={pkg.id}
-                                                    onClick={() => handleBuyCredits(pkg.id)}
-                                                    disabled={loadingCheckout}
-                                                    className={`relative p-6 bg-white/5 border border-white/10 rounded-3xl text-left hover:border-orange-500/50 hover:bg-white/10 transition-all group ${pkg.popular ? 'border-orange-500/40 bg-orange-600/5' : ''}`}
-                                                >
-                                                    {pkg.popular && (
-                                                        <div className="absolute top-4 right-4 bg-orange-600 px-2 py-0.5 rounded-full">
-                                                            <span className="text-[8px] font-black text-white uppercase tracking-widest">Popular</span>
-                                                        </div>
-                                                    )}
-                                                    <div className="flex items-center gap-3 mb-4">
-                                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${pkg.popular ? 'bg-orange-600 text-white' : 'bg-white/10 text-slate-400'}`}>
-                                                            <Zap className={`w-5 h-5 ${pkg.popular ? 'fill-white' : ''}`} />
-                                                        </div>
-                                                        <div>
-                                                            <h3 className="text-xs font-black text-white uppercase tracking-widest leading-none mb-1">{pkg.label}</h3>
-                                                            <span className="text-2xl font-black text-white italic tracking-tighter">${pkg.price}</span>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex items-center justify-between">
-                                                        <span className="text-xl font-black text-orange-500 italic">{pkg.credits} CREDITS</span>
-                                                        <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                                            <ChevronRight className="w-4 h-4 text-orange-500" />
-                                                        </div>
-                                                    </div>
-                                                </button>
-                                            ))}
-                                        </div>
-
-                                        {loadingCheckout && (
-                                            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-10 rounded-[40px]">
-                                                <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className="p-4 bg-white/5 border-t border-white/5 text-center">
-                                        <p className="text-[9px] text-slate-600 font-bold uppercase tracking-[0.2em]">Secure payments powered by Whop</p>
-                                    </div>
-                                </div>
+                        ) : (
+                            <div className="flex-1 min-h-0 bg-white rounded-2xl overflow-hidden relative">
+                                <WhopCheckoutEmbed
+                                    sessionId={checkoutSessionId}
+                                    onCheckoutComplete={() => {
+                                        setShowPaymentModal(false);
+                                        window.location.reload();
+                                    }}
+                                />
                             </div>
-                        </div>
-                    )}
-                </>
+                        )}
+
+                        <p className="text-[10px] text-slate-600 dark:text-slate-500 text-center uppercase tracking-widest font-bold mt-6 opacity-30">
+                            Secure Payment via Whop Cloud
+                        </p>
+                    </div>
+                </div>
             )}
 
             {/* Delete Confirmation Modal */}
             {projectToDelete && (
                 <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl animate-in fade-in duration-300">
-                    <div className="w-full max-w-sm bg-[#0c0c12] border border-white/10 rounded-3xl p-8 text-center shadow-2xl relative overflow-hidden">
+                    <div className="w-full max-w-sm bg-white dark:bg-[#0c0c12] border border-slate-200 dark:border-white/10 rounded-3xl p-8 text-center shadow-2xl relative overflow-hidden">
                         <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-red-500/20">
                             <Trash2 className="w-8 h-8 text-red-500" />
                         </div>
-                        <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter mb-2">Delete Project?</h2>
+                        <h2 className="text-2xl font-black text-slate-900 dark:text-white italic uppercase tracking-tighter mb-2">Delete Project?</h2>
                         <p className="text-slate-500 text-sm font-medium mb-8">This action cannot be undone. All footage and scripts will be permanently removed.</p>
                         <div className="flex flex-col gap-3">
                             <button
@@ -1148,7 +982,7 @@ const App: React.FC = () => {
                             </button>
                             <button
                                 onClick={() => setProjectToDelete(null)}
-                                className="w-full py-4 bg-white/5 border border-white/10 text-slate-400 hover:text-white hover:bg-white/10 font-bold rounded-xl transition-all text-sm uppercase tracking-widest"
+                                className="w-full py-4 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 font-bold rounded-xl transition-all text-sm uppercase tracking-widest"
                             >
                                 Cancel
                             </button>
@@ -1161,15 +995,22 @@ const App: React.FC = () => {
                 __html: `
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.05); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,115,0,0.1); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,115,0,0.3); }
         
-        .light-scrollbar::-webkit-scrollbar { width: 4px; }
-        .light-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .light-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 10px; }
-        .light-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.3); }
-      `}} />
-        </div >
+        @keyframes progress {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(250%); }
+        }
+        
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+      `
+            }} />
+        </div>
     );
-};
+}
 
 export default App;

@@ -15,6 +15,8 @@
     "@google/genai": "^1.38.0",
     "@libsql/client": "^0.17.0",
     "@whop/checkout": "^0.0.51",
+    "@whop/frosted-ui": "^0.0.1-canary.24",
+    "@whop/react": "^0.3.2",
     "@whop/sdk": "^0.0.23",
     "gaxios": "^7.1.3",
     "gcp-metadata": "^8.1.2",

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { WhopApp } from '@whop/frosted-ui';
 
 export const metadata: Metadata = {
     title: 'VlogStudio - Handheld Engine',
@@ -16,7 +17,11 @@ export default function RootLayout({
             <head>
                 <meta httpEquiv="Content-Security-Policy" content="frame-src 'self' https://whop.com https://*.whop.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://whop.com https://*.whop.com;" />
             </head>
-            <body>{children}</body>
+            <body>
+                <WhopApp appearance="inherit">
+                    {children}
+                </WhopApp>
+            </body>
         </html>
     );
 }
