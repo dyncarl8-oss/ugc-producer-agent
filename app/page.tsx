@@ -394,15 +394,31 @@ const App: React.FC = () => {
                     const videoBlob = await videoResponse.blob();
                     const videoFile = new File([videoBlob], 'stitched-video.mp4', { type: 'video/mp4' });
 
-                    // Call Subtitles API with video file and segments
-                    setStatus({ stage: 'generating', message: 'Generating script-based subtitles...', progress: 98 });
-                    const subFormData = new FormData();
-                    subFormData.append('video', videoFile);
-                    subFormData.append('segments', JSON.stringify(segments));
+                    // 1. Upload stitched video to Turso (via /api/upload)
+                    setStatus({ stage: 'generating', message: 'Finalizing production...', progress: 95 });
+                    const uploadFormData = new FormData();
+                    uploadFormData.append('file', videoFile);
 
+                    const uploadRes = await fetch('/api/upload', {
+                        method: 'POST',
+                        body: uploadFormData
+                    });
+
+                    if (!uploadRes.ok) throw new Error('Failed to upload video for subtitling');
+                    const uploadData = await uploadRes.json();
+
+                    // Get full public URL for Creatomate
+                    const appUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
+                    const publicUrl = `${appUrl.endsWith('/') ? appUrl.slice(0, -1) : appUrl}${uploadData.url}`;
+
+                    // 2. Call Subtitles API with publicUrl
+                    setStatus({ stage: 'generating', message: 'Generating script-based subtitles...', progress: 98 });
                     const subRes = await fetch('/api/video/subtitles', {
                         method: 'POST',
-                        body: subFormData
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            videoUrl: publicUrl
+                        })
                     });
 
                     if (!subRes.ok) {

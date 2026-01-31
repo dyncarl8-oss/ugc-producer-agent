@@ -83,4 +83,14 @@ export const initDb = async () => {
       preview_usage INTEGER DEFAULT 0
     )
   `);
+
+  // Temporary assets table for reliable subtitling
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS temp_assets (
+      id TEXT PRIMARY KEY,
+      content BLOB,
+      content_type TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
 };

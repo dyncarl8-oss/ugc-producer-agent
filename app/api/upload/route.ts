@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
-import { existsSync } from 'fs';
+import { db } from '@/lib/db';
+import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(req: Request) {
     try {
@@ -15,18 +14,16 @@ export async function POST(req: Request) {
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
 
-        // Create public/uploads if it doesn't exist
-        const uploadDir = join(process.cwd(), 'public', 'uploads');
-        if (!existsSync(uploadDir)) {
-            await mkdir(uploadDir, { recursive: true });
-        }
+        const assetId = uuidv4();
 
-        const fileName = `${Date.now()}-${file.name}`;
-        const filePath = join(uploadDir, fileName);
+        // Store in Turso
+        await db.execute({
+            sql: "INSERT INTO temp_assets (id, content, content_type) VALUES (?, ?, ?)",
+            args: [assetId, buffer, file.type]
+        });
 
-        await writeFile(filePath, buffer);
-
-        const publicUrl = `/uploads/${fileName}`;
+        // The URL will point to our new serving route
+        const publicUrl = `/api/video/serve/${assetId}`;
 
         return NextResponse.json({ success: true, url: publicUrl });
     } catch (error: any) {
