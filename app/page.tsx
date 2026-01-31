@@ -727,15 +727,15 @@ const App: React.FC = () => {
                                     {status.stage === 'generating' ? (
                                         <Loader2 className="w-6 h-6 animate-spin" />
                                     ) : (
-                                        <div className="flex items-center gap-4">
-                                            <Play className="w-6 h-6 fill-current" />
-                                            <div className="flex items-center gap-1.5 px-3 py-1 bg-white/10 rounded-full border border-white/10 shrink-0">
-                                                <Zap className="w-3.5 h-3.5 text-orange-400 fill-orange-400" />
-                                                <span className="text-xs font-black tracking-normal italic">1</span>
-                                            </div>
+                                        <Play className="w-6 h-6 fill-current" />
+                                    )}
+                                    <span>{status.stage === 'generating' ? status.message : 'START GENERATION'}</span>
+                                    {status.stage !== 'generating' && (
+                                        <div className="flex items-center gap-1.5 px-3 py-1 bg-white/10 rounded-full border border-white/10 shrink-0">
+                                            <Zap className="w-3.5 h-3.5 text-orange-400 fill-orange-400" />
+                                            <span className="text-xs font-black tracking-normal italic">1</span>
                                         </div>
                                     )}
-                                    {status.stage === 'generating' ? status.message : 'START GENERATION'}
                                 </button>
                             </div>
                         </div>
