@@ -660,7 +660,7 @@ const App: React.FC = () => {
 
                     <div className="text-center space-y-3">
                         <h2 className="text-6xl font-black text-slate-900 dark:text-white tracking-tighter italic uppercase leading-none">UGC Producer</h2>
-                        <p className="text-slate-500 text-base font-medium uppercase tracking-widest">3-Step Viral Production Flow</p>
+                        <p className="text-slate-500 text-base font-medium uppercase tracking-widest">4-Step Viral Production Flow</p>
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-12 items-start">
@@ -693,10 +693,36 @@ const App: React.FC = () => {
                                 </label>
                             </section>
 
-                            {/* Step 2: Vibe */}
+                            {/* Step 2: Select Template */}
                             <section className="space-y-4">
                                 <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
                                     <span className="w-5 h-5 bg-orange-600 rounded-md text-white flex items-center justify-center text-[9px] font-black italic">02</span>
+                                    Select Template
+                                </label>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {['/templates/template1.png', '/templates/template2.png', '/templates/template3.png'].map((template, idx) => (
+                                        <button
+                                            key={template}
+                                            onClick={() => setSelectedTemplate(template)}
+                                            onMouseEnter={() => setHoveredTemplate(template)}
+                                            onMouseLeave={() => setHoveredTemplate(null)}
+                                            className={`aspect-square rounded-2xl border-2 transition-all overflow-hidden ${selectedTemplate === template
+                                                ? 'border-orange-500 ring-2 ring-orange-500/20'
+                                                : 'border-slate-200 dark:border-white/10 hover:border-orange-500/50'
+                                                }`}
+                                        >
+                                            <div className="w-full h-full bg-slate-100 dark:bg-white/5 flex items-center justify-center">
+                                                <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase">T{idx + 1}</span>
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                            </section>
+
+                            {/* Step 3: Vibe */}
+                            <section className="space-y-4">
+                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                                    <span className="w-5 h-5 bg-orange-600 rounded-md text-white flex items-center justify-center text-[9px] font-black italic">03</span>
                                     Set Vibe
                                 </label>
                                 <div className="grid grid-cols-2 gap-2">
@@ -717,10 +743,10 @@ const App: React.FC = () => {
                                 </div>
                             </section>
 
-                            {/* Step 3: Aspect Ratio */}
+                            {/* Step 4: Aspect Ratio */}
                             <section className="space-y-4">
                                 <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                                    <span className="w-5 h-5 bg-orange-600 rounded-md text-white flex items-center justify-center text-[9px] font-black italic">03</span>
+                                    <span className="w-5 h-5 bg-orange-600 rounded-md text-white flex items-center justify-center text-[9px] font-black italic">04</span>
                                     Aspect Ratio
                                 </label>
                                 <div className="grid grid-cols-3 gap-2">
