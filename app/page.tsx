@@ -394,29 +394,15 @@ const App: React.FC = () => {
                     const videoBlob = await videoResponse.blob();
                     const videoFile = new File([videoBlob], 'stitched-video.mp4', { type: 'video/mp4' });
 
-                    const formData = new FormData();
-                    formData.append('file', videoFile);
-
-                    // Upload to get a public URL
-                    const uploadRes = await fetch('/api/upload', {
-                        method: 'POST',
-                        body: formData
-                    });
-
-                    if (!uploadRes.ok) throw new Error('Failed to upload video for subtitling');
-                    const uploadData = await uploadRes.json();
-                    const appUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
-                    const publicUrl = `${appUrl.endsWith('/') ? appUrl.slice(0, -1) : appUrl}${uploadData.url}`;
-
-                    // Call Subtitles API with segments
+                    // Call Subtitles API with video file and segments
                     setStatus({ stage: 'generating', message: 'Generating script-based subtitles...', progress: 98 });
+                    const subFormData = new FormData();
+                    subFormData.append('video', videoFile);
+                    subFormData.append('segments', JSON.stringify(segments));
+
                     const subRes = await fetch('/api/video/subtitles', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            videoUrl: publicUrl,
-                            segments
-                        })
+                        body: subFormData
                     });
 
                     if (!subRes.ok) {
