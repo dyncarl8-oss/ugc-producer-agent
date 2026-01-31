@@ -11,13 +11,10 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const formData = await req.formData();
-        const videoFile = formData.get('video') as File;
-        const segmentsJson = formData.get('segments') as string;
-        const segments = JSON.parse(segmentsJson);
+        const { videoUrl, segments } = await req.json();
 
-        if (!videoFile) {
-            return NextResponse.json({ error: 'No video file provided' }, { status: 400 });
+        if (!videoUrl) {
+            return NextResponse.json({ error: 'No video URL provided' }, { status: 400 });
         }
 
         const apiKey = process.env.CREATOMATE_API_KEY;
@@ -25,25 +22,9 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Creatomate API Key is missing or invalid.' }, { status: 500 });
         }
 
-        // 1. Upload video to Creatomate Storage
-        const uploadFormData = new FormData();
-        uploadFormData.append('file', videoFile);
+        // 1. Initial video setup
+        // We use the provide videoUrl directly for the render source.
 
-        const uploadRes = await fetch('https://api.creatomate.com/v1/uploads', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${apiKey}`
-            },
-            body: uploadFormData
-        });
-
-        if (!uploadRes.ok) {
-            const err = await uploadRes.json();
-            throw new Error(`Creatomate upload failed: ${err.message || uploadRes.statusText}`);
-        }
-
-        const uploadData = await uploadRes.json();
-        const videoUrl = uploadData.url;
 
         // 2. Prepare render elements
         const elements: any[] = [

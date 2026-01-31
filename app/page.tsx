@@ -786,12 +786,7 @@ const App: React.FC = () => {
                                             className="w-full h-full object-cover"
                                             autoPlay
                                             loop
-                                            controls={false}
-                                            onClick={(e) => {
-                                                const v = e.currentTarget;
-                                                if (v.paused) v.play();
-                                                else v.pause();
-                                            }}
+                                            controls={true}
                                         />
 
                                         {/* Custom HUD: Top Right Download */}
@@ -805,50 +800,7 @@ const App: React.FC = () => {
                                             </button>
                                         </div>
 
-                                        {/* Custom Player Controls */}
-                                        <div className="absolute inset-x-0 bottom-0 p-6 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover/player:opacity-100 transition-opacity duration-300 pointer-events-none">
-                                            <div className="flex flex-col gap-3 pointer-events-auto">
-                                                <div className="w-full h-1 bg-white/20 rounded-full overflow-hidden cursor-pointer relative group/progress" onClick={(e) => {
-                                                    const rect = e.currentTarget.getBoundingClientRect();
-                                                    const pos = (e.clientX - rect.left) / rect.width;
-                                                    const v = document.getElementById('main-video-player') as HTMLVideoElement;
-                                                    if (v) v.currentTime = pos * v.duration;
-                                                }}>
-                                                    <div
-                                                        id="video-progress-bar"
-                                                        className="absolute inset-y-0 left-0 bg-orange-600 rounded-full"
-                                                        style={{ width: '0%' }}
-                                                    />
-                                                </div>
-                                                <div className="flex items-center justify-between">
-                                                    <button
-                                                        className="text-white hover:text-orange-400 transition-colors"
-                                                        onClick={() => {
-                                                            const v = document.getElementById('main-video-player') as HTMLVideoElement;
-                                                            if (v) {
-                                                                if (v.paused) v.play();
-                                                                else v.pause();
-                                                            }
-                                                        }}
-                                                    >
-                                                        <Play className="w-4 h-4 fill-current" />
-                                                    </button>
-                                                    <span className="text-[10px] font-bold text-white/50 tracking-widest">VEOS VIDEO PLAYER</span>
-                                                </div>
-                                            </div>
-                                        </div>
 
-                                        <script dangerouslySetInnerHTML={{
-                                            __html: `
-                                            setInterval(() => {
-                                                const v = document.getElementById('main-video-player');
-                                                const bar = document.getElementById('video-progress-bar');
-                                                if (v && bar) {
-                                                    const pct = (v.currentTime / v.duration) * 100;
-                                                    bar.style.width = pct + '%';
-                                                }
-                                            }, 100);
-                                        `}} />
                                     </div>
                                 ) : (
                                     <div className="w-full h-full flex flex-col items-center justify-center p-12 text-center bg-gradient-to-b from-[var(--bg-tertiary)] to-[var(--bg-primary)]">
@@ -966,11 +918,7 @@ const App: React.FC = () => {
                                     className="w-full h-full object-cover"
                                     autoPlay
                                     loop
-                                    onClick={(e) => {
-                                        const v = e.currentTarget;
-                                        if (v.paused) v.play();
-                                        else v.pause();
-                                    }}
+                                    controls={true}
                                 />
                             </div>
                         ) : (
