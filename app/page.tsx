@@ -588,9 +588,9 @@ const App: React.FC = () => {
                             <div className="flex flex-col min-w-0 flex-1">
                                 <div className="flex items-center justify-between gap-2">
                                     <span className="text-sm font-black text-[var(--text-primary)] tracking-tight truncate">{user.username}</span>
-                                    <div className="flex items-center gap-1 px-2 py-0.5 bg-orange-600/20 border border-orange-500/30 rounded-full shrink-0">
-                                        <Zap className="w-2.5 h-2.5 text-orange-500 fill-orange-500" />
-                                        <span className="text-[10px] text-orange-200 font-black tracking-tighter">{user.credits}</span>
+                                    <div className="flex items-center gap-1 px-2 py-0.5 bg-[var(--orange-muted)] border border-[var(--border-accent)] rounded-full shrink-0">
+                                        <Zap className="w-2.5 h-2.5 text-[var(--orange-bright)] fill-[var(--orange-bright)]" />
+                                        <span className="text-[10px] text-[var(--orange-bright)] font-black tracking-tighter">{user.credits}</span>
                                     </div>
                                 </div>
                                 <span className="text-[9px] text-[var(--text-muted)] font-bold uppercase tracking-widest mt-0.5">Verified Account</span>
@@ -599,10 +599,10 @@ const App: React.FC = () => {
 
                         <button
                             onClick={() => setShowPaymentModal(true)}
-                            className="w-full py-2.5 bg-orange-600/10 border border-orange-500/20 rounded-xl flex items-center justify-center gap-2 hover:bg-orange-600/20 transition-all group"
+                            className="w-full py-2.5 bg-[var(--orange-primary)] hover:bg-[var(--orange-bright)] rounded-xl flex items-center justify-center gap-2 transition-all group shadow-lg shadow-orange-600/20"
                         >
-                            <Plus className="w-3.5 h-3.5 text-orange-500 group-hover:scale-110 transition-transform" />
-                            <span className="text-[10px] font-black text-orange-200 uppercase tracking-widest">Top Up Credits</span>
+                            <Plus className="w-3.5 h-3.5 text-[var(--text-on-orange)] group-hover:scale-110 transition-transform" />
+                            <span className="text-[10px] font-black text-[var(--text-on-orange)] uppercase tracking-widest">Top Up Credits</span>
                         </button>
                     </div>
                 )}
@@ -705,12 +705,12 @@ const App: React.FC = () => {
                                             key={v}
                                             onClick={() => setVibe(v)}
                                             className={`flex items-center justify-between px-4 py-3 rounded-xl border text-left transition-all ${vibe === v
-                                                ? 'bg-orange-600 border-orange-400 text-white shadow-lg'
+                                                ? 'bg-[var(--orange-primary)] border-[var(--orange-bright)] text-[var(--text-on-orange)] shadow-lg'
                                                 : 'bg-[var(--bg-card)] border-[var(--border-secondary)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-hover)]'
                                                 }`}
                                         >
                                             <span className="font-bold text-[9px] uppercase tracking-tight">{v}</span>
-                                            {vibe === v && <CheckCircle2 className="w-3 h-3 text-white" />}
+                                            {vibe === v && <CheckCircle2 className="w-3 h-3 text-[var(--text-on-orange)]" />}
                                         </button>
                                     ))}
                                 </div>
@@ -719,7 +719,7 @@ const App: React.FC = () => {
                             {/* Step 3: Template */}
                             <section className="space-y-4">
                                 <label className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest flex items-center gap-2">
-                                    <span className="w-5 h-5 bg-orange-600 rounded-md text-white flex items-center justify-center text-[9px] font-black italic">03</span>
+                                    <span className="w-5 h-5 bg-[var(--orange-primary)] rounded-md text-[var(--text-on-orange)] flex items-center justify-center text-[9px] font-black italic">03</span>
                                     Select Template
                                 </label>
                                 <div className="grid grid-cols-6 gap-2 relative">
@@ -731,7 +731,7 @@ const App: React.FC = () => {
                                                 onClick={() => setSelectedTemplate(path)}
                                                 onMouseEnter={() => setHoveredTemplate(path)}
                                                 onMouseLeave={() => setHoveredTemplate(null)}
-                                                className={`aspect-square rounded-xl overflow-hidden border-2 transition-all ${selectedTemplate === path ? 'border-orange-500 scale-95 shadow-lg shadow-orange-500/20' : 'border-[var(--border-secondary)] opacity-40 hover:opacity-100 hover:border-[var(--border-primary)]'}`}
+                                                className={`aspect-square rounded-xl overflow-hidden border-2 transition-all ${selectedTemplate === path ? 'border-[var(--orange-primary)] scale-95 shadow-lg shadow-orange-500/20' : 'border-[var(--border-secondary)] opacity-40 hover:opacity-100 hover:border-[var(--border-primary)]'}`}
                                             >
                                                 <img src={path} className="w-full h-full object-cover" alt={`Template ${num}`} />
                                             </button>
@@ -741,7 +741,7 @@ const App: React.FC = () => {
                                     {/* Hover Preview Overlay */}
                                     {hoveredTemplate && (
                                         <div className="absolute bottom-full mb-4 left-0 z-50 pointer-events-none animate-in fade-in zoom-in duration-200">
-                                            <div className="w-48 aspect-[9/16] rounded-3xl overflow-hidden border-4 border-orange-600 shadow-[0_0_50px_rgba(255,77,0,0.3)] bg-black">
+                                            <div className="w-48 aspect-[9/16] rounded-3xl overflow-hidden border-4 border-[var(--orange-primary)] shadow-[0_0_50px_var(--shadow-accent)] bg-[var(--bg-tertiary)]">
                                                 <img src={hoveredTemplate} className="w-full h-full object-cover" alt="Preview" />
                                             </div>
                                         </div>
@@ -754,8 +754,8 @@ const App: React.FC = () => {
                                     onClick={handleGenerateFullAd}
                                     disabled={!productImage || status.stage === 'generating'}
                                     className={`w-full py-6 rounded-3xl font-black text-xl uppercase italic tracking-tighter transition-all flex items-center justify-center gap-4 ${!productImage || status.stage === 'generating'
-                                        ? 'bg-[var(--bg-card)] text-[var(--text-muted)] cursor-not-allowed'
-                                        : 'bg-orange-600 text-white hover:bg-orange-500 hover:scale-[1.01] shadow-[0_20px_40px_rgba(255,77,0,0.25)]'
+                                        ? 'bg-[var(--bg-card)] text-[var(--text-muted)] border border-[var(--border-primary)] cursor-not-allowed opacity-50'
+                                        : 'bg-[var(--orange-primary)] text-[var(--text-on-orange)] hover:bg-[var(--orange-bright)] hover:scale-[1.01] shadow-[0_20px_40px_var(--shadow-accent)]'
                                         }`}
                                 >
                                     {status.stage === 'generating' ? (
@@ -765,9 +765,9 @@ const App: React.FC = () => {
                                     )}
                                     <span>{status.stage === 'generating' ? status.message : 'START GENERATION'}</span>
                                     {status.stage !== 'generating' && (
-                                        <div className="flex items-center gap-1.5 px-3 py-1 bg-white/10 rounded-full border border-white/10 shrink-0">
-                                            <Zap className="w-3.5 h-3.5 text-orange-400 fill-orange-400" />
-                                            <span className="text-xs font-black tracking-normal italic">1</span>
+                                        <div className="flex items-center gap-1.5 px-3 py-1 bg-[var(--orange-muted)] rounded-full border border-[var(--border-accent)] shrink-0">
+                                            <Zap className="w-3.5 h-3.5 text-[var(--text-on-orange)] fill-[var(--text-on-orange)]" />
+                                            <span className="text-xs font-black tracking-normal italic text-[var(--text-on-orange)]">1</span>
                                         </div>
                                     )}
                                 </button>
@@ -1105,7 +1105,7 @@ const App: React.FC = () => {
                                                         </div>
                                                     </div>
                                                     <div className="flex items-center justify-between">
-                                                        <span className="text-xl font-black text-orange-500 italic">{pkg.credits} CREDITS</span>
+                                                        <span className="text-xl font-black text-[var(--orange-bright)] italic">{pkg.credits} CREDITS</span>
                                                         <div className="w-8 h-8 rounded-full bg-[var(--bg-card)] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                                             <ChevronRight className="w-4 h-4 text-orange-500" />
                                                         </div>
