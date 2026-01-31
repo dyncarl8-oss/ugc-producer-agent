@@ -651,14 +651,7 @@ const App: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="pt-6 border-t border-white/5 space-y-3">
-                    <button
-                        onClick={() => window.location.reload()}
-                        className="w-full py-3 rounded-xl border border-white/5 text-[10px] font-bold text-slate-500 hover:text-white hover:bg-white/5 transition-all flex items-center justify-center gap-2"
-                    >
-                        <RefreshCcw className="w-3 h-3" /> RESET STUDIO
-                    </button>
-                </div>
+                <div className="pt-6 border-t border-white/5 space-y-3" />
             </aside>
 
             {/* Main Content */}
