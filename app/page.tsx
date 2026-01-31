@@ -711,9 +711,11 @@ const App: React.FC = () => {
                                                 : 'border-slate-200 dark:border-white/10 hover:border-orange-500/50'
                                                 }`}
                                         >
-                                            <div className="w-full h-full bg-slate-100 dark:bg-white/5 flex items-center justify-center">
-                                                <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase">T{idx + 1}</span>
-                                            </div>
+                                            <img
+                                                src={template}
+                                                alt={`Template ${idx + 1}`}
+                                                className="w-full h-full object-cover"
+                                            />
                                         </button>
                                     ))}
                                 </div>
