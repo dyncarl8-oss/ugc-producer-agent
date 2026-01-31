@@ -89,7 +89,7 @@ export class VeoService {
   /**
    * Stage 1: Generate a 4-part script by looking at the product image.
    */
-  static async createScript(productB64: string, vibe: string, simulateMode = false, aspectRatio?: string): Promise<Shot[]> {
+  static async createScript(productB64: string, vibe: string, simulateMode = false): Promise<Shot[]> {
     await this.serverLog('info', `Generating script for vibe: ${vibe}`);
 
     if (simulateMode) {
@@ -113,7 +113,6 @@ export class VeoService {
             {
               text: `You are a world-class TikTok UGC director. Analyze this product image and create a 4-part viral ad script. 
             Vibe: ${vibe}.
-            Aspect Ratio: ${aspectRatio || '9:16'} - Optimize framing and composition for this format.
             
             Requirements:
             1. Hook: Catchy opener speaking directly to camera.
