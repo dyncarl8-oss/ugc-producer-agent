@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
-import { Play, Loader2, Key, ShieldAlert, Smartphone, Sparkles, User, Box, ShoppingBag, Clapperboard, CheckCircle2, AlertCircle, Layers, RefreshCcw, Download, Zap, Plus, CreditCard, ChevronRight, X, Trash2 } from 'lucide-react';
+import { Play, Loader2, Key, ShieldAlert, Smartphone, Sparkles, User, Box, ShoppingBag, Clapperboard, CheckCircle2, AlertCircle, Layers, RefreshCcw, Download, Zap, Plus, CreditCard, ChevronRight, X, Trash2, Menu, PanelLeft } from 'lucide-react';
 import { AdVibe, AspectRatio, Config, GenerationStatus } from '../types';
 import { VeoService, Shot } from '../services/veoService';
 import { FFmpeg } from '@ffmpeg/ffmpeg';
@@ -54,6 +54,7 @@ const App: React.FC = () => {
     const [showQuotaModal, setShowQuotaModal] = useState(false);
     const [quotaMessage, setQuotaMessage] = useState('');
     const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     const params = useParams();
     const companyId = params?.companyId as string || '';
@@ -555,17 +556,30 @@ const App: React.FC = () => {
     }
 
     return (
-        <div className="flex h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] font-sans overflow-hidden">
-            {/* Sidebar */}
-            <aside className="w-80 bg-[var(--bg-secondary)] border-r border-[var(--border-secondary)] flex flex-col p-6 overflow-y-auto">
-                <div className="flex items-center gap-3 mb-10">
-                    <div className="w-10 h-10 bg-orange-600 rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/30">
-                        <Clapperboard className="w-6 h-6 text-white" />
-                    </div>
-                    <div>
+        <div className="flex h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] font-sans overflow-hidden relative">
+            {/* Mobile Sidebar Overlay */}
+            {isSidebarOpen && (
+                <div
+                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
+                    onClick={() => setIsSidebarOpen(false)}
+                />
+            )}
 
-                        <span className="text-[10px] text-orange-400 font-bold uppercase tracking-widest leading-none">AI Agent Studio</span>
+            {/* Sidebar */}
+            <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-80 bg-[var(--bg-secondary)] border-r border-[var(--border-secondary)] flex flex-col p-6 overflow-y-auto transition-all duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0 lg:hidden'}`}>
+                <div className="flex items-center justify-between mb-10">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-orange-600 rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/30">
+                            <Clapperboard className="w-6 h-6 text-white" />
+                        </div>
+                        <div>
+                            <h1 className="text-lg font-bold tracking-tight">UGC Producer</h1>
+                            <span className="text-[10px] text-orange-400 font-bold uppercase tracking-widest leading-none">UGC Producer Agent</span>
+                        </div>
                     </div>
+                    <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden p-2 hover:bg-[var(--bg-card-hover)] rounded-lg">
+                        <X className="w-5 h-5 text-[var(--text-muted)]" />
+                    </button>
                 </div>
 
                 {user && (
@@ -655,12 +669,22 @@ const App: React.FC = () => {
             </aside>
 
             {/* Main Content */}
-            <main className="flex-1 flex flex-col p-8 overflow-y-auto items-center">
-                <div className="max-w-5xl w-full flex flex-col gap-10">
+            <main className="flex-1 flex flex-col p-4 lg:p-8 overflow-y-auto items-center relative">
+                {/* Sidebar Toggle Button */}
+                {!isSidebarOpen && (
+                    <button
+                        onClick={() => setIsSidebarOpen(true)}
+                        className="fixed top-4 left-4 z-40 p-3 bg-orange-600 hover:bg-orange-500 text-white rounded-2xl shadow-xl shadow-orange-500/20 transition-all border border-orange-400/20"
+                    >
+                        <Menu className="w-6 h-6" />
+                    </button>
+                )}
+
+                <div className="max-w-5xl w-full flex flex-col gap-6 lg:gap-10">
 
 
 
-                    <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-12 items-start">
+                    <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-8 lg:gap-16 items-start">
                         {/* 3 Step Flow */}
                         <div className="space-y-8">
                             {/* Step 1: Upload */}
@@ -719,7 +743,7 @@ const App: React.FC = () => {
                                     <span className="w-5 h-5 bg-[var(--orange-primary)] rounded-md text-[var(--text-on-orange)] flex items-center justify-center text-[9px] font-black italic">03</span>
                                     Select Template
                                 </label>
-                                <div className="grid grid-cols-6 gap-2 relative">
+                                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 relative">
                                     {[1, 2, 3, 4, 5, 6].map((num) => {
                                         const path = `/templates/template${num}.png`;
                                         return (
@@ -735,9 +759,9 @@ const App: React.FC = () => {
                                         );
                                     })}
 
-                                    {/* Hover Preview Overlay */}
+                                    {/* Hover Preview Overlay - Desktop Only */}
                                     {hoveredTemplate && (
-                                        <div className="absolute bottom-full mb-4 left-0 z-50 pointer-events-none animate-in fade-in zoom-in duration-200">
+                                        <div className="hidden lg:block absolute bottom-full mb-4 left-0 z-50 pointer-events-none animate-in fade-in zoom-in duration-200">
                                             <div className="w-48 aspect-[9/16] rounded-3xl overflow-hidden border-4 border-[var(--orange-primary)] shadow-[0_0_50px_var(--shadow-accent)] bg-[var(--bg-tertiary)]">
                                                 <img src={hoveredTemplate} className="w-full h-full object-cover" alt="Preview" />
                                             </div>
@@ -772,8 +796,8 @@ const App: React.FC = () => {
                         </div>
 
                         {/* Viewfinder Column */}
-                        <div className="flex flex-col items-center">
-                            <div className="w-full aspect-[9/16] bg-[var(--phone-bg)] rounded-[48px] border-[12px] border-[var(--phone-border)] shadow-[0_0_100px_var(--shadow-color)] overflow-hidden relative">
+                        <div className="flex flex-col items-center w-full max-w-[340px] mx-auto lg:max-w-none">
+                            <div className="w-full aspect-[9/16] bg-[var(--phone-bg)] rounded-[32px] sm:rounded-[48px] border-[8px] sm:border-[12px] border-[var(--phone-border)] shadow-[0_0_100px_var(--shadow-color)] overflow-hidden relative">
 
                                 {masterVideoUrl ? (
                                     <div className="w-full h-full relative group/player">
