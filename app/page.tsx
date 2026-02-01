@@ -374,21 +374,24 @@ const App: React.FC = () => {
 
                     // Measure each shot's duration
                     const segments = [];
-                    for (const shot of shots) {
-                        if (shot.videoUrl) {
+                    for (let j = 0; j < totalShots; j++) {
+                        const sUrl = completedVideoUrls[j];
+                        const sText = generatedShots[j].script;
+                        if (sUrl) {
                             try {
                                 const duration = await new Promise<number>((resolve) => {
                                     const v = document.createElement('video');
-                                    v.src = shot.videoUrl!;
+                                    v.src = sUrl;
                                     v.onloadedmetadata = () => resolve(v.duration);
-                                    v.onerror = () => resolve(5); // Fallback to 5s if measurement fails
+                                    v.onerror = () => resolve(5);
                                 });
-                                segments.push({ text: shot.script, duration });
+                                segments.push({ text: sText, duration });
                             } catch (e) {
-                                segments.push({ text: shot.script, duration: 5 });
+                                segments.push({ text: sText, duration: 5 });
                             }
                         }
                     }
+                    console.log("[Subtitles] Generated segments:", segments);
 
                     // Convert final blob to File for upload
                     const videoResponse = await fetch(finalBlobUrl);
@@ -870,252 +873,260 @@ const App: React.FC = () => {
             </main>
 
             {/* High Demand / Quota Modal */}
-            {showQuotaModal && (
-                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl animate-in fade-in duration-300">
-                    <div className="w-full max-w-md bg-[var(--bg-tertiary)] border border-[var(--border-primary)] rounded-3xl p-8 text-center shadow-2xl relative overflow-hidden">
-                        <div className="absolute inset-0 bg-gradient-to-b from-blue-500/5 to-transparent pointer-events-none" />
+            {
+                showQuotaModal && (
+                    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl animate-in fade-in duration-300">
+                        <div className="w-full max-w-md bg-[var(--bg-tertiary)] border border-[var(--border-primary)] rounded-3xl p-8 text-center shadow-2xl relative overflow-hidden">
+                            <div className="absolute inset-0 bg-gradient-to-b from-blue-500/5 to-transparent pointer-events-none" />
 
-                        <div className="w-16 h-16 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-blue-500/20">
-                            <Layers className="w-8 h-8 text-blue-400" />
-                        </div>
+                            <div className="w-16 h-16 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-blue-500/20">
+                                <Layers className="w-8 h-8 text-blue-400" />
+                            </div>
 
-                        <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-2 tracking-tight">System Overload</h2>
-                        <p className="text-[var(--text-secondary)] text-sm leading-relaxed mb-8">
-                            {quotaMessage || "We are currently experiencing extremely high demand. To ensure quality for everyone, we have temporarily paused new generations."}
-                        </p>
+                            <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-2 tracking-tight">System Overload</h2>
+                            <p className="text-[var(--text-secondary)] text-sm leading-relaxed mb-8">
+                                {quotaMessage || "We are currently experiencing extremely high demand. To ensure quality for everyone, we have temporarily paused new generations."}
+                            </p>
 
-                        <div className="flex flex-col gap-3">
-                            <button
-                                onClick={() => setShowQuotaModal(false)}
-                                className="w-full py-4 bg-orange-600 text-white font-bold rounded-xl hover:bg-orange-500 transition-all text-sm uppercase tracking-widest"
-                            >
-                                Understood
-                            </button>
+                            <div className="flex flex-col gap-3">
+                                <button
+                                    onClick={() => setShowQuotaModal(false)}
+                                    className="w-full py-4 bg-orange-600 text-white font-bold rounded-xl hover:bg-orange-500 transition-all text-sm uppercase tracking-widest"
+                                >
+                                    Understood
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* Video Modal */}
-            {selectedProject && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 md:p-12 bg-[var(--bg-overlay)] backdrop-blur-xl animate-in fade-in duration-300">
-                    <div className="relative h-full max-h-[85vh] aspect-[9/16] bg-[var(--phone-bg)] rounded-[48px] border-[12px] border-[var(--phone-border)] shadow-[0_0_100px_var(--shadow-color)] overflow-hidden">
+            {
+                selectedProject && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 md:p-12 bg-[var(--bg-overlay)] backdrop-blur-xl animate-in fade-in duration-300">
+                        <div className="relative h-full max-h-[85vh] aspect-[9/16] bg-[var(--phone-bg)] rounded-[48px] border-[12px] border-[var(--phone-border)] shadow-[0_0_100px_var(--shadow-color)] overflow-hidden">
 
-                        {/* Modal Header */}
-                        {/* Modal Header HUD */}
-                        <div className="absolute top-6 right-6 z-[130] flex items-center gap-3">
-                            <button
-                                onClick={() => {
-                                    const a = document.createElement('a');
-                                    a.href = modalVideoUrl || '';
-                                    a.download = `ugc-video-${selectedProject.id}.mp4`;
-                                    document.body.appendChild(a);
-                                    a.click();
-                                    document.body.removeChild(a);
-                                }}
-                                disabled={!modalVideoUrl}
-                                className="bg-orange-600 hover:bg-orange-500 text-white px-5 py-2.5 rounded-full font-black text-[10px] uppercase tracking-widest shadow-lg shadow-orange-500/20 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                <Download className="w-2.5 h-2.5" />
-                                Download
-                            </button>
-                            <button
-                                onClick={() => setSelectedProject(null)}
-                                className="w-9 h-9 bg-black/80 hover:bg-black/90 rounded-full flex items-center justify-center border border-white/10 transition-all shadow-lg"
-                            >
-                                <X className="w-4 h-4 text-white" />
-                            </button>
-                        </div>
-
-                        {modalVideoUrl ? (
-                            <div className="w-full h-full relative group/modal-player">
-                                <PremiumPlayer
-                                    src={modalVideoUrl}
-                                />
+                            {/* Modal Header */}
+                            {/* Modal Header HUD */}
+                            <div className="absolute top-6 right-6 z-[130] flex items-center gap-3">
+                                <button
+                                    onClick={() => {
+                                        const a = document.createElement('a');
+                                        a.href = modalVideoUrl || '';
+                                        a.download = `ugc-video-${selectedProject.id}.mp4`;
+                                        document.body.appendChild(a);
+                                        a.click();
+                                        document.body.removeChild(a);
+                                    }}
+                                    disabled={!modalVideoUrl}
+                                    className="bg-orange-600 hover:bg-orange-500 text-white px-5 py-2.5 rounded-full font-black text-[10px] uppercase tracking-widest shadow-lg shadow-orange-500/20 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <Download className="w-2.5 h-2.5" />
+                                    Download
+                                </button>
+                                <button
+                                    onClick={() => setSelectedProject(null)}
+                                    className="w-9 h-9 bg-black/80 hover:bg-black/90 rounded-full flex items-center justify-center border border-white/10 transition-all shadow-lg"
+                                >
+                                    <X className="w-4 h-4 text-white" />
+                                </button>
                             </div>
-                        ) : (
-                            <div className="w-full h-full flex flex-col items-center justify-center p-12 text-center bg-gradient-to-b from-[var(--bg-tertiary)] to-[var(--bg-primary)]">
-                                <div className="space-y-4 opacity-30">
-                                    <div className="w-16 h-16 bg-[var(--bg-card)] rounded-3xl flex items-center justify-center mx-auto">
-                                        <AlertCircle className="w-8 h-8 text-[var(--text-primary)]" />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-[var(--text-primary)] font-bold text-[10px] uppercase tracking-widest">Video Not Ready</h3>
-                                        <p className="text-[var(--text-muted)] text-[9px] mt-1 italic">This generation may have been interrupted or the file is still uploading.</p>
-                                    </div>
-                                    <button
-                                        onClick={() => setSelectedProject(null)}
-                                        className="text-[10px] font-bold text-orange-500 uppercase tracking-widest hover:text-orange-400"
-                                    >
-                                        Back to Studio
-                                    </button>
+
+                            {modalVideoUrl ? (
+                                <div className="w-full h-full relative group/modal-player">
+                                    <PremiumPlayer
+                                        src={modalVideoUrl}
+                                    />
                                 </div>
-                            </div>
-                        )}
+                            ) : (
+                                <div className="w-full h-full flex flex-col items-center justify-center p-12 text-center bg-gradient-to-b from-[var(--bg-tertiary)] to-[var(--bg-primary)]">
+                                    <div className="space-y-4 opacity-30">
+                                        <div className="w-16 h-16 bg-[var(--bg-card)] rounded-3xl flex items-center justify-center mx-auto">
+                                            <AlertCircle className="w-8 h-8 text-[var(--text-primary)]" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-[var(--text-primary)] font-bold text-[10px] uppercase tracking-widest">Video Not Ready</h3>
+                                            <p className="text-[var(--text-muted)] text-[9px] mt-1 italic">This generation may have been interrupted or the file is still uploading.</p>
+                                        </div>
+                                        <button
+                                            onClick={() => setSelectedProject(null)}
+                                            className="text-[10px] font-bold text-orange-500 uppercase tracking-widest hover:text-orange-400"
+                                        >
+                                            Back to Studio
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
 
 
 
             {/* Payment Modal */}
-            {showPaymentModal && (
-                <>
-                    {checkoutSessionId ? (
-                        <div className="fixed inset-0 z-[200] bg-[var(--bg-overlay)] backdrop-blur-sm animate-in fade-in duration-300 flex items-center justify-center p-4">
-                            <div className="w-full max-w-md bg-[var(--bg-tertiary)] border border-[var(--border-primary)] rounded-3xl overflow-hidden shadow-2xl flex flex-col h-[85vh] animate-in zoom-in-95 duration-300">
-                                {/* Header */}
-                                <div className="px-6 py-4 border-b border-[var(--border-secondary)] flex justify-between items-center bg-[var(--bg-tertiary)] shrink-0">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-8 h-8 bg-orange-600 rounded-lg flex items-center justify-center">
-                                            <Zap className="w-4 h-4 text-white fill-white" />
+            {
+                showPaymentModal && (
+                    <>
+                        {checkoutSessionId ? (
+                            <div className="fixed inset-0 z-[200] bg-[var(--bg-overlay)] backdrop-blur-sm animate-in fade-in duration-300 flex items-center justify-center p-4">
+                                <div className="w-full max-w-md bg-[var(--bg-tertiary)] border border-[var(--border-primary)] rounded-3xl overflow-hidden shadow-2xl flex flex-col h-[85vh] animate-in zoom-in-95 duration-300">
+                                    {/* Header */}
+                                    <div className="px-6 py-4 border-b border-[var(--border-secondary)] flex justify-between items-center bg-[var(--bg-tertiary)] shrink-0">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-8 h-8 bg-orange-600 rounded-lg flex items-center justify-center">
+                                                <Zap className="w-4 h-4 text-white fill-white" />
+                                            </div>
+                                            <span className="text-sm font-black text-[var(--text-primary)] uppercase tracking-wide">Secure Checkout</span>
                                         </div>
-                                        <span className="text-sm font-black text-[var(--text-primary)] uppercase tracking-wide">Secure Checkout</span>
-                                    </div>
-                                    <button
-                                        onClick={() => { setShowPaymentModal(false); setCheckoutSessionId(null); setCheckoutPurchaseUrl(null); }}
-                                        className="transition-colors text-white/20 hover:text-white"
-                                    >
-                                        <X className="w-5 h-5" />
-                                    </button>
-                                </div>
-
-                                {/* Embed Container */}
-                                <div className="flex-1 bg-gray-50 relative overflow-y-auto light-scrollbar">
-                                    <WhopCheckoutEmbed
-                                        key={checkoutSessionId}
-                                        sessionId={checkoutSessionId}
-                                        returnUrl={typeof window !== 'undefined' ? window.location.origin + window.location.pathname : ""}
-                                        onComplete={async (paymentId) => {
-                                            console.log("Checkout complete! Verifying Payment ID:", paymentId);
-                                            try {
-                                                const res = await fetch('/api/payments/verify', {
-                                                    method: 'POST',
-                                                    headers: { 'Content-Type': 'application/json' },
-                                                    body: JSON.stringify({
-                                                        paymentId,
-                                                        packageId: selectedPackageId
-                                                    })
-                                                });
-                                                const data = await res.json();
-
-                                                if (data.success) {
-                                                    console.log("Credits added successfully!");
-                                                    setShowPaymentModal(false);
-                                                    setCheckoutSessionId(null);
-                                                    setCheckoutPurchaseUrl(null);
-                                                    window.location.reload();
-                                                } else {
-                                                    console.error("Payment verification failed:", data.error);
-                                                    // Optional: Show error to user
-                                                    alert("Payment verification failed. Please contact support if you were charged.");
-                                                }
-                                            } catch (err) {
-                                                console.error("Error calling verify API:", err);
-                                            }
-                                        }}
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="fixed inset-0 z-[200] overflow-y-auto bg-[var(--bg-overlay)] backdrop-blur-xl animate-in fade-in duration-300">
-                            <div className="flex min-h-full items-center justify-center p-4 sm:p-6 py-12">
-                                <div className="bg-[var(--bg-tertiary)] border border-[var(--border-primary)] rounded-[40px] w-full max-w-xl shadow-2xl relative overflow-hidden">
-                                    <div className="p-8 pb-4 flex flex-col items-center text-center relative">
                                         <button
-                                            onClick={() => { setShowPaymentModal(false); setCheckoutSessionId(null); }}
-                                            className="absolute top-6 right-6 transition-colors text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                                            onClick={() => { setShowPaymentModal(false); setCheckoutSessionId(null); setCheckoutPurchaseUrl(null); }}
+                                            className="transition-colors text-white/20 hover:text-white"
                                         >
                                             <X className="w-5 h-5" />
                                         </button>
-
-                                        <div className="w-16 h-16 bg-orange-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-orange-500/20">
-                                            <Zap className="w-8 h-8 text-white fill-white" />
-                                        </div>
-                                        <h2 className="text-3xl font-black text-[var(--text-primary)] italic uppercase tracking-tighter mb-2">Fuel Your Production</h2>
-                                        <p className="text-[var(--text-muted)] text-sm font-medium mb-10 max-w-md">Select a credit package to start generating high-converting viral UGC ads.</p>
-
-                                        <div className="grid grid-cols-2 gap-4 w-full">
-                                            {[
-                                                { id: 'pack_3', credits: 3, price: 6, label: 'Starter' },
-                                                { id: 'pack_5', credits: 5, price: 10, label: 'Standard' },
-                                                { id: 'pack_12', credits: 12, price: 20, label: 'Pro', popular: true },
-                                                { id: 'pack_18', credits: 18, price: 30, label: 'Agency' },
-                                            ].map((pkg) => (
-                                                <button
-                                                    key={pkg.id}
-                                                    onClick={() => handleBuyCredits(pkg.id)}
-                                                    disabled={loadingCheckout}
-                                                    className={`relative p-6 bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-3xl text-left hover:border-orange-500/50 hover:bg-[var(--bg-card-hover)] transition-all group ${pkg.popular ? 'border-orange-500/40 bg-orange-600/5' : ''}`}
-                                                >
-                                                    {pkg.popular && (
-                                                        <div className="absolute top-4 right-4 bg-orange-600 px-2 py-0.5 rounded-full">
-                                                            <span className="text-[8px] font-black text-white uppercase tracking-widest">Popular</span>
-                                                        </div>
-                                                    )}
-                                                    <div className="flex items-center gap-3 mb-4">
-                                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${pkg.popular ? 'bg-orange-600 text-white' : 'bg-[var(--bg-card)] text-[var(--text-secondary)]'}`}>
-                                                            <Zap className={`w-5 h-5 ${pkg.popular ? 'fill-white' : ''}`} />
-                                                        </div>
-                                                        <div>
-                                                            <h3 className="text-xs font-black text-[var(--text-primary)] uppercase tracking-widest leading-none mb-1">{pkg.label}</h3>
-                                                            <span className="text-2xl font-black text-[var(--text-primary)] italic tracking-tighter">${pkg.price}</span>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex items-center justify-between">
-                                                        <span className="text-xl font-black text-[var(--orange-bright)] italic">{pkg.credits} CREDITS</span>
-                                                        <div className="w-8 h-8 rounded-full bg-[var(--bg-card)] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                                            <ChevronRight className="w-4 h-4 text-orange-500" />
-                                                        </div>
-                                                    </div>
-                                                </button>
-                                            ))}
-                                        </div>
-
-                                        {loadingCheckout && (
-                                            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-10 rounded-[40px]">
-                                                <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
-                                            </div>
-                                        )}
                                     </div>
-                                    <div className="p-4 bg-[var(--bg-card)] border-t border-[var(--border-secondary)] text-center">
-                                        <p className="text-[9px] text-[var(--text-muted)] font-bold uppercase tracking-[0.2em]">Secure payments powered by Whop</p>
+
+                                    {/* Embed Container */}
+                                    <div className="flex-1 bg-gray-50 relative overflow-y-auto light-scrollbar">
+                                        <WhopCheckoutEmbed
+                                            key={checkoutSessionId}
+                                            sessionId={checkoutSessionId}
+                                            returnUrl={typeof window !== 'undefined' ? window.location.origin + window.location.pathname : ""}
+                                            onComplete={async (paymentId) => {
+                                                console.log("Checkout complete! Verifying Payment ID:", paymentId);
+                                                try {
+                                                    const res = await fetch('/api/payments/verify', {
+                                                        method: 'POST',
+                                                        headers: { 'Content-Type': 'application/json' },
+                                                        body: JSON.stringify({
+                                                            paymentId,
+                                                            packageId: selectedPackageId
+                                                        })
+                                                    });
+                                                    const data = await res.json();
+
+                                                    if (data.success) {
+                                                        console.log("Credits added successfully!");
+                                                        setShowPaymentModal(false);
+                                                        setCheckoutSessionId(null);
+                                                        setCheckoutPurchaseUrl(null);
+                                                        window.location.reload();
+                                                    } else {
+                                                        console.error("Payment verification failed:", data.error);
+                                                        // Optional: Show error to user
+                                                        alert("Payment verification failed. Please contact support if you were charged.");
+                                                    }
+                                                } catch (err) {
+                                                    console.error("Error calling verify API:", err);
+                                                }
+                                            }}
+                                        />
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    )}
-                </>
-            )}
+                        ) : (
+                            <div className="fixed inset-0 z-[200] overflow-y-auto bg-[var(--bg-overlay)] backdrop-blur-xl animate-in fade-in duration-300">
+                                <div className="flex min-h-full items-center justify-center p-4 sm:p-6 py-12">
+                                    <div className="bg-[var(--bg-tertiary)] border border-[var(--border-primary)] rounded-[40px] w-full max-w-xl shadow-2xl relative overflow-hidden">
+                                        <div className="p-8 pb-4 flex flex-col items-center text-center relative">
+                                            <button
+                                                onClick={() => { setShowPaymentModal(false); setCheckoutSessionId(null); }}
+                                                className="absolute top-6 right-6 transition-colors text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                                            >
+                                                <X className="w-5 h-5" />
+                                            </button>
+
+                                            <div className="w-16 h-16 bg-orange-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-orange-500/20">
+                                                <Zap className="w-8 h-8 text-white fill-white" />
+                                            </div>
+                                            <h2 className="text-3xl font-black text-[var(--text-primary)] italic uppercase tracking-tighter mb-2">Fuel Your Production</h2>
+                                            <p className="text-[var(--text-muted)] text-sm font-medium mb-10 max-w-md">Select a credit package to start generating high-converting viral UGC ads.</p>
+
+                                            <div className="grid grid-cols-2 gap-4 w-full">
+                                                {[
+                                                    { id: 'pack_3', credits: 3, price: 6, label: 'Starter' },
+                                                    { id: 'pack_5', credits: 5, price: 10, label: 'Standard' },
+                                                    { id: 'pack_12', credits: 12, price: 20, label: 'Pro', popular: true },
+                                                    { id: 'pack_18', credits: 18, price: 30, label: 'Agency' },
+                                                ].map((pkg) => (
+                                                    <button
+                                                        key={pkg.id}
+                                                        onClick={() => handleBuyCredits(pkg.id)}
+                                                        disabled={loadingCheckout}
+                                                        className={`relative p-6 bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-3xl text-left hover:border-orange-500/50 hover:bg-[var(--bg-card-hover)] transition-all group ${pkg.popular ? 'border-orange-500/40 bg-orange-600/5' : ''}`}
+                                                    >
+                                                        {pkg.popular && (
+                                                            <div className="absolute top-4 right-4 bg-orange-600 px-2 py-0.5 rounded-full">
+                                                                <span className="text-[8px] font-black text-white uppercase tracking-widest">Popular</span>
+                                                            </div>
+                                                        )}
+                                                        <div className="flex items-center gap-3 mb-4">
+                                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${pkg.popular ? 'bg-orange-600 text-white' : 'bg-[var(--bg-card)] text-[var(--text-secondary)]'}`}>
+                                                                <Zap className={`w-5 h-5 ${pkg.popular ? 'fill-white' : ''}`} />
+                                                            </div>
+                                                            <div>
+                                                                <h3 className="text-xs font-black text-[var(--text-primary)] uppercase tracking-widest leading-none mb-1">{pkg.label}</h3>
+                                                                <span className="text-2xl font-black text-[var(--text-primary)] italic tracking-tighter">${pkg.price}</span>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="text-xl font-black text-[var(--orange-bright)] italic">{pkg.credits} CREDITS</span>
+                                                            <div className="w-8 h-8 rounded-full bg-[var(--bg-card)] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                <ChevronRight className="w-4 h-4 text-orange-500" />
+                                                            </div>
+                                                        </div>
+                                                    </button>
+                                                ))}
+                                            </div>
+
+                                            {loadingCheckout && (
+                                                <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-10 rounded-[40px]">
+                                                    <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="p-4 bg-[var(--bg-card)] border-t border-[var(--border-secondary)] text-center">
+                                            <p className="text-[9px] text-[var(--text-muted)] font-bold uppercase tracking-[0.2em]">Secure payments powered by Whop</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </>
+                )
+            }
 
             {/* Delete Confirmation Modal */}
-            {projectToDelete && (
-                <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-[var(--bg-overlay)] backdrop-blur-xl animate-in fade-in duration-300">
-                    <div className="w-full max-w-sm bg-[var(--bg-tertiary)] border border-[var(--border-primary)] rounded-3xl p-8 text-center shadow-2xl relative overflow-hidden">
-                        <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-red-500/20">
-                            <Trash2 className="w-8 h-8 text-red-500" />
-                        </div>
-                        <h2 className="text-2xl font-black text-[var(--text-primary)] italic uppercase tracking-tighter mb-2">Delete Project?</h2>
-                        <p className="text-[var(--text-muted)] text-sm font-medium mb-8">This action cannot be undone. All footage and scripts will be permanently removed.</p>
-                        <div className="flex flex-col gap-3">
-                            <button
-                                onClick={confirmDelete}
-                                className="w-full py-4 bg-red-600 hover:bg-red-500 text-white font-black rounded-xl transition-all text-sm uppercase tracking-widest shadow-lg shadow-red-600/20"
-                            >
-                                Delete Permanently
-                            </button>
-                            <button
-                                onClick={() => setProjectToDelete(null)}
-                                className="w-full py-4 bg-[var(--bg-card)] border border-[var(--border-primary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] font-bold rounded-xl transition-all text-sm uppercase tracking-widest"
-                            >
-                                Cancel
-                            </button>
+            {
+                projectToDelete && (
+                    <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-[var(--bg-overlay)] backdrop-blur-xl animate-in fade-in duration-300">
+                        <div className="w-full max-w-sm bg-[var(--bg-tertiary)] border border-[var(--border-primary)] rounded-3xl p-8 text-center shadow-2xl relative overflow-hidden">
+                            <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-red-500/20">
+                                <Trash2 className="w-8 h-8 text-red-500" />
+                            </div>
+                            <h2 className="text-2xl font-black text-[var(--text-primary)] italic uppercase tracking-tighter mb-2">Delete Project?</h2>
+                            <p className="text-[var(--text-muted)] text-sm font-medium mb-8">This action cannot be undone. All footage and scripts will be permanently removed.</p>
+                            <div className="flex flex-col gap-3">
+                                <button
+                                    onClick={confirmDelete}
+                                    className="w-full py-4 bg-red-600 hover:bg-red-500 text-white font-black rounded-xl transition-all text-sm uppercase tracking-widest shadow-lg shadow-red-600/20"
+                                >
+                                    Delete Permanently
+                                </button>
+                                <button
+                                    onClick={() => setProjectToDelete(null)}
+                                    className="w-full py-4 bg-[var(--bg-card)] border border-[var(--border-primary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] font-bold rounded-xl transition-all text-sm uppercase tracking-widest"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             <style dangerouslySetInnerHTML={{
                 __html: `

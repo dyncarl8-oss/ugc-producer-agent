@@ -100,7 +100,18 @@ export async function POST(req: Request) {
         }
 
         let render = await response.json();
-        console.log('[Subtitles API] Render initiated:', render.id);
+
+        // Handle array response (sometimes returned by Creatomate)
+        if (Array.isArray(render)) {
+            render = render[0];
+        }
+
+        console.log('[Subtitles API] Render initiated:', render?.id, 'Status:', render?.status);
+
+        if (!render?.id) {
+            console.error('[Subtitles API] Invalid render response:', render);
+            throw new Error('Creatomate response missing ID');
+        }
 
         // 3. Simple Polling Loop (Short Wait)
         const start = Date.now();
@@ -113,7 +124,9 @@ export async function POST(req: Request) {
                 headers: { 'Authorization': `Bearer ${apiKey}` }
             });
             if (pollRes.ok) {
-                render = await pollRes.json();
+                let pollData = await pollRes.json();
+                if (Array.isArray(pollData)) pollData = pollData[0];
+                render = pollData;
             } else {
                 console.warn('[Subtitles API] Polling failed, status code:', pollRes.status);
             }
