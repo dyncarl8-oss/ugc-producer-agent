@@ -585,9 +585,6 @@ const App: React.FC = () => {
                         >
                             <ChevronLeft className="w-5 h-5" />
                         </button>
-                        <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden p-1.5 hover:bg-[var(--bg-card-hover)] rounded-lg">
-                            <X className="w-5 h-5 text-[var(--text-muted)]" />
-                        </button>
                     </div>
                 </div>
 
@@ -693,7 +690,7 @@ const App: React.FC = () => {
                                     <Menu className="w-6 h-6" />
                                 </button>
 
-                                <div className="flex items-center gap-3 ml-2 group cursor-default">
+                                <div className="hidden sm:flex items-center gap-3 ml-2 group cursor-default">
                                     <div className="w-9 h-9 bg-orange-600 rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/20 group-hover:scale-105 transition-transform">
                                         <Clapperboard className="w-5 h-5 text-white" />
                                     </div>
@@ -717,7 +714,7 @@ const App: React.FC = () => {
                                             className="px-4 py-1.5 bg-orange-600 hover:bg-orange-500 text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg shadow-orange-600/20 transition-all hover:scale-105 active:scale-95 flex items-center gap-2"
                                         >
                                             <Plus className="w-3 h-3 text-white" />
-                                            <span className="hidden sm:inline">Top Up</span>
+                                            <span>Top Up</span>
                                         </button>
                                     </div>
 
@@ -1139,8 +1136,8 @@ const App: React.FC = () => {
                     ) : (
                         <div className="fixed inset-0 z-[200] overflow-y-auto bg-[var(--bg-overlay)] backdrop-blur-xl animate-in fade-in duration-300">
                             <div className="flex min-h-full items-center justify-center p-4 sm:p-6 py-12">
-                                <div className="bg-[var(--bg-tertiary)] border border-[var(--border-primary)] rounded-[40px] w-full max-w-xl shadow-2xl relative overflow-hidden">
-                                    <div className="p-8 pb-4 flex flex-col items-center text-center relative">
+                                <div className="bg-[var(--bg-tertiary)] border border-[var(--border-primary)] rounded-[32px] sm:rounded-[40px] w-full max-w-xl shadow-2xl relative overflow-hidden">
+                                    <div className="p-6 sm:p-8 pb-4 flex flex-col items-center text-center relative">
                                         <button
                                             onClick={() => { setShowPaymentModal(false); setCheckoutSessionId(null); }}
                                             className="absolute top-6 right-6 transition-colors text-[var(--text-muted)] hover:text-[var(--text-primary)]"
@@ -1154,7 +1151,7 @@ const App: React.FC = () => {
                                         <h2 className="text-3xl font-black text-[var(--text-primary)] italic uppercase tracking-tighter mb-2">Fuel Your Production</h2>
                                         <p className="text-[var(--text-muted)] text-sm font-medium mb-10 max-w-md">Select a credit package to start generating high-converting viral UGC ads.</p>
 
-                                        <div className="grid grid-cols-2 gap-4 w-full">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
                                             {[
                                                 { id: 'pack_3', credits: 3, price: 6, label: 'Starter' },
                                                 { id: 'pack_5', credits: 5, price: 10, label: 'Standard' },
