@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
-import { Play, Loader2, Key, ShieldAlert, Smartphone, Sparkles, User, Box, ShoppingBag, Clapperboard, CheckCircle2, AlertCircle, Layers, RefreshCcw, Download, Zap, Plus, CreditCard, ChevronRight, X, Trash2, Menu, PanelLeft } from 'lucide-react';
+import { Play, Loader2, Key, ShieldAlert, Smartphone, Sparkles, User, Box, ShoppingBag, Clapperboard, CheckCircle2, AlertCircle, Layers, RefreshCcw, Download, Zap, Plus, CreditCard, ChevronRight, X, Trash2, Menu, PanelLeft, ChevronLeft } from 'lucide-react';
 import { AdVibe, AspectRatio, Config, GenerationStatus } from '../types';
 import { VeoService, Shot } from '../services/veoService';
 import { FFmpeg } from '@ffmpeg/ffmpeg';
@@ -577,9 +577,18 @@ const App: React.FC = () => {
                             <span className="text-[10px] text-orange-400 font-bold uppercase tracking-widest leading-none">UGC Producer Agent</span>
                         </div>
                     </div>
-                    <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden p-2 hover:bg-[var(--bg-card-hover)] rounded-lg">
-                        <X className="w-5 h-5 text-[var(--text-muted)]" />
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => setIsSidebarOpen(false)}
+                            className="p-1.5 hover:bg-[var(--bg-card-hover)] rounded-lg transition-all text-[var(--text-muted)] hover:text-orange-500"
+                            title="Hide Sidebar"
+                        >
+                            <ChevronLeft className="w-5 h-5" />
+                        </button>
+                        <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden p-1.5 hover:bg-[var(--bg-card-hover)] rounded-lg">
+                            <X className="w-5 h-5 text-[var(--text-muted)]" />
+                        </button>
+                    </div>
                 </div>
 
                 {user && (
@@ -669,73 +678,82 @@ const App: React.FC = () => {
             </aside>
 
             {/* Main Content */}
-            <main className="flex-1 flex flex-col p-4 lg:p-8 overflow-y-auto items-center relative">
-                {/* Sidebar Toggle Button */}
+            <main className={`flex-1 flex flex-col p-4 lg:p-8 overflow-y-auto items-center relative transition-all duration-300 ${!isSidebarOpen ? 'lg:pl-20' : ''}`}>
+                {/* Compact Integrated Sidebar Toggle */}
                 {!isSidebarOpen && (
-                    <button
-                        onClick={() => setIsSidebarOpen(true)}
-                        className="fixed top-4 left-4 z-40 p-3 bg-orange-600 hover:bg-orange-500 text-white rounded-2xl shadow-xl shadow-orange-500/20 transition-all border border-orange-400/20"
-                    >
-                        <Menu className="w-6 h-6" />
-                    </button>
+                    <div className="fixed top-6 left-6 z-40 animate-in fade-in slide-in-from-left-4 duration-300">
+                        <button
+                            onClick={() => setIsSidebarOpen(true)}
+                            className="group flex items-center gap-2 p-2 bg-[var(--bg-secondary)] border border-[var(--border-primary)] hover:border-orange-500/50 hover:bg-[var(--bg-card-hover)] text-[var(--text-muted)] hover:text-orange-500 rounded-xl shadow-lg transition-all"
+                            title="Show Sidebar"
+                        >
+                            <div className="w-8 h-8 bg-orange-600/10 rounded-lg flex items-center justify-center group-hover:bg-orange-600/20 transition-colors">
+                                <Menu className="w-4 h-4 text-orange-600" />
+                            </div>
+                            <span className="text-[10px] font-black uppercase tracking-widest pr-2 hidden sm:inline-block">Studio Controls</span>
+                        </button>
+                    </div>
                 )}
 
                 <div className="max-w-5xl w-full flex flex-col gap-6 lg:gap-10">
 
 
 
-                    <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-8 lg:gap-16 items-start">
+                    <div className={`grid grid-cols-1 ${!isSidebarOpen ? 'xl:grid-cols-[1fr_360px]' : 'lg:grid-cols-[1fr_360px]'} gap-8 lg:gap-12 items-start transition-all duration-500`}>
                         {/* 3 Step Flow */}
-                        <div className="space-y-8">
-                            {/* Step 1: Upload */}
-                            <section className="space-y-4">
-                                <label className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest flex items-center gap-2">
-                                    <span className="w-5 h-5 bg-orange-600 rounded-md text-white flex items-center justify-center text-[9px] font-black italic">01</span>
-                                    Upload Product
-                                </label>
-                                <label className={`flex flex-col items-center justify-center w-full aspect-square max-h-[160px] rounded-[32px] border-2 border-dashed transition-all cursor-pointer ${productImage ? 'border-orange-500/40 bg-orange-500/5' : 'border-[var(--border-primary)] hover:border-orange-500/30 bg-[var(--bg-card)] shadow-inner'
-                                    }`}>
-                                    {productImage ? (
-                                        <img src={productImage} alt="Product" className="w-full h-full object-contain p-6" />
-                                    ) : (
-                                        <div className="flex flex-col items-center gap-3 opacity-20 group">
-                                            <ShoppingBag className="w-8 h-8 group-hover:scale-110 transition-transform" />
-                                            <span className="text-[9px] font-black uppercase tracking-[0.2em]">Drop Item</span>
-                                        </div>
-                                    )}
-                                    <input type="file" className="hidden" accept="image/*" onChange={(e) => {
-                                        const file = e.target.files?.[0];
-                                        if (file) {
-                                            const r = new FileReader();
-                                            r.onload = () => setProductImage(r.result as string);
-                                            r.readAsDataURL(file);
-                                        }
-                                    }} />
-                                </label>
-                            </section>
+                        <div className="space-y-10">
+                            {/* Horizontal Layout for Step 1 & 2 when Expanded */}
+                            <div className={`grid grid-cols-1 ${!isSidebarOpen ? 'md:grid-cols-2' : ''} gap-8`}>
+                                {/* Step 1: Upload */}
+                                <section className="space-y-4">
+                                    <label className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest flex items-center gap-2">
+                                        <span className="w-5 h-5 bg-orange-600 rounded-md text-white flex items-center justify-center text-[9px] font-black italic">01</span>
+                                        Upload Product
+                                    </label>
+                                    <label className={`flex flex-col items-center justify-center w-full aspect-square ${!isSidebarOpen ? 'max-h-[220px]' : 'max-h-[160px]'} rounded-[32px] border-2 border-dashed transition-all cursor-pointer ${productImage ? 'border-orange-500/40 bg-orange-500/5' : 'border-[var(--border-primary)] hover:border-orange-500/30 bg-[var(--bg-card)] shadow-inner'
+                                        }`}>
+                                        {productImage ? (
+                                            <img src={productImage} alt="Product" className="w-full h-full object-contain p-6" />
+                                        ) : (
+                                            <div className="flex flex-col items-center gap-3 opacity-20 group">
+                                                <ShoppingBag className="w-8 h-8 group-hover:scale-110 transition-transform" />
+                                                <span className="text-[9px] font-black uppercase tracking-[0.2em]">Drop Item</span>
+                                            </div>
+                                        )}
+                                        <input type="file" className="hidden" accept="image/*" onChange={(e) => {
+                                            const file = e.target.files?.[0];
+                                            if (file) {
+                                                const r = new FileReader();
+                                                r.onload = () => setProductImage(r.result as string);
+                                                r.readAsDataURL(file);
+                                            }
+                                        }} />
+                                    </label>
+                                </section>
 
-                            {/* Step 2: Vibe */}
-                            <section className="space-y-4">
-                                <label className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest flex items-center gap-2">
-                                    <span className="w-5 h-5 bg-orange-600 rounded-md text-white flex items-center justify-center text-[9px] font-black italic">02</span>
-                                    Set Vibe
-                                </label>
-                                <div className="grid grid-cols-2 gap-2">
-                                    {Object.values(AdVibe).map((v) => (
-                                        <button
-                                            key={v}
-                                            onClick={() => setVibe(v)}
-                                            className={`flex items-center justify-between px-4 py-3 rounded-xl border text-left transition-all ${vibe === v
-                                                ? 'bg-[var(--orange-primary)] border-[var(--orange-bright)] text-[var(--text-on-orange)] shadow-lg'
-                                                : 'bg-[var(--bg-card)] border-[var(--border-secondary)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-hover)]'
-                                                }`}
-                                        >
-                                            <span className="font-bold text-[9px] uppercase tracking-tight">{v}</span>
-                                            {vibe === v && <CheckCircle2 className="w-3 h-3 text-[var(--text-on-orange)]" />}
-                                        </button>
-                                    ))}
-                                </div>
-                            </section>
+                                {/* Step 2: Vibe */}
+                                <section className="space-y-4">
+                                    <label className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest flex items-center gap-2">
+                                        <span className="w-5 h-5 bg-orange-600 rounded-md text-white flex items-center justify-center text-[9px] font-black italic">02</span>
+                                        Set Vibe
+                                    </label>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {Object.values(AdVibe).map((v) => (
+                                            <button
+                                                key={v}
+                                                onClick={() => setVibe(v)}
+                                                className={`flex items-center justify-between px-4 py-3 rounded-xl border text-left transition-all ${vibe === v
+                                                    ? 'bg-[var(--orange-primary)] border-[var(--orange-bright)] text-[var(--text-on-orange)] shadow-lg'
+                                                    : 'bg-[var(--bg-card)] border-[var(--border-secondary)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-hover)]'
+                                                    }`}
+                                            >
+                                                <span className="font-bold text-[9px] uppercase tracking-tight">{v}</span>
+                                                {vibe === v && <CheckCircle2 className="w-3 h-3 text-[var(--text-on-orange)]" />}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </section>
+                            </div>
 
                             {/* Step 3: Template */}
                             <section className="space-y-4">
