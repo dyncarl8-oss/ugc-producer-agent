@@ -680,16 +680,58 @@ const App: React.FC = () => {
             {/* Main Content */}
             <main className="flex-1 flex flex-col p-4 lg:p-8 overflow-y-auto items-center relative transition-all duration-300">
                 <div className="max-w-5xl w-full flex flex-col gap-6 lg:gap-10">
-                    {/* Integrated Sidebar Toggle */}
+                    {/* Integrated Top Navigation (Full-width when sidebar hidden) */}
                     {!isSidebarOpen && (
-                        <div className="flex animate-in fade-in slide-in-from-left-4 duration-300">
-                            <button
-                                onClick={() => setIsSidebarOpen(true)}
-                                className="p-2.5 bg-[var(--bg-secondary)] border border-[var(--border-primary)] hover:border-orange-500/50 hover:bg-[var(--bg-card-hover)] text-[var(--text-muted)] hover:text-orange-500 rounded-xl shadow-lg transition-all"
-                                title="Show Sidebar"
-                            >
-                                <Menu className="w-5 h-5" />
-                            </button>
+                        <div className="flex items-center justify-between pb-6 border-b border-[var(--border-secondary)]/50 mb-2 animate-in fade-in slide-in-from-top-4 duration-500">
+                            {/* Left: Branding & Toggle */}
+                            <div className="flex items-center gap-4">
+                                <button
+                                    onClick={() => setIsSidebarOpen(true)}
+                                    className="p-1.5 text-[var(--text-muted)] hover:text-orange-500 transition-colors"
+                                    title="Show Sidebar"
+                                >
+                                    <Menu className="w-6 h-6" />
+                                </button>
+
+                                <div className="flex items-center gap-3 ml-2 group cursor-default">
+                                    <div className="w-9 h-9 bg-orange-600 rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/20 group-hover:scale-105 transition-transform">
+                                        <Clapperboard className="w-5 h-5 text-white" />
+                                    </div>
+                                    <div className="hidden sm:block">
+                                        <h1 className="text-sm font-bold tracking-tight leading-none text-[var(--text-primary)]">UGC Producer</h1>
+                                        <span className="text-[9px] text-orange-400 font-bold uppercase tracking-[0.15em] leading-none mt-1 block">Studio Agent</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Right: User Stats & Top Up */}
+                            {user && (
+                                <div className="flex items-center gap-4">
+                                    <div className="flex items-center gap-2 group">
+                                        <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-full shadow-sm hover:border-orange-500/30 transition-all">
+                                            <Zap className="w-3.5 h-3.5 text-orange-500 fill-orange-500 group-hover:animate-pulse" />
+                                            <span className="text-[11px] font-black text-[var(--text-primary)] tracking-tight">{user.credits}</span>
+                                        </div>
+                                        <button
+                                            onClick={() => setShowPaymentModal(true)}
+                                            className="px-4 py-1.5 bg-orange-600 hover:bg-orange-500 text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg shadow-orange-600/20 transition-all hover:scale-105 active:scale-95 flex items-center gap-2"
+                                        >
+                                            <Plus className="w-3 h-3 text-white" />
+                                            <span className="hidden sm:inline">Top Up</span>
+                                        </button>
+                                    </div>
+
+                                    <div className="w-9 h-9 rounded-full border-2 border-orange-500/20 overflow-hidden shadow-inner bg-[var(--bg-card)]">
+                                        {user.profile_pic_url ? (
+                                            <img src={user.profile_pic_url} alt={user.username} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center">
+                                                <User className="w-5 h-5 text-orange-500/40" />
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
 
