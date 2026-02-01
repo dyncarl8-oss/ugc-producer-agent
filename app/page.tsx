@@ -705,7 +705,7 @@ const App: React.FC = () => {
                             {user && (
                                 <div className="flex items-center gap-4">
                                     <div className="flex items-center gap-2 group">
-                                        <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-full shadow-sm hover:border-orange-500/30 transition-all">
+                                        <div className="flex items-center gap-2 px-3 py-1.5 bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-full shadow-sm hover:border-orange-500/30 transition-all">
                                             <Zap className="w-3.5 h-3.5 text-orange-500 fill-orange-500 group-hover:animate-pulse" />
                                             <span className="text-[11px] font-black text-[var(--text-primary)] tracking-tight">{user.credits}</span>
                                         </div>
