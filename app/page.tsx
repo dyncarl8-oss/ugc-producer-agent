@@ -678,19 +678,16 @@ const App: React.FC = () => {
             </aside>
 
             {/* Main Content */}
-            <main className={`flex-1 flex flex-col p-4 lg:p-8 overflow-y-auto items-center relative transition-all duration-300 ${!isSidebarOpen ? 'lg:pl-20' : ''}`}>
-                {/* Compact Integrated Sidebar Toggle */}
+            <main className="flex-1 flex flex-col p-4 lg:p-8 overflow-y-auto items-center relative transition-all duration-300">
+                {/* Simplified Sidebar Toggle Integrated into Page Flow */}
                 {!isSidebarOpen && (
-                    <div className="fixed top-6 left-6 z-40 animate-in fade-in slide-in-from-left-4 duration-300">
+                    <div className="absolute top-8 left-8 z-40 animate-in fade-in slide-in-from-left-4 duration-300">
                         <button
                             onClick={() => setIsSidebarOpen(true)}
-                            className="group flex items-center gap-2 p-2 bg-[var(--bg-secondary)] border border-[var(--border-primary)] hover:border-orange-500/50 hover:bg-[var(--bg-card-hover)] text-[var(--text-muted)] hover:text-orange-500 rounded-xl shadow-lg transition-all"
+                            className="p-2.5 bg-[var(--bg-secondary)] border border-[var(--border-primary)] hover:border-orange-500/50 hover:bg-[var(--bg-card-hover)] text-[var(--text-muted)] hover:text-orange-500 rounded-xl shadow-lg transition-all"
                             title="Show Sidebar"
                         >
-                            <div className="w-8 h-8 bg-orange-600/10 rounded-lg flex items-center justify-center group-hover:bg-orange-600/20 transition-colors">
-                                <Menu className="w-4 h-4 text-orange-600" />
-                            </div>
-                            <span className="text-[10px] font-black uppercase tracking-widest pr-2 hidden sm:inline-block">Studio Controls</span>
+                            <Menu className="w-5 h-5" />
                         </button>
                     </div>
                 )}
@@ -699,7 +696,7 @@ const App: React.FC = () => {
 
 
 
-                    <div className={`grid grid-cols-1 ${!isSidebarOpen ? 'xl:grid-cols-[1fr_360px]' : 'lg:grid-cols-[1fr_360px]'} gap-8 lg:gap-12 items-start transition-all duration-500`}>
+                    <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-8 lg:gap-16 items-start transition-all duration-500">
                         {/* 3 Step Flow */}
                         <div className="space-y-10">
                             {/* Horizontal Layout for Step 1 & 2 when Expanded */}
@@ -710,7 +707,7 @@ const App: React.FC = () => {
                                         <span className="w-5 h-5 bg-orange-600 rounded-md text-white flex items-center justify-center text-[9px] font-black italic">01</span>
                                         Upload Product
                                     </label>
-                                    <label className={`flex flex-col items-center justify-center w-full aspect-square ${!isSidebarOpen ? 'max-h-[220px]' : 'max-h-[160px]'} rounded-[32px] border-2 border-dashed transition-all cursor-pointer ${productImage ? 'border-orange-500/40 bg-orange-500/5' : 'border-[var(--border-primary)] hover:border-orange-500/30 bg-[var(--bg-card)] shadow-inner'
+                                    <label className={`flex flex-col items-center justify-center w-full aspect-square max-h-[160px] rounded-[32px] border-2 border-dashed transition-all cursor-pointer ${productImage ? 'border-orange-500/40 bg-orange-500/5' : 'border-[var(--border-primary)] hover:border-orange-500/30 bg-[var(--bg-card)] shadow-inner'
                                         }`}>
                                         {productImage ? (
                                             <img src={productImage} alt="Product" className="w-full h-full object-contain p-6" />
