@@ -21,10 +21,14 @@ export async function GET(
         const content = asset.content as unknown as Buffer;
         const contentType = asset.content_type as string;
 
-        return new NextResponse(content, {
+        // Return a proper response with headers that Creatomate likes
+        return new NextResponse(new Uint8Array(content), {
             headers: {
                 'Content-Type': contentType,
-                'Cache-Control': 'public, max-age=3600, immutable',
+                'Content-Length': content.length.toString(),
+                'Cache-Control': 'public, max-age=31536000, immutable',
+                'Access-Control-Allow-Origin': '*',
+                'Accept-Ranges': 'bytes'
             },
         });
     } catch (error) {

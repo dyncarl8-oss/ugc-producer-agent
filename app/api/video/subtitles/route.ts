@@ -12,6 +12,7 @@ export async function POST(req: Request) {
         }
 
         const { videoUrl, options = {} } = await req.json();
+        console.log('[Subtitles API] Request for video:', videoUrl);
 
         if (!videoUrl) {
             return NextResponse.json({ error: 'No video URL provided' }, { status: 400 });
@@ -19,6 +20,7 @@ export async function POST(req: Request) {
 
         const apiKey = process.env.CREATOMATE_API_KEY;
         if (!apiKey || apiKey === 'your_creatomate_api_key_here' || apiKey.length < 10) {
+            console.error('[Subtitles API] Invalid API Key');
             return NextResponse.json({ error: 'Creatomate API Key is missing or invalid.' }, { status: 500 });
         }
 
@@ -53,6 +55,7 @@ export async function POST(req: Request) {
             }
         ];
 
+        console.log('[Subtitles API] Sending render request to Creatomate...');
         // 2. Initial Render Request
         const response = await fetch('https://api.creatomate.com/v1/renders', {
             method: 'POST',
@@ -70,21 +73,32 @@ export async function POST(req: Request) {
 
         if (!response.ok) {
             const err = await response.json();
+            console.error('[Subtitles API] Creatomate Error:', err);
             throw new Error(err.message || 'Creatomate render request failed');
         }
 
         let render = await response.json();
+        console.log('[Subtitles API] Render initiated:', render.id);
 
         // 3. Simple Polling Loop (Short Wait)
         const start = Date.now();
-        while (render.status !== 'succeeded' && render.status !== 'failed' && (Date.now() - start) < 55000) {
+        const MAX_POLL_TIME = 60000; // 60 seconds
+
+        while (render.status !== 'succeeded' && render.status !== 'failed' && (Date.now() - start) < MAX_POLL_TIME) {
+            console.log(`[Subtitles API] Polling render ${render.id}, status: ${render.status}`);
             await new Promise(res => setTimeout(res, 3000));
             const pollRes = await fetch(`https://api.creatomate.com/v1/renders/${render.id}`, {
                 headers: { 'Authorization': `Bearer ${apiKey}` }
             });
             if (pollRes.ok) {
                 render = await pollRes.json();
+            } else {
+                console.warn('[Subtitles API] Polling failed, status code:', pollRes.status);
             }
+        }
+
+        if (render.status === 'failed') {
+            console.error('[Subtitles API] Render failed on Creatomate:', render.error_message);
         }
 
         return NextResponse.json(render);

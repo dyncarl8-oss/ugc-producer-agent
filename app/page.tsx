@@ -409,8 +409,12 @@ const App: React.FC = () => {
                     const uploadData = await uploadRes.json();
 
                     // Get full public URL for Creatomate
-                    const appUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
-                    const publicUrl = `${appUrl.endsWith('/') ? appUrl.slice(0, -1) : appUrl}${uploadData.url}`;
+                    // In production on Render, we MUST use the full public domain
+                    const appUrl = "https://ugc-producer-agent.onrender.com";
+                    const publicUrl = `${appUrl}${uploadData.url}`;
+
+                    console.log("[Subtitles] Stitched Video Public URL:", publicUrl);
+                    console.log("[Subtitles] App URL being used:", appUrl);
 
                     // 2. Call Subtitles API with publicUrl
                     setStatus({ stage: 'generating', message: 'Generating script-based subtitles...', progress: 98 });
@@ -428,10 +432,18 @@ const App: React.FC = () => {
                     }
 
                     const render = await subRes.json();
+                    console.log("[Subtitles] Creatomate Render Response:", render);
+
                     if (render.status === 'succeeded' && render.url) {
+                        console.log("[Subtitles] Success! Rendered Video URL:", render.url);
                         masterVideoUrlToSave = render.url;
+                    } else if (render.status === 'failed') {
+                        throw new Error(`Creatomate render failed: ${render.error_message || 'Unknown error'}`);
+                    } else if (render.status === 'timed_out' || render.status === 'planned') {
+                        console.warn("[Subtitles] Render still in progress or timed out. Status:", render.status);
+                        // We might want to show the original video if it takes too long
                     } else {
-                        throw new Error(`Subtitle render failed: ${render.error_message || render.status}`);
+                        throw new Error(`Subtitle render state: ${render.status}`);
                     }
                 } catch (e: any) {
                     console.error("Subtitles failed:", e);
