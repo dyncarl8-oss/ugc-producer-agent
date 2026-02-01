@@ -410,7 +410,7 @@ const App: React.FC = () => {
 
                     // Get full public URL for Creatomate
                     // In production on Render, we MUST use the full public domain
-                    const appUrl = "https://ugc-producer-agent.onrender.com";
+                    const appUrl = "https://ugc-producer-agent-3mhd.onrender.com";
                     const publicUrl = `${appUrl}${uploadData.url}`;
 
                     console.log("[Subtitles] Stitched Video Public URL:", publicUrl);
