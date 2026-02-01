@@ -235,18 +235,32 @@ export class VeoService {
       await new Promise(resolve => setTimeout(resolve, 15000)); // Snappier 15s polling
       const statusMsg = `Enhancing footage (checking progress)...`;
       onProgress(statusMsg);
-      await this.serverLog('info', `Polling status for ${shot.type}...`);
 
       const aiStatus = new GoogleGenAI({ apiKey });
+      // Log the operation object before polling
+      await this.serverLog('info', `Polling for ${shot.type}. Current Op ID: ${operation.name}`);
+
       operation = await this.callWithRetry(() => aiStatus.operations.getVideosOperation({ operation: operation }));
 
       if (operation.error) {
+        await this.serverLog('error', `Operation error for ${shot.type}`, operation.error);
         throw new Error(`Video generation failed: ${operation.error.message || 'Unknown API error'}`);
       }
     }
 
+    // Deep log the final operation state
+    await this.serverLog('info', `Operation DONE for ${shot.type}`, {
+      hasResponse: !!operation.response,
+      generatedVideosHeader: !!operation.response?.generatedVideos,
+      videoCount: operation.response?.generatedVideos?.length || 0
+    });
+
     const downloadLink = operation.response?.generatedVideos?.[0]?.video?.uri;
-    if (!downloadLink) throw new Error("No download link returned.");
+    if (!downloadLink) {
+      // Log the full response for inspection in the server logs
+      await this.serverLog('error', `CRITICAL: No download link for ${shot.type}. Full Response:`, operation.response);
+      throw new Error(`No download link returned. Status: ${operation.done ? 'Done' : 'Pending'}`);
+    }
 
     await this.serverLog('info', `Shot ${shot.type} complete. Downloading...`);
     const response = await this.callWithRetry(() => fetch(`${downloadLink}&key=${apiKey}`));

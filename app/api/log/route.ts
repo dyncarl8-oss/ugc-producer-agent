@@ -1,5 +1,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
+import fs from 'fs';
+import path from 'path';
 
 export async function POST(req: NextRequest) {
     try {
@@ -9,10 +11,18 @@ export async function POST(req: NextRequest) {
         const timestamp = new Date().toISOString();
         const prefix = `[CLIENT-${level.toUpperCase()}] [${timestamp}]`;
 
+        let logMessage = `${prefix} ${message}`;
         if (data) {
-            console.log(`${prefix} ${message}`, data);
-        } else {
-            console.log(`${prefix} ${message}`);
+            logMessage += ` | DATA: ${JSON.stringify(data, null, 2)}`;
+        }
+
+        console.log(logMessage);
+
+        try {
+            const logFile = path.join(process.cwd(), 'debug_client.log');
+            fs.appendFileSync(logFile, logMessage + '\n---' + '\n');
+        } catch (e) {
+            console.error("Failed to write log to file:", e);
         }
 
         return NextResponse.json({ success: true });
