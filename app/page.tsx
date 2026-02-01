@@ -10,6 +10,7 @@ import { fetchFile, toBlobURL } from '@ffmpeg/util';
 import { WhopCheckoutEmbed } from "@whop/checkout/react";
 
 
+import { PremiumPlayer } from '../components/PremiumPlayer';
 
 declare global {
     var aistudio: {
@@ -782,13 +783,8 @@ const App: React.FC = () => {
 
                                 {masterVideoUrl ? (
                                     <div className="w-full h-full relative group/player">
-                                        <video
-                                            id="main-video-player"
+                                        <PremiumPlayer
                                             src={masterVideoUrl}
-                                            className="w-full h-full object-cover"
-                                            autoPlay
-                                            loop
-                                            controls={true}
                                         />
 
                                         {/* Custom HUD: Top Right Download */}
@@ -913,13 +909,8 @@ const App: React.FC = () => {
 
                         {modalVideoUrl ? (
                             <div className="w-full h-full relative group/modal-player">
-                                <video
-                                    id="modal-video-player"
+                                <PremiumPlayer
                                     src={modalVideoUrl}
-                                    className="w-full h-full object-cover"
-                                    autoPlay
-                                    loop
-                                    controls={true}
                                 />
                             </div>
                         ) : (
