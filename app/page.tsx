@@ -679,20 +679,19 @@ const App: React.FC = () => {
 
             {/* Main Content */}
             <main className="flex-1 flex flex-col p-4 lg:p-8 overflow-y-auto items-center relative transition-all duration-300">
-                {/* Simplified Sidebar Toggle Integrated into Page Flow */}
-                {!isSidebarOpen && (
-                    <div className="absolute top-8 left-8 z-40 animate-in fade-in slide-in-from-left-4 duration-300">
-                        <button
-                            onClick={() => setIsSidebarOpen(true)}
-                            className="p-2.5 bg-[var(--bg-secondary)] border border-[var(--border-primary)] hover:border-orange-500/50 hover:bg-[var(--bg-card-hover)] text-[var(--text-muted)] hover:text-orange-500 rounded-xl shadow-lg transition-all"
-                            title="Show Sidebar"
-                        >
-                            <Menu className="w-5 h-5" />
-                        </button>
-                    </div>
-                )}
-
                 <div className="max-w-5xl w-full flex flex-col gap-6 lg:gap-10">
+                    {/* Integrated Sidebar Toggle */}
+                    {!isSidebarOpen && (
+                        <div className="flex animate-in fade-in slide-in-from-left-4 duration-300">
+                            <button
+                                onClick={() => setIsSidebarOpen(true)}
+                                className="p-2.5 bg-[var(--bg-secondary)] border border-[var(--border-primary)] hover:border-orange-500/50 hover:bg-[var(--bg-card-hover)] text-[var(--text-muted)] hover:text-orange-500 rounded-xl shadow-lg transition-all"
+                                title="Show Sidebar"
+                            >
+                                <Menu className="w-5 h-5" />
+                            </button>
+                        </div>
+                    )}
 
 
 
