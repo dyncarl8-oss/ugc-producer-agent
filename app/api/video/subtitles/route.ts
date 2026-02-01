@@ -11,8 +11,8 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const { videoUrl, options = {} } = await req.json();
-        console.log('[Subtitles API] Request for video:', videoUrl);
+        const { videoUrl, segments, options = {} } = await req.json();
+        console.log('[Subtitles API] Request for video:', videoUrl, 'with segments:', segments?.length);
 
         if (!videoUrl) {
             return NextResponse.json({ error: 'No video URL provided' }, { status: 400 });
@@ -24,36 +24,58 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Creatomate API Key is missing or invalid.' }, { status: 500 });
         }
 
-        // 1. Prepare render elements using transcript_source for auto-subtitles
+        // 1. Prepare render elements
         const videoElementId = 'v0';
         const elements: any[] = [
             {
                 type: 'video',
                 id: videoElementId,
                 source: videoUrl
-            },
-            {
-                type: 'text',
-                transcript_source: videoElementId,
-                transcript_effect: options.transcript_effect || 'highlight',
-                transcript_maximum_length: options.transcript_maximum_length || 14,
-                y: '82%',
-                width: '81%',
-                height: '35%',
-                x_alignment: '50%',
-                y_alignment: '50%',
-                fill_color: options.fill_color || '#ffffff',
-                stroke_color: options.stroke_color || '#000000',
-                stroke_width: options.stroke_width || '1.6 vmin',
-                font_family: options.font_family || 'Montserrat',
-                font_weight: options.font_weight || '700',
-                font_size: options.font_size || '9.29 vmin',
-                background_color: options.background_color || 'rgba(216,216,216,0)',
-                background_x_padding: '31%',
-                background_y_padding: '17%',
-                background_border_radius: '31%'
             }
         ];
+
+        // Style helper
+        const commonTextProps = {
+            transcript_effect: options.transcript_effect || 'highlight',
+            y: options.y || '82%',
+            width: options.width || '81%',
+            height: options.height || '35%',
+            x_alignment: '50%',
+            y_alignment: '50%',
+            fill_color: options.fill_color || '#ffffff',
+            stroke_color: options.stroke_color || '#000000',
+            stroke_width: options.stroke_width || '1.6 vmin',
+            font_family: options.font_family || 'Montserrat',
+            font_weight: options.font_weight || '700',
+            font_size: options.font_size || '9.29 vmin',
+            background_color: options.background_color || 'rgba(216,216,216,0)',
+            background_x_padding: '31%',
+            background_y_padding: '17%',
+            background_border_radius: '31%'
+        };
+
+        if (segments && segments.length > 0) {
+            // Manual segment mode (Better for silent videos)
+            let currentTime = 0;
+            segments.forEach((seg: any) => {
+                elements.push({
+                    type: 'text',
+                    text: seg.text,
+                    time: currentTime,
+                    duration: seg.duration,
+                    ...commonTextProps
+                });
+                currentTime += seg.duration;
+            });
+        } else {
+            // Auto-transcription mode (Fails if silent)
+            elements.push({
+                type: 'text',
+                transcript_source: videoElementId,
+                transcript_maximum_length: options.transcript_maximum_length || 14,
+                ...commonTextProps
+            });
+        }
 
         console.log('[Subtitles API] Sending render request to Creatomate...');
         // 2. Initial Render Request

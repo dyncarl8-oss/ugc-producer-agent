@@ -416,13 +416,14 @@ const App: React.FC = () => {
                     console.log("[Subtitles] Stitched Video Public URL:", publicUrl);
                     console.log("[Subtitles] App URL being used:", appUrl);
 
-                    // 2. Call Subtitles API with publicUrl
+                    // 2. Call Subtitles API with publicUrl and segments (for manual script-sync)
                     setStatus({ stage: 'generating', message: 'Generating script-based subtitles...', progress: 98 });
                     const subRes = await fetch('/api/video/subtitles', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            videoUrl: publicUrl
+                            videoUrl: publicUrl,
+                            segments: segments
                         })
                     });
 
@@ -431,7 +432,14 @@ const App: React.FC = () => {
                         throw new Error(err.error || "Subtitles failed to initialize");
                     }
 
-                    const render = await subRes.json();
+                    let render = await subRes.json();
+
+                    // Handle potential array response from API
+                    if (Array.isArray(render)) {
+                        render = render[0];
+                    }
+
+                    console.log("[Subtitles] Status update:", render);
                     console.log("[Subtitles] Creatomate Render Response:", render);
 
                     if (render.status === 'succeeded' && render.url) {
