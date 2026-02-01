@@ -11,74 +11,87 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const { videoUrl, segments, options = {} } = await req.json();
-        console.log('[Subtitles API] Request for video:', videoUrl, 'with segments:', segments?.length);
+        const formData = await req.formData();
+        const videoFile = formData.get('video') as File;
+        const segmentsJson = formData.get('segments') as string;
+        const segments = JSON.parse(segmentsJson);
 
-        if (!videoUrl) {
-            return NextResponse.json({ error: 'No video URL provided' }, { status: 400 });
+        if (!videoFile) {
+            return NextResponse.json({ error: 'No video file provided' }, { status: 400 });
         }
 
         const apiKey = process.env.CREATOMATE_API_KEY;
         if (!apiKey || apiKey === 'your_creatomate_api_key_here' || apiKey.length < 10) {
-            console.error('[Subtitles API] Invalid API Key');
             return NextResponse.json({ error: 'Creatomate API Key is missing or invalid.' }, { status: 500 });
         }
 
-        // 1. Prepare render elements
-        const videoElementId = 'v0';
+        // 1. Upload video to Creatomate Storage
+        const uploadFormData = new FormData();
+        uploadFormData.append('file', videoFile);
+
+        const uploadRes = await fetch('https://api.creatomate.com/v1/uploads', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${apiKey}`
+            },
+            body: uploadFormData
+        });
+
+        if (!uploadRes.ok) {
+            const err = await uploadRes.json();
+            throw new Error(`Creatomate upload failed: ${err.message || uploadRes.statusText}`);
+        }
+
+        const uploadData = await uploadRes.json();
+        const videoUrl = uploadData.url;
+
+        // 2. Prepare render elements
         const elements: any[] = [
             {
                 type: 'video',
-                id: videoElementId,
+                id: 'video-element',
                 source: videoUrl
             }
         ];
 
-        // Style helper
-        const commonTextProps = {
-            transcript_effect: options.transcript_effect || 'highlight',
-            y: options.y || '82%',
-            width: options.width || '81%',
-            height: options.height || '35%',
-            x_alignment: '50%',
-            y_alignment: '50%',
-            fill_color: options.fill_color || '#ffffff',
-            stroke_color: options.stroke_color || '#000000',
-            stroke_width: options.stroke_width || '1.6 vmin',
-            font_family: options.font_family || 'Montserrat',
-            font_weight: options.font_weight || '700',
-            font_size: options.font_size || '9.29 vmin',
-            background_color: options.background_color || 'rgba(216,216,216,0)',
-            background_x_padding: '31%',
-            background_y_padding: '17%',
-            background_border_radius: '31%'
-        };
-
-        if (segments && segments.length > 0) {
-            // Manual segment mode (Better for silent videos)
-            let currentTime = 0;
-            segments.forEach((seg: any) => {
+        // 3. Add script-based captions
+        let cumulativeTime = 0;
+        if (segments && Array.isArray(segments)) {
+            segments.forEach((seg: { text: string; duration: number }) => {
                 elements.push({
                     type: 'text',
                     text: seg.text,
-                    time: currentTime,
+                    time: cumulativeTime,
                     duration: seg.duration,
-                    ...commonTextProps
+                    y: '82%',
+                    width: '81%',
+                    height: '35%',
+                    x_alignment: '50%',
+                    y_alignment: '50%',
+                    fill_color: '#ffffff',
+                    stroke_color: '#000000',
+                    stroke_width: '1.6 vmin',
+                    font_family: 'Montserrat',
+                    font_weight: '700',
+                    font_size: '9.29 vmin',
+                    background_color: 'rgba(216,216,216,0)',
+                    background_x_padding: '31%',
+                    background_y_padding: '17%',
+                    background_border_radius: '31%',
+                    animations: [
+                        {
+                            type: 'text-appearance',
+                            time: 0,
+                            duration: 0.3,
+                            transition: 'fade'
+                        }
+                    ]
                 });
-                currentTime += seg.duration;
-            });
-        } else {
-            // Auto-transcription mode (Fails if silent)
-            elements.push({
-                type: 'text',
-                transcript_source: videoElementId,
-                transcript_maximum_length: options.transcript_maximum_length || 14,
-                ...commonTextProps
+                cumulativeTime += seg.duration;
             });
         }
 
-        console.log('[Subtitles API] Sending render request to Creatomate...');
-        // 2. Initial Render Request
+        // 4. Initial Render Request
         const response = await fetch('https://api.creatomate.com/v1/renders', {
             method: 'POST',
             headers: {
@@ -95,45 +108,23 @@ export async function POST(req: Request) {
 
         if (!response.ok) {
             const err = await response.json();
-            console.error('[Subtitles API] Creatomate Error:', err);
             throw new Error(err.message || 'Creatomate render request failed');
         }
 
         let render = await response.json();
 
-        // Handle array response (sometimes returned by Creatomate)
-        if (Array.isArray(render)) {
-            render = render[0];
-        }
-
-        console.log('[Subtitles API] Render initiated:', render?.id, 'Status:', render?.status);
-
-        if (!render?.id) {
-            console.error('[Subtitles API] Invalid render response:', render);
-            throw new Error('Creatomate response missing ID');
-        }
-
-        // 3. Simple Polling Loop (Short Wait)
+        // 2. Simple Polling Loop (Short Wait)
+        // Since we are in a serverless route, we should be careful with long waits.
+        // We'll poll for 55 seconds max before returning the ID for frontend to take over.
         const start = Date.now();
-        const MAX_POLL_TIME = 60000; // 60 seconds
-
-        while (render.status !== 'succeeded' && render.status !== 'failed' && (Date.now() - start) < MAX_POLL_TIME) {
-            console.log(`[Subtitles API] Polling render ${render.id}, status: ${render.status}`);
+        while (render.status !== 'succeeded' && render.status !== 'failed' && (Date.now() - start) < 55000) {
             await new Promise(res => setTimeout(res, 3000));
             const pollRes = await fetch(`https://api.creatomate.com/v1/renders/${render.id}`, {
                 headers: { 'Authorization': `Bearer ${apiKey}` }
             });
             if (pollRes.ok) {
-                let pollData = await pollRes.json();
-                if (Array.isArray(pollData)) pollData = pollData[0];
-                render = pollData;
-            } else {
-                console.warn('[Subtitles API] Polling failed, status code:', pollRes.status);
+                render = await pollRes.json();
             }
-        }
-
-        if (render.status === 'failed') {
-            console.error('[Subtitles API] Render failed on Creatomate:', render.error_message);
         }
 
         return NextResponse.json(render);

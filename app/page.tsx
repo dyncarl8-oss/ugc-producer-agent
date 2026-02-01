@@ -10,7 +10,6 @@ import { fetchFile, toBlobURL } from '@ffmpeg/util';
 import { WhopCheckoutEmbed } from "@whop/checkout/react";
 
 
-import { PremiumPlayer } from '../components/PremiumPlayer';
 
 declare global {
     var aistudio: {
@@ -372,87 +371,51 @@ const App: React.FC = () => {
                 try {
                     setStatus({ stage: 'generating', message: 'Measuring shot timings...', progress: 97 });
 
-                    // Measure each shot's duration and chunk text microscopically
+                    // Measure each shot's duration
                     const segments = [];
-                    for (let j = 0; j < totalShots; j++) {
-                        const sUrl = completedVideoUrls[j];
-                        const sText = generatedShots[j]?.script || "";
-                        if (sUrl) {
+                    for (const shot of shots) {
+                        if (shot.videoUrl) {
                             try {
                                 const duration = await new Promise<number>((resolve) => {
                                     const v = document.createElement('video');
-                                    v.src = sUrl;
+                                    v.src = shot.videoUrl!;
                                     v.onloadedmetadata = () => resolve(v.duration);
-                                    v.onerror = () => resolve(5);
+                                    v.onerror = () => resolve(5); // Fallback to 5s if measurement fails
                                 });
-
-                                // Split text into microscopic chunks (2-3 words) for high-energy sync
-                                const words = sText.split(/\s+/).filter(w => w.length > 0);
-                                const wordsPerChunk = 3;
-                                const chunksCount = Math.ceil(words.length / wordsPerChunk);
-                                const timePerChunk = duration / Math.max(1, chunksCount);
-
-                                for (let k = 0; k < words.length; k += wordsPerChunk) {
-                                    const chunkText = words.slice(k, k + wordsPerChunk).join(' ');
-                                    segments.push({
-                                        text: chunkText,
-                                        duration: timePerChunk
-                                    });
-                                }
+                                segments.push({ text: shot.script, duration });
                             } catch (e) {
-                                segments.push({ text: sText, duration: 5 });
+                                segments.push({ text: shot.script, duration: 5 });
                             }
                         }
                     }
-                    console.log("[Subtitles] Generated micro-segments:", segments);
 
                     // Convert final blob to File for upload
                     const videoResponse = await fetch(finalBlobUrl);
                     const videoBlob = await videoResponse.blob();
                     const videoFile = new File([videoBlob], 'stitched-video.mp4', { type: 'video/mp4' });
 
-                    // 1. Upload stitched video to Turso (via /api/upload)
-                    setStatus({ stage: 'generating', message: 'Finalizing production...', progress: 95 });
-                    const uploadFormData = new FormData();
-                    uploadFormData.append('file', videoFile);
+                    const formData = new FormData();
+                    formData.append('file', videoFile);
 
+                    // Upload to get a public URL
                     const uploadRes = await fetch('/api/upload', {
                         method: 'POST',
-                        body: uploadFormData
+                        body: formData
                     });
 
                     if (!uploadRes.ok) throw new Error('Failed to upload video for subtitling');
                     const uploadData = await uploadRes.json();
+                    const appUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
+                    const publicUrl = `${appUrl.endsWith('/') ? appUrl.slice(0, -1) : appUrl}${uploadData.url}`;
 
-                    // Get full public URL for Creatomate
-                    // In production on Render, we MUST use the full public domain
-                    const appUrl = "https://ugc-producer-agent-3mhd.onrender.com";
-                    const publicUrl = `${appUrl}${uploadData.url}`;
-
-                    console.log("[Subtitles] Stitched Video Public URL:", publicUrl);
-                    console.log("[Subtitles] App URL being used:", appUrl);
-
-                    // 2. Call Subtitles API with ultra-elegant styling
-                    setStatus({ stage: 'generating', message: 'Applying elegant finishing...', progress: 98 });
+                    // Call Subtitles API with segments
+                    setStatus({ stage: 'generating', message: 'Generating script-based subtitles...', progress: 98 });
                     const subRes = await fetch('/api/video/subtitles', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             videoUrl: publicUrl,
-                            segments: segments,
-                            options: {
-                                font_size: '4.2 vmin', // Sophisticated small size
-                                y: '84%',
-                                font_family: 'Inter', // Premium sans-serif
-                                font_weight: '800', // Bold but small
-                                fill_color: '#ffffff',
-                                stroke_color: '#000000',
-                                stroke_width: '0.8 vmin',
-                                background_color: 'rgba(0,0,0,0.6)', // Glassmorphism-style backing
-                                background_x_padding: '10%',
-                                background_y_padding: '5%',
-                                background_border_radius: '10%'
-                            }
+                            segments
                         })
                     });
 
@@ -461,26 +424,11 @@ const App: React.FC = () => {
                         throw new Error(err.error || "Subtitles failed to initialize");
                     }
 
-                    let render = await subRes.json();
-
-                    // Handle potential array response from API
-                    if (Array.isArray(render)) {
-                        render = render[0];
-                    }
-
-                    console.log("[Subtitles] Status update:", render);
-                    console.log("[Subtitles] Creatomate Render Response:", render);
-
+                    const render = await subRes.json();
                     if (render.status === 'succeeded' && render.url) {
-                        console.log("[Subtitles] Success! Rendered Video URL:", render.url);
                         masterVideoUrlToSave = render.url;
-                    } else if (render.status === 'failed') {
-                        throw new Error(`Creatomate render failed: ${render.error_message || 'Unknown error'}`);
-                    } else if (render.status === 'timed_out' || render.status === 'planned') {
-                        console.warn("[Subtitles] Render still in progress or timed out. Status:", render.status);
-                        // We might want to show the original video if it takes too long
                     } else {
-                        throw new Error(`Subtitle render state: ${render.status}`);
+                        throw new Error(`Subtitle render failed: ${render.error_message || render.status}`);
                     }
                 } catch (e: any) {
                     console.error("Subtitles failed:", e);
@@ -531,7 +479,7 @@ const App: React.FC = () => {
                     method: 'POST',
                     body: JSON.stringify({ action: 'exhaust' })
                 });
-                setQuotaMessage("Daily system quota reached. Please try again tomorrow at 12:00 AM PT to unlock more.");
+                setQuotaMessage("Daily system quota reached. Please try again after 4:00 PM PHT.");
                 setShowQuotaModal(true);
                 setStatus({ stage: 'idle', message: '' });
             } else if (error.message?.includes("Requested entity was not found")) {
@@ -615,7 +563,7 @@ const App: React.FC = () => {
                         <Clapperboard className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                        <h1 className="text-lg font-bold tracking-tight">UGC Producer</h1>
+
                         <span className="text-[10px] text-orange-400 font-bold uppercase tracking-widest leading-none">AI Agent Studio</span>
                     </div>
                 </div>
@@ -710,10 +658,7 @@ const App: React.FC = () => {
             <main className="flex-1 flex flex-col p-8 overflow-y-auto items-center">
                 <div className="max-w-5xl w-full flex flex-col gap-10">
 
-                    <div className="text-center space-y-3">
-                        <h2 className="text-6xl font-black text-[var(--text-primary)] tracking-tighter italic uppercase leading-none">UGC Producer</h2>
-                        <p className="text-[var(--text-muted)] text-base font-medium uppercase tracking-widest">3-Step Viral Production Flow</p>
-                    </div>
+
 
                     <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-12 items-start">
                         {/* 3 Step Flow */}
@@ -832,8 +777,18 @@ const App: React.FC = () => {
 
                                 {masterVideoUrl ? (
                                     <div className="w-full h-full relative group/player">
-                                        <PremiumPlayer
+                                        <video
+                                            id="main-video-player"
                                             src={masterVideoUrl}
+                                            className="w-full h-full object-cover"
+                                            autoPlay
+                                            loop
+                                            controls={false}
+                                            onClick={(e) => {
+                                                const v = e.currentTarget;
+                                                if (v.paused) v.play();
+                                                else v.pause();
+                                            }}
                                         />
 
                                         {/* Custom HUD: Top Right Download */}
@@ -847,7 +802,50 @@ const App: React.FC = () => {
                                             </button>
                                         </div>
 
+                                        {/* Custom Player Controls */}
+                                        <div className="absolute inset-x-0 bottom-0 p-6 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover/player:opacity-100 transition-opacity duration-300 pointer-events-none">
+                                            <div className="flex flex-col gap-3 pointer-events-auto">
+                                                <div className="w-full h-1 bg-white/20 rounded-full overflow-hidden cursor-pointer relative group/progress" onClick={(e) => {
+                                                    const rect = e.currentTarget.getBoundingClientRect();
+                                                    const pos = (e.clientX - rect.left) / rect.width;
+                                                    const v = document.getElementById('main-video-player') as HTMLVideoElement;
+                                                    if (v) v.currentTime = pos * v.duration;
+                                                }}>
+                                                    <div
+                                                        id="video-progress-bar"
+                                                        className="absolute inset-y-0 left-0 bg-orange-600 rounded-full"
+                                                        style={{ width: '0%' }}
+                                                    />
+                                                </div>
+                                                <div className="flex items-center justify-between">
+                                                    <button
+                                                        className="text-white hover:text-orange-400 transition-colors"
+                                                        onClick={() => {
+                                                            const v = document.getElementById('main-video-player') as HTMLVideoElement;
+                                                            if (v) {
+                                                                if (v.paused) v.play();
+                                                                else v.pause();
+                                                            }
+                                                        }}
+                                                    >
+                                                        <Play className="w-4 h-4 fill-current" />
+                                                    </button>
+                                                    <span className="text-[10px] font-bold text-white/50 tracking-widest">VEOS VIDEO PLAYER</span>
+                                                </div>
+                                            </div>
+                                        </div>
 
+                                        <script dangerouslySetInnerHTML={{
+                                            __html: `
+                                            setInterval(() => {
+                                                const v = document.getElementById('main-video-player');
+                                                const bar = document.getElementById('video-progress-bar');
+                                                if (v && bar) {
+                                                    const pct = (v.currentTime / v.duration) * 100;
+                                                    bar.style.width = pct + '%';
+                                                }
+                                            }, 100);
+                                        `}} />
                                     </div>
                                 ) : (
                                     <div className="w-full h-full flex flex-col items-center justify-center p-12 text-center bg-gradient-to-b from-[var(--bg-tertiary)] to-[var(--bg-primary)]">
@@ -899,260 +897,262 @@ const App: React.FC = () => {
             </main>
 
             {/* High Demand / Quota Modal */}
-            {
-                showQuotaModal && (
-                    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl animate-in fade-in duration-300">
-                        <div className="w-full max-w-md bg-[var(--bg-tertiary)] border border-[var(--border-primary)] rounded-3xl p-8 text-center shadow-2xl relative overflow-hidden">
-                            <div className="absolute inset-0 bg-gradient-to-b from-blue-500/5 to-transparent pointer-events-none" />
+            {showQuotaModal && (
+                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl animate-in fade-in duration-300">
+                    <div className="w-full max-w-md bg-[var(--bg-tertiary)] border border-[var(--border-primary)] rounded-3xl p-8 text-center shadow-2xl relative overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-b from-blue-500/5 to-transparent pointer-events-none" />
 
-                            <div className="w-16 h-16 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-blue-500/20">
-                                <Layers className="w-8 h-8 text-blue-400" />
-                            </div>
+                        <div className="w-16 h-16 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-blue-500/20">
+                            <Layers className="w-8 h-8 text-blue-400" />
+                        </div>
 
-                            <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-2 tracking-tight">System Overload</h2>
-                            <p className="text-[var(--text-secondary)] text-sm leading-relaxed mb-8">
-                                {quotaMessage || "We are currently experiencing extremely high demand. To ensure quality for everyone, we have temporarily paused new generations."}
-                            </p>
+                        <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-2 tracking-tight">System Overload</h2>
+                        <p className="text-[var(--text-secondary)] text-sm leading-relaxed mb-8">
+                            {quotaMessage || "We are currently experiencing extremely high demand. To ensure quality for everyone, we have temporarily paused new generations."}
+                        </p>
 
-                            <div className="flex flex-col gap-3">
-                                <button
-                                    onClick={() => setShowQuotaModal(false)}
-                                    className="w-full py-4 bg-orange-600 text-white font-bold rounded-xl hover:bg-orange-500 transition-all text-sm uppercase tracking-widest"
-                                >
-                                    Understood
-                                </button>
-                            </div>
+                        <div className="flex flex-col gap-3">
+                            <button
+                                onClick={() => setShowQuotaModal(false)}
+                                className="w-full py-4 bg-orange-600 text-white font-bold rounded-xl hover:bg-orange-500 transition-all text-sm uppercase tracking-widest"
+                            >
+                                Understood
+                            </button>
+                            <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest mt-2">Please try again tomorrow</p>
                         </div>
                     </div>
-                )
-            }
+                </div>
+            )}
 
             {/* Video Modal */}
-            {
-                selectedProject && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 md:p-12 bg-[var(--bg-overlay)] backdrop-blur-xl animate-in fade-in duration-300">
-                        <div className="relative h-full max-h-[85vh] aspect-[9/16] bg-[var(--phone-bg)] rounded-[48px] border-[12px] border-[var(--phone-border)] shadow-[0_0_100px_var(--shadow-color)] overflow-hidden">
+            {selectedProject && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 md:p-12 bg-[var(--bg-overlay)] backdrop-blur-xl animate-in fade-in duration-300">
+                    <div className="relative h-full max-h-[85vh] aspect-[9/16] bg-[var(--phone-bg)] rounded-[48px] border-[12px] border-[var(--phone-border)] shadow-[0_0_100px_var(--shadow-color)] overflow-hidden">
 
-                            {/* Modal Header */}
-                            {/* Modal Header HUD */}
-                            <div className="absolute top-6 right-6 z-[130] flex items-center gap-3">
-                                <button
-                                    onClick={() => {
-                                        const a = document.createElement('a');
-                                        a.href = modalVideoUrl || '';
-                                        a.download = `ugc-video-${selectedProject.id}.mp4`;
-                                        document.body.appendChild(a);
-                                        a.click();
-                                        document.body.removeChild(a);
-                                    }}
-                                    disabled={!modalVideoUrl}
-                                    className="bg-orange-600 hover:bg-orange-500 text-white px-5 py-2.5 rounded-full font-black text-[10px] uppercase tracking-widest shadow-lg shadow-orange-500/20 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    <Download className="w-2.5 h-2.5" />
-                                    Download
-                                </button>
-                                <button
-                                    onClick={() => setSelectedProject(null)}
-                                    className="w-9 h-9 bg-black/80 hover:bg-black/90 rounded-full flex items-center justify-center border border-white/10 transition-all shadow-lg"
-                                >
-                                    <X className="w-4 h-4 text-white" />
-                                </button>
-                            </div>
-
-                            {modalVideoUrl ? (
-                                <div className="w-full h-full relative group/modal-player">
-                                    <PremiumPlayer
-                                        src={modalVideoUrl}
-                                    />
-                                </div>
-                            ) : (
-                                <div className="w-full h-full flex flex-col items-center justify-center p-12 text-center bg-gradient-to-b from-[var(--bg-tertiary)] to-[var(--bg-primary)]">
-                                    <div className="space-y-4 opacity-30">
-                                        <div className="w-16 h-16 bg-[var(--bg-card)] rounded-3xl flex items-center justify-center mx-auto">
-                                            <AlertCircle className="w-8 h-8 text-[var(--text-primary)]" />
-                                        </div>
-                                        <div>
-                                            <h3 className="text-[var(--text-primary)] font-bold text-[10px] uppercase tracking-widest">Video Not Ready</h3>
-                                            <p className="text-[var(--text-muted)] text-[9px] mt-1 italic">This generation may have been interrupted or the file is still uploading.</p>
-                                        </div>
-                                        <button
-                                            onClick={() => setSelectedProject(null)}
-                                            className="text-[10px] font-bold text-orange-500 uppercase tracking-widest hover:text-orange-400"
-                                        >
-                                            Back to Studio
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
+                        {/* Modal Header */}
+                        {/* Modal Header HUD */}
+                        <div className="absolute top-6 right-6 z-[130] flex items-center gap-3">
+                            <button
+                                onClick={() => {
+                                    const a = document.createElement('a');
+                                    a.href = modalVideoUrl || '';
+                                    a.download = `ugc-video-${selectedProject.id}.mp4`;
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    document.body.removeChild(a);
+                                }}
+                                disabled={!modalVideoUrl}
+                                className="bg-orange-600 hover:bg-orange-500 text-white px-5 py-2.5 rounded-full font-black text-[10px] uppercase tracking-widest shadow-lg shadow-orange-500/20 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <Download className="w-2.5 h-2.5" />
+                                Download
+                            </button>
+                            <button
+                                onClick={() => setSelectedProject(null)}
+                                className="w-9 h-9 bg-black/80 hover:bg-black/90 rounded-full flex items-center justify-center border border-white/10 transition-all shadow-lg"
+                            >
+                                <X className="w-4 h-4 text-white" />
+                            </button>
                         </div>
+
+                        {modalVideoUrl ? (
+                            <div className="w-full h-full relative group/modal-player">
+                                <video
+                                    id="modal-video-player"
+                                    src={modalVideoUrl}
+                                    className="w-full h-full object-cover"
+                                    autoPlay
+                                    loop
+                                    onClick={(e) => {
+                                        const v = e.currentTarget;
+                                        if (v.paused) v.play();
+                                        else v.pause();
+                                    }}
+                                />
+                            </div>
+                        ) : (
+                            <div className="w-full h-full flex flex-col items-center justify-center p-12 text-center bg-gradient-to-b from-[var(--bg-tertiary)] to-[var(--bg-primary)]">
+                                <div className="space-y-4 opacity-30">
+                                    <div className="w-16 h-16 bg-[var(--bg-card)] rounded-3xl flex items-center justify-center mx-auto">
+                                        <AlertCircle className="w-8 h-8 text-[var(--text-primary)]" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-[var(--text-primary)] font-bold text-[10px] uppercase tracking-widest">Video Not Ready</h3>
+                                        <p className="text-[var(--text-muted)] text-[9px] mt-1 italic">This generation may have been interrupted or the file is still uploading.</p>
+                                    </div>
+                                    <button
+                                        onClick={() => setSelectedProject(null)}
+                                        className="text-[10px] font-bold text-orange-500 uppercase tracking-widest hover:text-orange-400"
+                                    >
+                                        Back to Studio
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
-                )
-            }
+                </div>
+            )}
 
 
 
 
             {/* Payment Modal */}
-            {
-                showPaymentModal && (
-                    <>
-                        {checkoutSessionId ? (
-                            <div className="fixed inset-0 z-[200] bg-[var(--bg-overlay)] backdrop-blur-sm animate-in fade-in duration-300 flex items-center justify-center p-4">
-                                <div className="w-full max-w-md bg-[var(--bg-tertiary)] border border-[var(--border-primary)] rounded-3xl overflow-hidden shadow-2xl flex flex-col h-[85vh] animate-in zoom-in-95 duration-300">
-                                    {/* Header */}
-                                    <div className="px-6 py-4 border-b border-[var(--border-secondary)] flex justify-between items-center bg-[var(--bg-tertiary)] shrink-0">
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-8 h-8 bg-orange-600 rounded-lg flex items-center justify-center">
-                                                <Zap className="w-4 h-4 text-white fill-white" />
-                                            </div>
-                                            <span className="text-sm font-black text-[var(--text-primary)] uppercase tracking-wide">Secure Checkout</span>
+            {showPaymentModal && (
+                <>
+                    {checkoutSessionId ? (
+                        <div className="fixed inset-0 z-[200] bg-[var(--bg-overlay)] backdrop-blur-sm animate-in fade-in duration-300 flex items-center justify-center p-4">
+                            <div className="w-full max-w-md bg-[var(--bg-tertiary)] border border-[var(--border-primary)] rounded-3xl overflow-hidden shadow-2xl flex flex-col h-[85vh] animate-in zoom-in-95 duration-300">
+                                {/* Header */}
+                                <div className="px-6 py-4 border-b border-[var(--border-secondary)] flex justify-between items-center bg-[var(--bg-tertiary)] shrink-0">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-8 h-8 bg-orange-600 rounded-lg flex items-center justify-center">
+                                            <Zap className="w-4 h-4 text-white fill-white" />
                                         </div>
+                                        <span className="text-sm font-black text-[var(--text-primary)] uppercase tracking-wide">Secure Checkout</span>
+                                    </div>
+                                    <button
+                                        onClick={() => { setShowPaymentModal(false); setCheckoutSessionId(null); setCheckoutPurchaseUrl(null); }}
+                                        className="transition-colors text-white/20 hover:text-white"
+                                    >
+                                        <X className="w-5 h-5" />
+                                    </button>
+                                </div>
+
+                                {/* Embed Container */}
+                                <div className="flex-1 bg-gray-50 relative overflow-y-auto light-scrollbar">
+                                    <WhopCheckoutEmbed
+                                        key={checkoutSessionId}
+                                        sessionId={checkoutSessionId}
+                                        returnUrl={typeof window !== 'undefined' ? window.location.origin + window.location.pathname : ""}
+                                        onComplete={async (paymentId) => {
+                                            console.log("Checkout complete! Verifying Payment ID:", paymentId);
+                                            try {
+                                                const res = await fetch('/api/payments/verify', {
+                                                    method: 'POST',
+                                                    headers: { 'Content-Type': 'application/json' },
+                                                    body: JSON.stringify({
+                                                        paymentId,
+                                                        packageId: selectedPackageId
+                                                    })
+                                                });
+                                                const data = await res.json();
+
+                                                if (data.success) {
+                                                    console.log("Credits added successfully!");
+                                                    setShowPaymentModal(false);
+                                                    setCheckoutSessionId(null);
+                                                    setCheckoutPurchaseUrl(null);
+                                                    window.location.reload();
+                                                } else {
+                                                    console.error("Payment verification failed:", data.error);
+                                                    // Optional: Show error to user
+                                                    alert("Payment verification failed. Please contact support if you were charged.");
+                                                }
+                                            } catch (err) {
+                                                console.error("Error calling verify API:", err);
+                                            }
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="fixed inset-0 z-[200] overflow-y-auto bg-[var(--bg-overlay)] backdrop-blur-xl animate-in fade-in duration-300">
+                            <div className="flex min-h-full items-center justify-center p-4 sm:p-6 py-12">
+                                <div className="bg-[var(--bg-tertiary)] border border-[var(--border-primary)] rounded-[40px] w-full max-w-xl shadow-2xl relative overflow-hidden">
+                                    <div className="p-8 pb-4 flex flex-col items-center text-center relative">
                                         <button
-                                            onClick={() => { setShowPaymentModal(false); setCheckoutSessionId(null); setCheckoutPurchaseUrl(null); }}
-                                            className="transition-colors text-white/20 hover:text-white"
+                                            onClick={() => { setShowPaymentModal(false); setCheckoutSessionId(null); }}
+                                            className="absolute top-6 right-6 transition-colors text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                                         >
                                             <X className="w-5 h-5" />
                                         </button>
+
+                                        <div className="w-16 h-16 bg-orange-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-orange-500/20">
+                                            <Zap className="w-8 h-8 text-white fill-white" />
+                                        </div>
+                                        <h2 className="text-3xl font-black text-[var(--text-primary)] italic uppercase tracking-tighter mb-2">Fuel Your Production</h2>
+                                        <p className="text-[var(--text-muted)] text-sm font-medium mb-10 max-w-md">Select a credit package to start generating high-converting viral UGC ads.</p>
+
+                                        <div className="grid grid-cols-2 gap-4 w-full">
+                                            {[
+                                                { id: 'pack_3', credits: 3, price: 6, label: 'Starter' },
+                                                { id: 'pack_5', credits: 5, price: 10, label: 'Standard' },
+                                                { id: 'pack_12', credits: 12, price: 20, label: 'Pro', popular: true },
+                                                { id: 'pack_18', credits: 18, price: 30, label: 'Agency' },
+                                            ].map((pkg) => (
+                                                <button
+                                                    key={pkg.id}
+                                                    onClick={() => handleBuyCredits(pkg.id)}
+                                                    disabled={loadingCheckout}
+                                                    className={`relative p-6 bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-3xl text-left hover:border-orange-500/50 hover:bg-[var(--bg-card-hover)] transition-all group ${pkg.popular ? 'border-orange-500/40 bg-orange-600/5' : ''}`}
+                                                >
+                                                    {pkg.popular && (
+                                                        <div className="absolute top-4 right-4 bg-orange-600 px-2 py-0.5 rounded-full">
+                                                            <span className="text-[8px] font-black text-white uppercase tracking-widest">Popular</span>
+                                                        </div>
+                                                    )}
+                                                    <div className="flex items-center gap-3 mb-4">
+                                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${pkg.popular ? 'bg-orange-600 text-white' : 'bg-[var(--bg-card)] text-[var(--text-secondary)]'}`}>
+                                                            <Zap className={`w-5 h-5 ${pkg.popular ? 'fill-white' : ''}`} />
+                                                        </div>
+                                                        <div>
+                                                            <h3 className="text-xs font-black text-[var(--text-primary)] uppercase tracking-widest leading-none mb-1">{pkg.label}</h3>
+                                                            <span className="text-2xl font-black text-[var(--text-primary)] italic tracking-tighter">${pkg.price}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-xl font-black text-[var(--orange-bright)] italic">{pkg.credits} CREDITS</span>
+                                                        <div className="w-8 h-8 rounded-full bg-[var(--bg-card)] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <ChevronRight className="w-4 h-4 text-orange-500" />
+                                                        </div>
+                                                    </div>
+                                                </button>
+                                            ))}
+                                        </div>
+
+                                        {loadingCheckout && (
+                                            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-10 rounded-[40px]">
+                                                <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
+                                            </div>
+                                        )}
                                     </div>
-
-                                    {/* Embed Container */}
-                                    <div className="flex-1 bg-gray-50 relative overflow-y-auto light-scrollbar">
-                                        <WhopCheckoutEmbed
-                                            key={checkoutSessionId}
-                                            sessionId={checkoutSessionId}
-                                            returnUrl={typeof window !== 'undefined' ? window.location.origin + window.location.pathname : ""}
-                                            onComplete={async (paymentId) => {
-                                                console.log("Checkout complete! Verifying Payment ID:", paymentId);
-                                                try {
-                                                    const res = await fetch('/api/payments/verify', {
-                                                        method: 'POST',
-                                                        headers: { 'Content-Type': 'application/json' },
-                                                        body: JSON.stringify({
-                                                            paymentId,
-                                                            packageId: selectedPackageId
-                                                        })
-                                                    });
-                                                    const data = await res.json();
-
-                                                    if (data.success) {
-                                                        console.log("Credits added successfully!");
-                                                        setShowPaymentModal(false);
-                                                        setCheckoutSessionId(null);
-                                                        setCheckoutPurchaseUrl(null);
-                                                        window.location.reload();
-                                                    } else {
-                                                        console.error("Payment verification failed:", data.error);
-                                                        // Optional: Show error to user
-                                                        alert("Payment verification failed. Please contact support if you were charged.");
-                                                    }
-                                                } catch (err) {
-                                                    console.error("Error calling verify API:", err);
-                                                }
-                                            }}
-                                        />
+                                    <div className="p-4 bg-[var(--bg-card)] border-t border-[var(--border-secondary)] text-center">
+                                        <p className="text-[9px] text-[var(--text-muted)] font-bold uppercase tracking-[0.2em]">Secure payments powered by Whop</p>
                                     </div>
                                 </div>
-                            </div>
-                        ) : (
-                            <div className="fixed inset-0 z-[200] overflow-y-auto bg-[var(--bg-overlay)] backdrop-blur-xl animate-in fade-in duration-300">
-                                <div className="flex min-h-full items-center justify-center p-4 sm:p-6 py-12">
-                                    <div className="bg-[var(--bg-tertiary)] border border-[var(--border-primary)] rounded-[40px] w-full max-w-xl shadow-2xl relative overflow-hidden">
-                                        <div className="p-8 pb-4 flex flex-col items-center text-center relative">
-                                            <button
-                                                onClick={() => { setShowPaymentModal(false); setCheckoutSessionId(null); }}
-                                                className="absolute top-6 right-6 transition-colors text-[var(--text-muted)] hover:text-[var(--text-primary)]"
-                                            >
-                                                <X className="w-5 h-5" />
-                                            </button>
-
-                                            <div className="w-16 h-16 bg-orange-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-orange-500/20">
-                                                <Zap className="w-8 h-8 text-white fill-white" />
-                                            </div>
-                                            <h2 className="text-3xl font-black text-[var(--text-primary)] italic uppercase tracking-tighter mb-2">Fuel Your Production</h2>
-                                            <p className="text-[var(--text-muted)] text-sm font-medium mb-10 max-w-md">Select a credit package to start generating high-converting viral UGC ads.</p>
-
-                                            <div className="grid grid-cols-2 gap-4 w-full">
-                                                {[
-                                                    { id: 'pack_3', credits: 3, price: 6, label: 'Starter' },
-                                                    { id: 'pack_5', credits: 5, price: 10, label: 'Standard' },
-                                                    { id: 'pack_12', credits: 12, price: 20, label: 'Pro', popular: true },
-                                                    { id: 'pack_18', credits: 18, price: 30, label: 'Agency' },
-                                                ].map((pkg) => (
-                                                    <button
-                                                        key={pkg.id}
-                                                        onClick={() => handleBuyCredits(pkg.id)}
-                                                        disabled={loadingCheckout}
-                                                        className={`relative p-6 bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-3xl text-left hover:border-orange-500/50 hover:bg-[var(--bg-card-hover)] transition-all group ${pkg.popular ? 'border-orange-500/40 bg-orange-600/5' : ''}`}
-                                                    >
-                                                        {pkg.popular && (
-                                                            <div className="absolute top-4 right-4 bg-orange-600 px-2 py-0.5 rounded-full">
-                                                                <span className="text-[8px] font-black text-white uppercase tracking-widest">Popular</span>
-                                                            </div>
-                                                        )}
-                                                        <div className="flex items-center gap-3 mb-4">
-                                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${pkg.popular ? 'bg-orange-600 text-white' : 'bg-[var(--bg-card)] text-[var(--text-secondary)]'}`}>
-                                                                <Zap className={`w-5 h-5 ${pkg.popular ? 'fill-white' : ''}`} />
-                                                            </div>
-                                                            <div>
-                                                                <h3 className="text-xs font-black text-[var(--text-primary)] uppercase tracking-widest leading-none mb-1">{pkg.label}</h3>
-                                                                <span className="text-2xl font-black text-[var(--text-primary)] italic tracking-tighter">${pkg.price}</span>
-                                                            </div>
-                                                        </div>
-                                                        <div className="flex items-center justify-between">
-                                                            <span className="text-xl font-black text-[var(--orange-bright)] italic">{pkg.credits} CREDITS</span>
-                                                            <div className="w-8 h-8 rounded-full bg-[var(--bg-card)] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                <ChevronRight className="w-4 h-4 text-orange-500" />
-                                                            </div>
-                                                        </div>
-                                                    </button>
-                                                ))}
-                                            </div>
-
-                                            {loadingCheckout && (
-                                                <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-10 rounded-[40px]">
-                                                    <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div className="p-4 bg-[var(--bg-card)] border-t border-[var(--border-secondary)] text-center">
-                                            <p className="text-[9px] text-[var(--text-muted)] font-bold uppercase tracking-[0.2em]">Secure payments powered by Whop</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </>
-                )
-            }
-
-            {/* Delete Confirmation Modal */}
-            {
-                projectToDelete && (
-                    <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-[var(--bg-overlay)] backdrop-blur-xl animate-in fade-in duration-300">
-                        <div className="w-full max-w-sm bg-[var(--bg-tertiary)] border border-[var(--border-primary)] rounded-3xl p-8 text-center shadow-2xl relative overflow-hidden">
-                            <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-red-500/20">
-                                <Trash2 className="w-8 h-8 text-red-500" />
-                            </div>
-                            <h2 className="text-2xl font-black text-[var(--text-primary)] italic uppercase tracking-tighter mb-2">Delete Project?</h2>
-                            <p className="text-[var(--text-muted)] text-sm font-medium mb-8">This action cannot be undone. All footage and scripts will be permanently removed.</p>
-                            <div className="flex flex-col gap-3">
-                                <button
-                                    onClick={confirmDelete}
-                                    className="w-full py-4 bg-red-600 hover:bg-red-500 text-white font-black rounded-xl transition-all text-sm uppercase tracking-widest shadow-lg shadow-red-600/20"
-                                >
-                                    Delete Permanently
-                                </button>
-                                <button
-                                    onClick={() => setProjectToDelete(null)}
-                                    className="w-full py-4 bg-[var(--bg-card)] border border-[var(--border-primary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] font-bold rounded-xl transition-all text-sm uppercase tracking-widest"
-                                >
-                                    Cancel
-                                </button>
                             </div>
                         </div>
+                    )}
+                </>
+            )}
+
+            {/* Delete Confirmation Modal */}
+            {projectToDelete && (
+                <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-[var(--bg-overlay)] backdrop-blur-xl animate-in fade-in duration-300">
+                    <div className="w-full max-w-sm bg-[var(--bg-tertiary)] border border-[var(--border-primary)] rounded-3xl p-8 text-center shadow-2xl relative overflow-hidden">
+                        <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-red-500/20">
+                            <Trash2 className="w-8 h-8 text-red-500" />
+                        </div>
+                        <h2 className="text-2xl font-black text-[var(--text-primary)] italic uppercase tracking-tighter mb-2">Delete Project?</h2>
+                        <p className="text-[var(--text-muted)] text-sm font-medium mb-8">This action cannot be undone. All footage and scripts will be permanently removed.</p>
+                        <div className="flex flex-col gap-3">
+                            <button
+                                onClick={confirmDelete}
+                                className="w-full py-4 bg-red-600 hover:bg-red-500 text-white font-black rounded-xl transition-all text-sm uppercase tracking-widest shadow-lg shadow-red-600/20"
+                            >
+                                Delete Permanently
+                            </button>
+                            <button
+                                onClick={() => setProjectToDelete(null)}
+                                className="w-full py-4 bg-[var(--bg-card)] border border-[var(--border-primary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] font-bold rounded-xl transition-all text-sm uppercase tracking-widest"
+                            >
+                                Cancel
+                            </button>
+                        </div>
                     </div>
-                )
-            }
+                </div>
+            )}
 
             <style dangerouslySetInnerHTML={{
                 __html: `

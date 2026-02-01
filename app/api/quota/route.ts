@@ -49,9 +49,10 @@ export async function GET() {
             });
         }
 
+        // Tier 3: Blocked
         return NextResponse.json({
             allowed: false,
-            message: 'Daily system quota reached. Please try again tomorrow at 12:00 AM PT to unlock more.'
+            message: 'Daily system quota reached. Please try again tomorrow.'
         });
 
     } catch (error: any) {
