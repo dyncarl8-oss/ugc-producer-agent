@@ -372,11 +372,11 @@ const App: React.FC = () => {
                 try {
                     setStatus({ stage: 'generating', message: 'Measuring shot timings...', progress: 97 });
 
-                    // Measure each shot's duration
+                    // Measure each shot's duration and chunk text microscopically
                     const segments = [];
                     for (let j = 0; j < totalShots; j++) {
                         const sUrl = completedVideoUrls[j];
-                        const sText = generatedShots[j].script;
+                        const sText = generatedShots[j]?.script || "";
                         if (sUrl) {
                             try {
                                 const duration = await new Promise<number>((resolve) => {
@@ -385,13 +385,26 @@ const App: React.FC = () => {
                                     v.onloadedmetadata = () => resolve(v.duration);
                                     v.onerror = () => resolve(5);
                                 });
-                                segments.push({ text: sText, duration });
+
+                                // Split text into microscopic chunks (2-3 words) for high-energy sync
+                                const words = sText.split(/\s+/).filter(w => w.length > 0);
+                                const wordsPerChunk = 3;
+                                const chunksCount = Math.ceil(words.length / wordsPerChunk);
+                                const timePerChunk = duration / Math.max(1, chunksCount);
+
+                                for (let k = 0; k < words.length; k += wordsPerChunk) {
+                                    const chunkText = words.slice(k, k + wordsPerChunk).join(' ');
+                                    segments.push({
+                                        text: chunkText,
+                                        duration: timePerChunk
+                                    });
+                                }
                             } catch (e) {
                                 segments.push({ text: sText, duration: 5 });
                             }
                         }
                     }
-                    console.log("[Subtitles] Generated segments:", segments);
+                    console.log("[Subtitles] Generated micro-segments:", segments);
 
                     // Convert final blob to File for upload
                     const videoResponse = await fetch(finalBlobUrl);
@@ -419,14 +432,27 @@ const App: React.FC = () => {
                     console.log("[Subtitles] Stitched Video Public URL:", publicUrl);
                     console.log("[Subtitles] App URL being used:", appUrl);
 
-                    // 2. Call Subtitles API with publicUrl and segments (for manual script-sync)
-                    setStatus({ stage: 'generating', message: 'Generating script-based subtitles...', progress: 98 });
+                    // 2. Call Subtitles API with ultra-elegant styling
+                    setStatus({ stage: 'generating', message: 'Applying elegant finishing...', progress: 98 });
                     const subRes = await fetch('/api/video/subtitles', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             videoUrl: publicUrl,
-                            segments: segments
+                            segments: segments,
+                            options: {
+                                font_size: '4.2 vmin', // Sophisticated small size
+                                y: '84%',
+                                font_family: 'Inter', // Premium sans-serif
+                                font_weight: '800', // Bold but small
+                                fill_color: '#ffffff',
+                                stroke_color: '#000000',
+                                stroke_width: '0.8 vmin',
+                                background_color: 'rgba(0,0,0,0.6)', // Glassmorphism-style backing
+                                background_x_padding: '10%',
+                                background_y_padding: '5%',
+                                background_border_radius: '10%'
+                            }
                         })
                     });
 
